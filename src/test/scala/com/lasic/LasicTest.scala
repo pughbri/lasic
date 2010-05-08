@@ -1,11 +1,12 @@
 package com.lasic;
 
 import junit.framework._;
-import Assert._;
+
 
 object LasicTest {
     def suite: Test = {
         val suite = new TestSuite(classOf[LasicTest]);
+        suite.addTestSuite(classOf[LasicParserTest])
         suite
     }
 
@@ -22,8 +23,10 @@ class LasicTest extends TestCase("lasic") {
     /**
      * Rigourous Tests :-)
      */
-    def testOK() = assertTrue(true);
+    def testOK() = assert(true);
 //    def testKO() = assertTrue(false);
+
+
     
 
 }

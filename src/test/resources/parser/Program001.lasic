@@ -1,0 +1,26 @@
+system {
+    name = "sys"
+    count = 1
+
+    node {
+        name = "node"
+        count = 1
+        machineimage = "machineimage"
+        kernelid        = "kernelid"
+        ramdiskid       = "ramdiskid"
+        groups           = "group"
+        key             = "key"
+        user            = "user"
+        instancetype    = "small"
+        scripts += "script1" { arg = "value" }
+        scripts += "script2" {  }
+        scp += "src" : "destination"
+
+  }
+
+  system {
+    name = "foo"
+    count = 2
+    }
+
+}
