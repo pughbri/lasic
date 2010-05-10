@@ -3,6 +3,7 @@ package com.lasic.cloud
 
 import mock.MockVM
 import com.lasic.{VM, Cloud}
+import java.io.File
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,16 +14,47 @@ import com.lasic.{VM, Cloud}
  */
 
 class MockCloud(startupDelay: Int) extends Cloud {
+  def this() = this (2);
 
-  def this() = this(5);
-  
-  override def startVM(launchConfig: LaunchConfiguration):VM = {
-    val vm: MockVM = new MockVM(startupDelay, this)
-    vm.start()
-    return vm
+  override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
+    var i = 0
+    var vms = new Array[VM](numVMs);
+    while (i < numVMs) {
+      val vm: MockVM = new MockVM(startupDelay, this)
+
+      vms(i) = vm
+      i += 1;
+    }
+
+    if (startVM) {
+      start(vms)
+    }
+    return vms
+  }
+
+  def start(vms: Array[VM]) {
+    vms.foreach(vm => System.out.println("starting vm [" + vm + "]...."))
   }
 
   def getStartupDelay(): Int = {
     startupDelay
   }
+
+  def reboot(vms: Array[VM]) {
+
+    vms.foreach(vm => System.out.println("rebooting vm [" + vm + "]...."))
+  }
+
+  def shutdown(vms: Array[VM]) {
+    vms.foreach(vm => System.out.println("shutting down vm [" + vm + "]...."))
+  }
+
+  def copyTo(vms: Array[VM], sourceFile: File, destinationAbsPath: String) {
+    vms.foreach(vm => System.out.println("copying file to vm [" + vm + "]...."))
+  }
+
+  def execute(vms: Array[VM], executableAbsPath: String) {
+    vms.foreach(vm => System.out.println("executing on vm [" + vm + "]...."))
+  }
+
 }

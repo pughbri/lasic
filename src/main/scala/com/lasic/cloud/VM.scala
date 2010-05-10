@@ -11,9 +11,21 @@ import java.io.File
  */
 
 trait VM {
-  def start()
-  def reboot()
-  def stop()
-  def copyTo(sourceFile: File, destinationAbsPath: String)
-  def execute(executableAbsPath: String)
+  val cloud: Cloud
+
+  def start() {
+    cloud.start(Array(this))
+  }
+  def reboot(){
+    cloud.reboot(Array(this))
+  }
+  def shutdown(){
+    cloud.shutdown(Array(this))
+  }
+  def copyTo(sourceFile: File, destinationAbsPath: String){
+    cloud.copyTo(Array(this), sourceFile, destinationAbsPath)
+  }
+  def execute(executableAbsPath: String){
+    cloud.execute(Array(this), executableAbsPath)
+  }
 }

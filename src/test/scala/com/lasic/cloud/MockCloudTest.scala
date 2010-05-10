@@ -14,11 +14,14 @@ import com.lasic.VM;
 
 class MockCloudTest extends TestCase("MockCloudTest") {
   def testStartVM() = {
-    val cloud = new MockCloud(2)
+    val cloud = new MockCloud(1)
     val time1 = System.currentTimeMillis();
-    val vm: VM = cloud.startVM(new LaunchConfiguration())
+    val numInstances: Int = 3
+    val vms: Array[VM] = cloud.createVMs(new LaunchConfiguration(), numInstances, true)
     val time2 = System.currentTimeMillis();
-    assert( ((time2 - time1) * 1000) >= (cloud.getStartupDelay()) )
+    assert( (((time2 - time1) * 1000) * numInstances) >= (cloud.getStartupDelay() * numInstances) )
+    assert(vms.size == numInstances);
+    //todo: test that cloud.start was called with the Array[VM]
 
   }
 }

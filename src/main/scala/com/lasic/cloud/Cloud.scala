@@ -1,6 +1,7 @@
 package com.lasic
 
 import cloud.LaunchConfiguration
+import java.io.File
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,5 +12,10 @@ import cloud.LaunchConfiguration
  */
 
 trait Cloud {
-  def startVM(launchConfig: LaunchConfiguration):VM
+  def createVMs(launchConfig: LaunchConfiguration, numVMs : Int, startVM: Boolean):Array[VM]
+  def start(vms: Array[VM])
+  def reboot(vms: Array[VM])
+  def shutdown(vms: Array[VM])
+  def copyTo(vms: Array[VM], sourceFile: File, destinationAbsPath: String)
+  def execute(vms: Array[VM], executableAbsPath: String)
 }
