@@ -26,10 +26,11 @@ class LasicParserTest extends TestCase("LasicParserTest") {
     val p = new LasicParser
     for (i <- 1 to 1) {
       val s = getLasicProgram(1);
-      var result = p.parseAll(p.system, s);
+      var result = p.parseAll(p.system,s);
       var ok = false;
       result match {
         case  p.Success(r,_) => ok = true
+        case _ => false
       }
       assert(ok, "test %d".format(i))
 

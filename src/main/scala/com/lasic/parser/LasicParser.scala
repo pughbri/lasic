@@ -3,6 +3,7 @@ package com.lasic.parser
 import util.parsing.combinator.syntactical.StdTokenParsers
 import util.parsing.combinator.lexical.StdLexical
 import util.parsing.combinator.JavaTokenParsers
+import util.matching.Regex
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,6 +14,7 @@ import util.parsing.combinator.JavaTokenParsers
  */
 
 class LasicParser extends JavaTokenParsers {
+
   def lbrace = "{"
 
   def rbrace = "}"
@@ -21,47 +23,40 @@ class LasicParser extends JavaTokenParsers {
 
   def peq = "+="
 
-  def system = "system" ~ lbrace ~ system_internals ~ rbrace
+  def system = "system" ~ stringLiteral ~ lbrace ~ system_body ~ rbrace
 
-  def system_internals = rep(system_internals_1)
+  def system_body: Parser[Any] = rep(props | node | system)
 
-  def system_internals_1: Parser[Any] = name | count | node | system
+  def props = "props" ~ lbrace ~ props_body ~ rbrace
 
-  def name = "name" ~ "=" ~ stringLiteral
+  def props_body = rep(single_prop)
 
-  def count = "count" ~ eq ~ wholeNumber
+  def single_prop = ident ~ ":" ~ (wholeNumber | stringLiteral)
 
-  def node = "node" ~ lbrace ~ node_internals ~ rbrace
+  def node = "node" ~ stringLiteral ~ lbrace ~ node_body ~ rbrace
 
-  def node_internals = rep(name | count | machineimage | kernelid | ramdiskid | groups | key | user | instancetype | scripts | scp)
+  def node_body: Parser[Any] = rep(props | scripts | scp)
 
-  def machineimage = "machineimage" ~ eq ~ stringLiteral
+  def scripts = "scripts" ~ lbrace ~ scripts_body ~ rbrace
 
-  def kernelid = "kernelid" ~ eq ~ stringLiteral
+  def scripts_body = rep(script_stmnt)
 
-  def ramdiskid = "ramdiskid" ~ eq ~ stringLiteral
+  def script_stmnt = stringLiteral ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace
 
-  def groups = "groups" ~ eq ~ stringLiteral
+  def script_param = ident ~ ":" ~ stringLiteral
 
-  def key = "key" ~ eq ~ stringLiteral
+  def scp = "scp" ~ lbrace ~ scp_body ~ rbrace
 
-  def user = "user" ~ eq ~ stringLiteral
+  def scp_body = rep(stringLiteral ~ ":" ~ stringLiteral)
 
-  def instancetype = "instancetype" ~ eq ~ stringLiteral
-
-  def scripts = "scripts" ~ peq ~ stringLiteral ~ script_args
-
-  def script_args = (lbrace ~ rbrace) | (lbrace ~ rep(ident ~ eq ~ stringLiteral) ~ rbrace)
-
-  def scp = "scp" ~ peq ~ stringLiteral ~ ":" ~ stringLiteral
 
 }
 
 object Foo {
   def main(args: Array[String]) {
-    val p = new LasicParser
-    var result = p.parseAll(p.system, "system { name=\"foo\" }");
-    println(result)
+//    val p = new LasicParser
+//    var result = p.do_parse("system { name=\"foo\" }");
+//    println(result)
   }
 
 }
