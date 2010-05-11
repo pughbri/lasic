@@ -1,8 +1,10 @@
 package com.lasic.cloud
 
+import amazon.AmazonVM
 import com.lasic.{VM, Cloud}
 
 import java.io.File
+import com.xerox.amazonws.ec2.Jec2
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,11 +15,20 @@ import java.io.File
  */
 
 class AmazonCloud extends Cloud {
+
+  //todo:  get the key and secret from properties file
+  val ec2: Jec2 = new Jec2("dummy", "value");
+
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
-    return new Array[VM](0);
+    createVMs(numVMs, startVM, () => new AmazonVM(this, launchConfig))
   }
 
   def start(vms: Array[VM]) {
+    vms.foreach(vm => {
+      //todo: get the launch configuration
+      ec2.runInstances(null)
+    }
+      )
 
   }
 
