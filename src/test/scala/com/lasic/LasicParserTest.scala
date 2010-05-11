@@ -3,6 +3,7 @@ package com.lasic
 import junit.framework._;
 import org.apache.commons.io.IOUtils
 import parser.LasicParser
+import parser.ast._
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,6 +14,11 @@ import parser.LasicParser
  */
 
 class LasicParserTest extends TestCase("LasicParserTest") {
+  val tests = List(
+      List(1, new ASTSystem())
+    )
+
+
   def getLasicProgram(i: Int): String = {
     val path = "/parser/Program%03d.lasic".format(i)
     val is = getClass.getResourceAsStream(path)
@@ -23,19 +29,15 @@ class LasicParserTest extends TestCase("LasicParserTest") {
    * Rigourous Tests :-)
    */
   def testParser() = {
+
     val p = new LasicParser
     for (i <- 1 to 1) {
       val s = getLasicProgram(1);
-      var result = p.parseAll(p.system,s);
-      var ok = false;
-      result match {
-        case  p.Success(r,_) => ok = true
-        case _ => false
+      p.parseAll(p.system,s) match {
+        case  p.Success(r:ASTSystem,_) => println("Result: "+r);
+        case x => println(x); assert(false, "Test %d".format(i))
       }
-      assert(ok, "test %d".format(i))
-
     }
-
   }
   //    def testKO() = assertTrue(false);
 
