@@ -15,35 +15,31 @@ class MockVM(delay: Int, cloudInst: Cloud) extends VM {
   def this(cloud: Cloud) = this (2, cloud)
 
   val cloud: Cloud = cloudInst
-  val delayInMillis = delay * 1000
 
   override def start() {
-    //todo: replace all these sleeps with a single closure that sleeps then executes what we pass into the closure
-    Thread.sleep(delayInMillis)
-    super.start()
-
+    withDelay(() => super.start())
   }
 
   override def reboot() {
-    Thread.sleep(delayInMillis)
-    super.reboot()
-
+    withDelay(() => super.reboot())
   }
 
   override def shutdown() {
-    Thread.sleep(delayInMillis)
-    super.shutdown()
+    withDelay(() => super.shutdown())
   }
 
   override def copyTo(sourceFile: File, destinationAbsPath: String) {
-    Thread.sleep(delayInMillis)
-    super.copyTo(sourceFile, destinationAbsPath)
+    withDelay(() => super.copyTo(sourceFile, destinationAbsPath))
   }
 
   override def execute(executableAbsPath: String) {
-    Thread.sleep(delayInMillis)
-    super.execute(executableAbsPath)
+    withDelay(() => super.execute(executableAbsPath))
   }
 
-  
+  def withDelay(callback: () => Unit): Unit = {
+    Thread.sleep(delay* 1000)
+    callback()
+  }
+
+
 }

@@ -17,18 +17,16 @@ class MockCloud(startupDelay: Int) extends Cloud {
   def this() = this (2);
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
-    var i = 0
     var vms = new Array[VM](numVMs);
-    while (i < numVMs) {
+    for (i <- 0 until numVMs) {
       val vm: MockVM = new MockVM(startupDelay, this)
-
       vms(i) = vm
-      i += 1;
     }
 
     if (startVM) {
       start(vms)
     }
+
     return vms
   }
 
