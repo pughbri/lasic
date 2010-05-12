@@ -1,5 +1,6 @@
 package com.lasic
 
+import cloud.LaunchConfiguration
 import java.io.File
 
 /**
@@ -12,6 +13,8 @@ import java.io.File
 
 trait VM {
   val cloud: Cloud
+  val launchConfiguration : LaunchConfiguration
+  var instanceId: String = null
 
   def start() {
     cloud.start(Array(this))
@@ -20,7 +23,7 @@ trait VM {
     cloud.reboot(Array(this))
   }
   def shutdown(){
-    cloud.shutdown(Array(this))
+    cloud.terminate(Array(this))
   }
   def copyTo(sourceFile: File, destinationAbsPath: String){
     cloud.copyTo(Array(this), sourceFile, destinationAbsPath)
@@ -28,4 +31,5 @@ trait VM {
   def execute(executableAbsPath: String){
     cloud.execute(Array(this), executableAbsPath)
   }
+
 }

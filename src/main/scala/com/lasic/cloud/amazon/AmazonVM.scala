@@ -11,6 +11,7 @@ import com.lasic.cloud.LaunchConfiguration
  * To change this template use File | Settings | File Templates.
  */
 
-class AmazonVM(cloudInst: Cloud, lc : LaunchConfiguration ) extends VM {
+class AmazonVM(val cloudInst: Cloud,val lc : LaunchConfiguration ) extends VM {
   val cloud: Cloud = cloudInst
+  val launchConfiguration: LaunchConfiguration = lc
 }

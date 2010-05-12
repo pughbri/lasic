@@ -10,7 +10,6 @@ import java.io.File
  * Time: 12:37:20 PM
  * To change this template use File | Settings | File Templates.
  */
-
 trait Cloud {
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM]
 
@@ -18,7 +17,7 @@ trait Cloud {
 
   def reboot(vms: Array[VM])
 
-  def shutdown(vms: Array[VM])
+  def terminate(vms: Array[VM])
 
   def copyTo(vms: Array[VM], sourceFile: File, destinationAbsPath: String)
 

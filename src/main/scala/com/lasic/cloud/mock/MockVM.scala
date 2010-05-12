@@ -2,6 +2,7 @@ package com.lasic.cloud.mock
 
 import java.io.File
 import com.lasic.{Cloud, VM}
+import com.lasic.cloud.LaunchConfiguration
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,6 +16,7 @@ class MockVM(delay: Int, cloudInst: Cloud) extends VM {
   def this(cloud: Cloud) = this (2, cloud)
 
   val cloud: Cloud = cloudInst
+  val launchConfiguration: LaunchConfiguration = null
 
   override def start() {
     withDelay(() => super.start())

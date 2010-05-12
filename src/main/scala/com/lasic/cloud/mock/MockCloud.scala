@@ -33,7 +33,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
     vms.foreach(vm => System.out.println("rebooting vm [" + vm + "]...."))
   }
 
-  def shutdown(vms: Array[VM]) {
+  def terminate(vms: Array[VM]) {
     vms.foreach(vm => System.out.println("shutting down vm [" + vm + "]...."))
   }
 
