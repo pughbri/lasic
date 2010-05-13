@@ -1,19 +1,22 @@
 package com.lasic
 
+import java.lang.String
+
 /**
- * Created by IntelliJ IDEA.
  * User: pughbc
  * Date: May 12, 2010
- * Time: 1:57:01 PM
- * To change this template use File | Settings | File Templates.
  */
-
 //TODO: is there a scala thing out there like groovy ConfigurationHolder
 object LasicProperties {
 
+    /** The name of the System properties that specifies the name of the properties file**/
+  val SYSTEM_PROPERTY_FOR_FILENAME = "properties.file"
+
   /** The name of the properties file  **/
-   //TODO: Should be loaded from the lasic script like old lasic did
-  private val propFilename = "/lasic.properties"
+  private val propFilename = {
+    val propFile: String = System.getProperty(SYSTEM_PROPERTY_FOR_FILENAME)
+    if (propFile != null) propFile else "/lasic.properties"
+  }
 
   /**The loaded properties */
   private val props = {
@@ -25,12 +28,12 @@ object LasicProperties {
   }
 
   def getProperty(key: String): String = {
-    //todo: look for system property overrides first
-    props.getProperty(key)
+    getProperty(key, null)
   }
 
   def getProperty(key: String, defaultValue: String): String = {
-    props.getProperty(key, defaultValue)
+    val sysProperty: String = System.getProperty(key)
+    if (sysProperty != null) sysProperty else props.getProperty(key, defaultValue)
   }
 
   def resolveProperty(text: String): String = {

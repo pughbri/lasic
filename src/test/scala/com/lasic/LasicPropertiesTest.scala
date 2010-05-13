@@ -26,9 +26,29 @@ class LasicPropertiesTest extends TestCase("MockCloudTest") {
     assert("junk" == property, "expected junk got " + property)
   }
 
+  def testGetSystemProperty() = {
+    val key: String = "___A_VERY_OBSCURE_KEY___"
+    val value: String = "new_val"
+    System.setProperty(key, value)
+    val prop1: String = LasicProperties.getProperty(key)
+    assert(value == prop1, "expected " + value + " got " + prop1)
+
+  }
+
+  def testSetPropertyFileName() = {
+    //this test depends on the system property being set BEFORE the LasicProperties is initialized
+    //which won't be true all the time (when running from mvn or ide that runs more than 1 test)
+    if (false) {
+      System.setProperty("properties.file", "/lasic2.properties")
+      val prop1: String = LasicProperties.getProperty("ACCESS_KEY")
+      assert("access_key2" == prop1, "expected access_key2 got " + prop1)
+    }
+
+  }
+
 
   def testResolveProperty() = {
     val property: String = LasicProperties.resolveProperty("${this} string has ${two} variables in ${it}")
-    assert (property == "my string has 2 variables in itself", "got: " + property)
+    assert(property == "my string has 2 variables in itself", "got: " + property)
   }
 }
