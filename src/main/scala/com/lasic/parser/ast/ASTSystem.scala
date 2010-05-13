@@ -9,12 +9,13 @@ package com.lasic.parser.ast
  * To change this template use File | Settings | File Templates.
  */
 
-import scala.collection.mutable.Map
+import com.lasic.model.{SystemInstance, SystemProperties, SystemGroup}
+import collection.mutable.{ListBuffer, HashMap}
+
 
 class ASTSystem extends SystemProperties {
-  val nodes:Map[String,ASTNode] = scala.collection.mutable.Map()
-  val subsystems:Map[String,ASTSystem] = scala.collection.mutable.Map()
-
+  val nodes = new ListBuffer[ASTNode]()
+  val subsystems = new ListBuffer[ASTSystem]()
 }
 
 

@@ -10,7 +10,7 @@ import scala.collection.mutable.Map
  */
 
 
-class ASTNode extends NodeProperties
+class ASTNode extends NodeProperties 
 
 
 /*

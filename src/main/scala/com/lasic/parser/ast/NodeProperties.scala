@@ -1,12 +1,6 @@
 package com.lasic.parser.ast
 
-/**
- * Created by IntelliJ IDEA.
- * User: lmonson
- * Date: May 11, 2010
- * Time: 10:06:53 AM
- * To change this template use File | Settings | File Templates.
- */
+import scala.collection.mutable.Map
 
 trait NodeProperties {
   var name                    = ""
@@ -18,6 +12,8 @@ trait NodeProperties {
   var key: String             = null
   var user: String            = null
   var instancetype: String    = null
+  var scp                     = new scala.collection.mutable.HashMap()
+
 }
 
 

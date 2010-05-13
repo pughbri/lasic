@@ -1,4 +1,4 @@
-package com.lasic.parser.ast
+package com.lasic.model
 
 /**
  * Created by IntelliJ IDEA.

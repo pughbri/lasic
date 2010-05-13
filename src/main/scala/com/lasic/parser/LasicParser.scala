@@ -26,8 +26,8 @@ class LasicParser extends JavaTokenParsers {
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initSystemProperties(sys, propertyMap)
-          case node: ASTNode => sys.nodes(node.name) = node
-          case system: ASTSystem => sys.subsystems(system.name) = system
+          case node: ASTNode => sys.nodes += node
+          case system: ASTSystem => sys.subsystems += system
           case x => println("Unknown object: " + x)
         }
     }
@@ -135,9 +135,9 @@ class LasicParser extends JavaTokenParsers {
 
   def script_param = ident ~ ":" ~ aString
 
-  def scp = "scp" ~ lbrace ~ scp_body ~ rbrace
+  def scp = "scp" ~ lbrace ~ scp_body ~ rbrace //^^ { case _ ~ _ ~ list_body ~ _ => Map() ++ list_body ++ ("type"-->"scp")}
 
-  def scp_body = rep(aString ~ ":" ~ aString)
+  def scp_body = rep(aString ~ ":" ~ aString) //^^ { case from ~ _ ~ to => ( from -> to )}
 
   /*==========================================================================================================
     Misc bnf

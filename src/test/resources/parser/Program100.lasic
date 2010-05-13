@@ -5,7 +5,7 @@ system  "sys" {
 
     node "a node" {
         props {
-            count: 3
+            count: 1
             machineimage: "machineimage"
             kernelid: "kernelid"
             ramdiskid:        "ramdiskid"
