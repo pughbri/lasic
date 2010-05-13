@@ -112,6 +112,8 @@ object LasicCompiler {
     nodeGroup.key = ast.key
     nodeGroup.user = ast.user
     nodeGroup.instancetype = ast.instancetype
+    nodeGroup.scpMap = ast.scpMap
+    nodeGroup.scriptMap = ast.scriptMap
 
 
     createInstances(nodeGroup)

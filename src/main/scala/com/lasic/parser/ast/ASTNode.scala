@@ -1,5 +1,4 @@
 package com.lasic.parser.ast
-import scala.collection.mutable.Map
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,7 +9,10 @@ import scala.collection.mutable.Map
  */
 
 
-class ASTNode extends NodeProperties 
+class ASTNode extends NodeProperties {
+
+
+}
 
 
 /*

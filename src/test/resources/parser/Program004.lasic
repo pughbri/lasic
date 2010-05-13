@@ -1,0 +1,11 @@
+/* Tests system variable substitution */
+system  "sys1" {
+    node "node1" {
+
+        scp {
+			"src1":"dest1"
+			"src2":"dest2"
+        }
+    }
+
+}

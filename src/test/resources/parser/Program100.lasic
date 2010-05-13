@@ -23,7 +23,7 @@ system  "sys" {
 		}
 
         scp {
-			"src":"dest"
+			"src1":"dest1"
 			"src2":"dest2"
         }
 

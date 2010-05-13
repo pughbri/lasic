@@ -1,6 +1,6 @@
 package com.lasic.parser.ast
 
-import scala.collection.mutable.Map
+import scala.collection.mutable._
 
 trait NodeProperties {
   var name                    = ""
@@ -12,7 +12,8 @@ trait NodeProperties {
   var key: String             = null
   var user: String            = null
   var instancetype: String    = null
-  var scp                     = new scala.collection.mutable.HashMap()
+  var scpMap                  = Map[String,String]()
+  var scriptMap               = Map[String,Map[String,String]]()
 
 }
 

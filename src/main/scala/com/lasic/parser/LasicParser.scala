@@ -1,6 +1,6 @@
 package com.lasic.parser
 
-import ast.{ASTNode, ASTSystem}
+import ast.{ASTScript, ASTScp, ASTNode, ASTSystem}
 import util.parsing.combinator.syntactical.StdTokenParsers
 import util.parsing.combinator.lexical.StdLexical
 import util.parsing.combinator.JavaTokenParsers
@@ -48,6 +48,8 @@ class LasicParser extends JavaTokenParsers {
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
+          case astScp:ASTScp => sys.scpMap = astScp.scpMap
+          case astScript:ASTScript => sys.scriptMap = astScript.scpMap
           case _ =>
         }
     }
@@ -127,18 +129,35 @@ class LasicParser extends JavaTokenParsers {
 
   def node_list_prop_name = "groups"
 
-  def scripts = "scripts" ~ lbrace ~ scripts_body ~ rbrace
+  def scripts = "scripts" ~ lbrace ~ scripts_body ~ rbrace ^^ {
+    case _ ~ _ ~ list_o_scripts ~ _ =>
+      val s = new ASTScript
+      s.scpMap = Map() ++ list_o_scripts
+      s
+  }
 
   def scripts_body = rep(script_stmnt)
 
-  def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace
+  def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace  ^^ {
+    case name ~ _ ~ _ ~ arg_list ~ _ =>
+      val argMap = Map() ++ arg_list
+      (name -> argMap)
+  }
 
-  def script_param = ident ~ ":" ~ aString
+  def script_param = ident ~ ":" ~ aString ^^ {
+    case from ~ _ ~ to =>
+      ( from -> to )
+  }
 
-  def scp = "scp" ~ lbrace ~ scp_body ~ rbrace //^^ { case _ ~ _ ~ list_body ~ _ => Map() ++ list_body ++ ("type"-->"scp")}
+  def scp = "scp" ~ lbrace ~ scp_body ~ rbrace ^^ {
+    case _ ~ _ ~ list_body ~ _ =>
+      val x = new ASTScp
+      x.scpMap = Map() ++ list_body
+      x
+  }
 
-  def scp_body = rep(aString ~ ":" ~ aString) //^^ { case from ~ _ ~ to => ( from -> to )}
-
+  def scp_body = rep(scp_line) 
+  def scp_line = aString ~ ":" ~ aString ^^ { case from ~ _ ~ to => ( from -> to )}
   /*==========================================================================================================
     Misc bnf
    ==========================================================================================================*/

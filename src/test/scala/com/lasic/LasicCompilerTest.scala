@@ -1,19 +1,17 @@
 package com.lasic
 
 import junit.framework._
-import parser.{LasicCompiler, LasicParser};
+import parser.{LasicCompiler};
 import org.apache.commons.io.IOUtils
-import parser.ast._
 
 /**
- * Created by IntelliJ IDEA.
- * User: lmonson
- * Date: May 7, 2010
- * Time: 9:38:00 PM
- * To change this template use File | Settings | File Templates.
+ * Tests a variety of sample LASIC programs to ensure that they compile into the proper object model
  */
+class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
-class LasicParserTest extends TestCase("LasicParserTest") {
+  /**
+   * Load a program, based on a test number, from the classpath
+   */
   def getLasicProgram(i: Int) = {
     val path = "/parser/Program%03d.lasic".format(i)
     val is = getClass.getResourceAsStream(path)
@@ -21,6 +19,7 @@ class LasicParserTest extends TestCase("LasicParserTest") {
     LasicCompiler.compile(program)
   }
 
+  /* utility */
   def assertEquals(a: Any, b: Any) = {
     assert(a == b)
   }
@@ -32,6 +31,9 @@ class LasicParserTest extends TestCase("LasicParserTest") {
     val program = getLasicProgram(1);
   }
 
+  /**
+   * Ensure that an empty program, but with repeated "arity" produces objects
+   */
   def testEmptySystem() = {
     val program = getLasicProgram(2);
     assertEquals(2, program.count)
@@ -42,13 +44,43 @@ class LasicParserTest extends TestCase("LasicParserTest") {
     assertEquals(0, program.instances(1).nodegroups.size)
 
   }
+
+  /**
+   * Ensure that variable substitution is occurring
+   */
   def testVariableSubstitution() = {
     val program = getLasicProgram(3);
     assertEquals("sysvar", program.name)
     assertEquals("var2", program.instances(0).nodegroups(0).name)
   }
+
   /**
-   * Rigourous Tests :-)
+   * Ensure that SCP statements are parsed
+   */
+  def testScp() = {
+    val program= getLasicProgram(4);
+    assertEquals(2, program.instances(0).nodegroups(0).scpMap.size)
+    assertEquals("dest1", program.instances(0).nodegroups(0).scpMap("src1"))
+    assertEquals("dest2", program.instances(0).nodegroups(0).scpMap("src2"))
+  }
+
+  /**
+   * Ensure that script statements are parsed
+   */
+  def testScripts() = {
+    val program= getLasicProgram(5);
+    assertEquals(2, program.instances(0).nodegroups(0).scriptMap.size)
+
+    var map = program.instances(0).nodegroups(0).scriptMap("some_script")
+    assertEquals(0, map.size)
+
+    map = program.instances(0).nodegroups(0).scriptMap("another")
+    assertEquals(1, map.size)
+    assertEquals("bar", map("foo"))
+  }
+
+  /**
+   *  Parse a basic, but non trivial, program and test a variety of features about it
    */
   def testSimpleProgram() = {
     val program = getLasicProgram(100);
@@ -60,7 +92,10 @@ class LasicParserTest extends TestCase("LasicParserTest") {
     // system instance 0 should have one nodegroup, with 3 instances in it
     for (i <- 0 to 1) {
       assertEquals(1, program.instances(i).nodegroups.size)
-      assertEquals("a node", program.instances(i).nodegroups(0).name)
+
+      val nodeGroup = program.instances(i).nodegroups(0)
+
+      assertEquals("a node", nodeGroup.name)
       assertEquals(3, program.instances(i).nodegroups(0).count)
       assertEquals(3, program.instances(i).nodegroups(0).instances.size)
       assertEquals("machineimage", program.instances(i).nodegroups(0).machineimage)
@@ -71,83 +106,26 @@ class LasicParserTest extends TestCase("LasicParserTest") {
       assertEquals("key", program.instances(i).nodegroups(0).key)
       assertEquals("user", program.instances(i).nodegroups(0).user)
       assertEquals("small", program.instances(i).nodegroups(0).instancetype)
+
       // test scripts
+      val scriptMap = nodeGroup.scriptMap
+      assertEquals(2,scriptMap.size)
+      var map = scriptMap("some_script")
+      assertEquals(0, map.size)
+      map = scriptMap("another")
+      assertEquals(1, map.size)
+      assertEquals("bar", map("foo"))
+
+      val scpMap = nodeGroup.scpMap
+      assertEquals("dest1", scpMap("src1"))
+      assertEquals("dest2", scpMap("src2"))
+
       // test scp
     }
-
-
-
 
     assertEquals(1, program.subsystems.size )
     assertEquals(List("subsystem 1"), program.subsystems.toList.map {x => x.name})
     assertEquals(1, program.subsystems(0).instances.size )
     assertEquals(0, program.subsystems(0).instances(0).nodegroups.size )
-    
-    /*
-        assertEquals("sys", ast.name)
-        assertEquals(2, ast.count)
-        assertEquals(1, ast.nodes.size)
-        assertEquals(List("a node"), ast.nodes.toList.map { x => x.name} )
-        val node = ast.nodes(0)
-        assertEquals("a node", node.name )
-        assertEquals(3, node.count)
-        assertEquals("machineimage", node.machineimage)
-        assertEquals("kernelid", node.kernelid)
-        assertEquals("ramdiskid",  node.ramdiskid)
-        assertEquals(1, node.groups.size)
-        assertEquals(List("group"), node.groups)
-        assertEquals("key", node.key)
-        assertEquals("user", node.user)
-        assertEquals("small", node.instancetype)
-
-        // test scripts
-        // test scp
-
-        assertEquals(1, ast.subsystems.size)
-        assertEquals(List("subsystem 1"), ast.subsystems.toList.map { x => x.name} )
-        val subsys = ast.subsystems(0)
-        assertEquals(1, subsys.count)
-    */
-
   }
-  //    def testKO() = assertTrue(false);
-
-  /*
- system  "sys" {
-props {
-  count: 2
-}
-
-  node "a node" {
-      props {
-          count: 3
-          machineimage: "machineimage"
-          kernelid: "kernelid"
-          ramdiskid:        "ramdiskid"
-          groups:            "group"
-          key:              "key"
-          user:             "user"
-          instancetype:     "small"
-      }
-
-  scripts {
-    "some_script": {}
-    "another": {
-      foo:"bar"
-    }
-  }
-
-      scp {
-    "src":"dest"
-    "src2":"dest2"
-      }
-
-  }
-
-
-  system "subsystem 1" {}
-}
-  */
-
-
 }

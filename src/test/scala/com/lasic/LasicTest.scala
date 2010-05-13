@@ -6,7 +6,7 @@ import junit.framework._;
 object LasicTest {
     def suite: Test = {
         val suite = new TestSuite(classOf[LasicTest]);
-        suite.addTestSuite(classOf[LasicParserTest])
+        suite.addTestSuite(classOf[LasicCompilerTest])
         suite
     }
 
