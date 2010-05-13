@@ -4,11 +4,8 @@ import cloud.LaunchConfiguration
 import java.io.File
 
 /**
- * Created by IntelliJ IDEA.
- * User: pughbc
+ * User: Brian Pugh
  * Date: May 10, 2010
- * Time: 12:38:35 PM
- * To change this template use File | Settings | File Templates.
  */
 
 trait VM {

@@ -5,11 +5,8 @@ import com.lasic.{Cloud, VM}
 import com.lasic.cloud.LaunchConfiguration
 
 /**
- * Created by IntelliJ IDEA.
- * User: pughbc
+ * User: Brian Pugh
  * Date: May 10, 2010
- * Time: 1:17:30 PM
- * To change this template use File | Settings | File Templates.
  */
 
 class MockVM(delay: Int, cloudInst: Cloud) extends VM {

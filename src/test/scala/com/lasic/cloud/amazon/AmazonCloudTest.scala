@@ -5,11 +5,9 @@ import junit.framework.TestCase
 import com.lasic.cloud.{LaunchConfiguration, AmazonCloud}
 
 /**
- * Created by IntelliJ IDEA.
  * User: pughbc
  * Date: May 12, 2010
  * Time: 1:13:40 PM
- * To change this template use File | Settings | File Templates.
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {

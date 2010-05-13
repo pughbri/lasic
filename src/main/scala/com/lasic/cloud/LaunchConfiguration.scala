@@ -1,11 +1,10 @@
 package com.lasic.cloud
 
+import com.xerox.amazonws.ec2.InstanceType
+
 /**
- * Created by IntelliJ IDEA.
- * User: pughbc
+ * User: Brian Pugh
  * Date: May 10, 2010
- * Time: 2:10:19 PM
- * To change this template use File | Settings | File Templates.
  */
 class LaunchConfiguration {
   var name: String = null
@@ -14,9 +13,10 @@ class LaunchConfiguration {
   var kernelId: String = null
   var key: String = null
   var groups: String = null
-//  val instanceType: Nothing = null
+  val instanceType: InstanceType = InstanceType.DEFAULT
   var userName: String = null
   var s3Download: String = null
+  var availabilityZone: String = "us-east-1b"
   //val scpDeclarations: List[ScpDeclaration] = new ArrayList[ScpDeclaration]
   //private ScriptDeclaration script = new ScriptDeclaration();
   //private final val startupScripts: List[ScriptDeclaration] = new ArrayList[ScriptDeclaration]

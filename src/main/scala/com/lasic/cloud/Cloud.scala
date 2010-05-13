@@ -4,13 +4,11 @@ import cloud.LaunchConfiguration
 import java.io.File
 
 /**
- * Created by IntelliJ IDEA.
- * User: pughbc
+ * User: Brian Pugh
  * Date: May 10, 2010
- * Time: 12:37:20 PM
- * To change this template use File | Settings | File Templates.
  */
 trait Cloud {
+  
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM]
 
   def start(vms: Array[VM])
