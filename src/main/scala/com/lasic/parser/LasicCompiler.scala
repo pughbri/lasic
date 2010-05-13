@@ -3,6 +3,7 @@ package com.lasic.parser
 import ast.{ASTNode, ASTSystem}
 import collection.mutable.ListBuffer
 import com.lasic.model.{NodeInstance, NodeGroup, SystemInstance, SystemGroup}
+import scala.util.matching.Regex
 import org.apache.commons.io.IOUtils
 
 /**
@@ -14,6 +15,12 @@ import org.apache.commons.io.IOUtils
  */
 
 object LasicCompiler {
+  var blockComment = """(/\*([^*]|(\*+[^*/]))*\*+/)|(//.*)""".r
+
+  private def stripComments(s:String) = {
+    blockComment.replaceAllIn(s, " ")
+  }
+  
   private def createInstances(nodeGroup: NodeGroup) = {
     // Create all the instances
     val lb = new ListBuffer[NodeInstance]()
@@ -59,8 +66,9 @@ object LasicCompiler {
   }
 
   def compile(program: String): SystemGroup = {
+    val reducedProgram = stripComments(program)
     val p = new LasicParser()
-    p.parseAll(p.system, program) match {
+    p.parseAll(p.system, reducedProgram) match {
       case p.Success(r: ASTSystem, _) => compile(r)
       case x => throw new RuntimeException("compilation failure: " + x);
     }

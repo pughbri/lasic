@@ -6,6 +6,7 @@ import util.parsing.combinator.lexical.StdLexical
 import util.parsing.combinator.JavaTokenParsers
 import util.matching.Regex
 import scala.collection.mutable._
+import com.lasic.LasicProperties
 
 /**
  * Created by IntelliJ IDEA.
@@ -67,7 +68,6 @@ class LasicParser extends JavaTokenParsers {
     }
 
   }
-
   /*==========================================================================================================
     SYSTEM bnf
     ==========================================================================================================*/
@@ -142,7 +142,12 @@ class LasicParser extends JavaTokenParsers {
   /*==========================================================================================================
     Misc bnf
    ==========================================================================================================*/
-  def aString = stringLiteral ^^ {x => x.substring(1, x.length - 1) /* variable substitution should happen here */ }
+  def aString = stringLiteral ^^ {
+    x =>
+      val y=LasicProperties.resolveProperty(x);
+      val z=y.substring(1, y.length - 1)
+      z
+  }
 
   def aNumber = wholeNumber ^^ {_.toInt}
 
@@ -157,11 +162,3 @@ class LasicParser extends JavaTokenParsers {
 
 }
 
-object Foo {
-  def main(args: Array[String]) {
-    //    val p = new LasicParser
-    //    var result = p.do_parse("system { name=\"foo\" }");
-    //    println(result)
-  }
-
-}

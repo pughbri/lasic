@@ -37,17 +37,15 @@ object LasicProperties {
   }
 
   def resolveProperty(text: String): String = {
-    //quick hackjob to replace vars.  This should be handled by framework if we decide to use configgy or something
-    var beginVarIndex = text.indexOf("${", 0)
-    var newText = "";
-    var endVarIndex = 0
-    while (beginVarIndex != -1) {
-      newText += text.substring(endVarIndex, beginVarIndex)
-      endVarIndex = text.indexOf("}",beginVarIndex)
-      newText += getProperty(text.substring(beginVarIndex + 2, endVarIndex))
-      beginVarIndex = text.indexOf("${", endVarIndex)
-      endVarIndex += 1
+    val regex = """\$\{[^\}]*\}""".r
+    var result = text
+
+    for(x:String <- regex findAllIn text) {
+      val target = x.substring(2,x.length-1)
+      val propValue = getProperty(target)
+      result = result.replaceAll("\\$\\{"+target+"\\}",propValue)
     }
-    newText
+    result;
+
   }
 }

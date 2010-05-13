@@ -26,10 +26,32 @@ class LasicParserTest extends TestCase("LasicParserTest") {
   }
 
   /**
+   * Ensures that comments are allowed as whitespace in a lasic program
+   */
+  def testComments() = {
+    val program = getLasicProgram(1);
+  }
+
+  def testEmptySystem() = {
+    val program = getLasicProgram(2);
+    assertEquals(2, program.count)
+    assertEquals(2, program.instances.size)
+    assertEquals(program, program.instances(0).parent)
+    assertEquals(program, program.instances(1).parent)
+    assertEquals(0, program.instances(0).nodegroups.size)
+    assertEquals(0, program.instances(1).nodegroups.size)
+
+  }
+  def testVariableSubstitution() = {
+    val program = getLasicProgram(3);
+    assertEquals("sysvar", program.name)
+    assertEquals("var2", program.instances(0).nodegroups(0).name)
+  }
+  /**
    * Rigourous Tests :-)
    */
   def testSimpleProgram() = {
-    val program = getLasicProgram(1);
+    val program = getLasicProgram(100);
 
     assertEquals("sys", program.name)
     assertEquals(2, program.count)

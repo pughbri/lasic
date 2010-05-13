@@ -10,7 +10,8 @@ import collection.mutable.ListBuffer
  * To change this template use File | Settings | File Templates.
  */
 
-class SystemInstance(parent:SystemGroup, index:Int) {
+class SystemInstance(_parent:SystemGroup, index:Int) {
+  val parent:SystemGroup = _parent 
   var nodegroups = List[NodeGroup]() 
 
 }

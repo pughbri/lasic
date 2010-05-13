@@ -1,34 +1,8 @@
-system  "sys" {
-	props {
-		count: 2
+/* Tests that comments can appear anywhere */
+system /**/ "sys" /* bar */ { /*
+        */
+	props /*
+	    */{
+		count: /* sd*/ 2
 	}
-
-    node "a node" {
-        props {
-            count: 3
-            machineimage: "machineimage"
-            kernelid: "kernelid"
-            ramdiskid:        "ramdiskid"
-            groups:            "group"
-            key:              "key"
-            user:             "user"
-            instancetype:     "small"
-        }
-
-		scripts {
-			"some_script": {}
-			"another": {
-				foo:"bar"
-			}
-		}
-
-        scp {
-			"src":"dest"
-			"src2":"dest2"
-        }
-
-    }
-
-
-    system "subsystem 1" {}
 }

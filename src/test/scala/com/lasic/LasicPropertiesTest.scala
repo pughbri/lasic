@@ -51,4 +51,14 @@ class LasicPropertiesTest extends TestCase("MockCloudTest") {
     val property: String = LasicProperties.resolveProperty("${this} string has ${two} variables in ${it}")
     assert(property == "my string has 2 variables in itself", "got: " + property)
   }
+
+  def testQuotedString() = {
+    val property = LasicProperties.resolveProperty("\"var${it}\"");
+    assert( property=="\"varitself\"", "got: "+property)
+  }
+  def testNoProperties() = {
+    val property: String = LasicProperties.resolveProperty("this string has no properties")
+    assert (property == "this string has no properties", "got: " + property)
+
+  }
 }

@@ -13,4 +13,5 @@ import com.lasic.parser.ast.NodeProperties
 class NodeGroup extends NodeProperties {
   var parent:SystemInstance = null
   var instances:List[NodeInstance] = List()
+  
 }
