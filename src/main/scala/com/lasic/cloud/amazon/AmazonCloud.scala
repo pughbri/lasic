@@ -1,7 +1,6 @@
 package com.lasic.cloud
 
 import amazon.AmazonVM
-import java.io.File
 import com.lasic.{LasicProperties, VM, Cloud}
 import java.lang.String
 import com.xerox.amazonws.ec2.{Jec2}
@@ -24,31 +23,36 @@ class AmazonCloud extends Cloud {
   }
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
-    createVMs(numVMs, startVM, () => new AmazonVM(this, launchConfig))
+    createVMs(numVMs, startVM) {new AmazonVM(this, launchConfig)}
   }
+
+
 
 
   def start(vms: Array[VM]) {
     //todo: don't just iterate.  Batching things together and making a single call with params is MUCH more efficient
-    vms.foreach(vm => {
-      val amazonLC = createLaunchConfiguration(vm.launchConfiguration)
-      val rd: ReservationDescription = ec2.runInstances(amazonLC)
-      println(rd.getReservationId())
+    vms.foreach(vm => {startVM(vm)})
+  }
 
-      //todo: how do I cleanly deal with java collections?
-      //      val instances = List(rd.getInstances())
-      //      instances.foreach(desc => println(desc.getInstanceId()))
+  private def startVM(vm: VM) {
+    val amazonLC = createLaunchConfiguration(vm.launchConfiguration)
+    val rd: ReservationDescription = ec2.runInstances(amazonLC)
+    println(rd.getReservationId())
 
-      val iterator: Iterator[ReservationDescription#Instance] = rd.getInstances().iterator()
-      while (iterator.hasNext()) {
-        val instanceId: String = iterator.next.getInstanceId
-        println(instanceId)
-        vm.instanceId = instanceId;
-      }
+    //todo: how do I cleanly deal with java collections?
+    //      val instances = List(rd.getInstances())
+    //      instances.foreach(desc => println(desc.getInstanceId()))
 
+    val iterator: Iterator[ReservationDescription#Instance] = rd.getInstances().iterator()
+    while (iterator.hasNext()) {
+      val instance: ReservationDescription#Instance = iterator.next
+      val instanceId: String = instance.getInstanceId
+      println(instanceId)
+      vm.machineDescription = new MachineDescription(instanceId,
+        MachineState.valueOf(instance.getState).get,
+        instance.getDnsName,
+        instance.getPrivateDnsName)
     }
-      )
-
   }
 
   private def createLaunchConfiguration(lasicLC: LaunchConfiguration): com.xerox.amazonws.ec2.LaunchConfiguration = {
@@ -68,20 +72,12 @@ class AmazonCloud extends Cloud {
 
   def terminate(vms: Array[VM]) {
     vms.foreach(vm => {
-      println("termination " + vm.instanceId)
+      println("termination " + vm.machineDescription.instanceId)
       var instances = new java.util.ArrayList[String]
-      instances.add(vm.instanceId)
+      instances.add(vm.machineDescription.instanceId)
       ec2.terminateInstances(instances)
     }
       )
-  }
-
-  def copyTo(vms: Array[VM], sourceFile: File, destinationAbsPath: String) {
-
-  }
-
-  def execute(vms: Array[VM], executableAbsPath: String) {
-
   }
 
 

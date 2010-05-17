@@ -19,7 +19,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       val vm: VM = new AmazonVM(cloud, lc)
       val vms = Array(vm)
       cloud.start(vms)
-      Thread.sleep(30000); //give it a minute to come up
+      Thread.sleep(20000); //give it a minute to come up
       cloud.terminate(vms)
     }
   }

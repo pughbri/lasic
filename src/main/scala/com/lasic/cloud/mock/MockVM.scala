@@ -16,28 +16,28 @@ class MockVM(delay: Int, cloudInst: Cloud) extends VM {
   val launchConfiguration: LaunchConfiguration = null
 
   override def start() {
-    withDelay(() => super.start())
+    withDelay(super.start())
   }
 
   override def reboot() {
-    withDelay(() => super.reboot())
+    withDelay(super.reboot())
   }
 
   override def shutdown() {
-    withDelay(() => super.shutdown())
+    withDelay(super.shutdown())
   }
 
   override def copyTo(sourceFile: File, destinationAbsPath: String) {
-    withDelay(() => super.copyTo(sourceFile, destinationAbsPath))
+    withDelay(println("copying file " + sourceFile.getAbsoluteFile + " to " + destinationAbsPath))
   }
 
   override def execute(executableAbsPath: String) {
-    withDelay(() => super.execute(executableAbsPath))
+    withDelay(println("executing " + executableAbsPath))
   }
 
-  def withDelay(callback: () => Unit): Unit = {
+  private def withDelay(callback: => Unit): Unit = {
     Thread.sleep(delay* 1000)
-    callback()
+    callback
   }
 
 
