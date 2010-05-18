@@ -4,7 +4,7 @@ import junit.framework.TestCase
 import java.lang.String
 import java.io.File
 import com.lasic.cloud.ssh.SshSession
-import com.lasic.cloud.{MachineDescription, MachineState, LaunchConfiguration}
+import com.lasic.cloud.{MockCloud, MachineState, LaunchConfiguration}
 
 /**
  *
@@ -36,7 +36,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
     val lc: LaunchConfiguration = new LaunchConfiguration()
     lc.key = "some"
     var state = MachineState.Unknown
-    val vm: AmazonVM = new AmazonVM(null, lc) {
+    val vm: AmazonVM = new AmazonVM(new MockCloud(0), lc) {
       override protected def createSshSession = {
         new MockSshSession
       }
@@ -64,23 +64,8 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
     }
 
     //test2: set machine to valid state of running
-    try {
       state = MachineState.Running
       vm.copyTo(sourceFile, remoteFile)
-      assert(false, "should have got IllegalStateException: VM hasn't been initialized")
-    }
-    catch {
-      case t: IllegalStateException => { //expected
-      }
-      case t: Throwable => {
-        assert(false, "unexpected exception " + t)
-      }
-    }
-
-    //test3: all is good now
-    vm.machineDescription = new MachineDescription("id", "public-name", "private-name")
-    vm.copyTo(sourceFile, remoteFile)
-
   }
 
 

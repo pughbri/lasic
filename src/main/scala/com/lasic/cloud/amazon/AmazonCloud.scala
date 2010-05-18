@@ -43,12 +43,8 @@ class AmazonCloud extends Cloud {
     val iterator: Iterator[ReservationDescription#Instance] = rd.getInstances().iterator()
     while (iterator.hasNext()) {
       val instance: ReservationDescription#Instance = iterator.next
-      val instanceId: String = instance.getInstanceId
-      println(instanceId)
-      vm.machineDescription = new MachineDescription(instanceId,
-//        MachineState.valueOf(instance.getState).get,
-        instance.getDnsName,
-        instance.getPrivateDnsName)
+      vm.instanceId = instance.getInstanceId
+      println(vm.instanceId)
     }
   }
 
@@ -69,27 +65,38 @@ class AmazonCloud extends Cloud {
 
   def terminate(vms: Array[VM]) {
     vms.foreach(vm => {
-      println("termination " + vm.machineDescription.instanceId)
+      println("termination " + vm.instanceId)
       var instances = new java.util.ArrayList[String]
-      instances.add(vm.machineDescription.instanceId)
+      instances.add(vm.instanceId)
       ec2.terminateInstances(instances)
     }
       )
   }
 
 
-  def getState(vm: VM): MachineState.Value = {
-    val list: List[ReservationDescription] = ec2.describeInstances(Array(vm.machineDescription.instanceId))
+  private def getInstance(vm: VM): ReservationDescription#Instance = {
+    val list: List[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
     if (list.size != 1) {
-      throw new IllegalStateException("expected a single reservation description for instance id " + vm.machineDescription.instanceId + " but got " + list.size)
+      throw new IllegalStateException("expected a single reservation description for instance id " + vm.instanceId + " but got " + list.size)
     }
 
     val instances: List[ReservationDescription#Instance] = list.get(0).getInstances
     if (list.size != 1) {
-      throw new IllegalStateException("expected a single instance for instance id " + vm.machineDescription.instanceId + " but got " + instances.size)
+      throw new IllegalStateException("expected a single instance for instance id " + vm.instanceId + " but got " + instances.size)
     }
 
-    MachineState.valueOf(instances.get(0).getState).get
+    instances.get(0)
+  }
 
+  def getState(vm: VM): MachineState.Value = {
+    MachineState.valueOf(getInstance(vm).getState).get
+  }
+
+  def getPublicDns(vm: VM): String = {
+    getInstance(vm).getDnsName
+  }
+
+  def getPrivateDns(vm: VM): String = {
+    getInstance(vm).getPrivateDnsName
   }
 }

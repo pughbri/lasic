@@ -15,9 +15,13 @@ trait Cloud {
 
   def terminate(vms: Array[VM])
 
-  def getState(vm: VM) : MachineState.Value
+  def getState(vm: VM): MachineState.Value
 
-  protected def createVMs(numVMs: Int, startVM: Boolean) ( createVM: => VM): Array[VM] = {
+  def getPublicDns(vm: VM): String
+
+  def getPrivateDns(vm: VM): String
+
+  protected def createVMs(numVMs: Int, startVM: Boolean)(createVM: => VM): Array[VM] = {
     var vms = new Array[VM](numVMs)
     for (i <- 0 until numVMs) {
       vms(i) = createVM

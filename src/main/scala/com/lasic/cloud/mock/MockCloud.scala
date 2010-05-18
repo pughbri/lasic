@@ -37,4 +37,15 @@ class MockCloud(startupDelay: Int) extends Cloud {
   def getState(vm: VM) = {
     MachineState.Unknown
   }
+
+  def getPublicDns(vm: VM): String = {
+     "mock-public-dns"
+  }
+
+  def getPrivateDns(vm: VM): String = {
+     "mock-private-dns"
+  }
+
+
+
 }

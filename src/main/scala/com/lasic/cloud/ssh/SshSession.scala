@@ -2,8 +2,6 @@ package com.lasic.cloud.ssh
 
 import com.jcraft.jsch._
 import java.io.{InputStream, FileInputStream, File, OutputStream}
-import runtime.RichByte
-
 /**
  *
  * User: Brian Pugh
@@ -44,6 +42,7 @@ class SshSession extends JSch {
     catch {
       case e: JSchException => {
         isConnected = false
+        e.printStackTrace
         //logger.debug("Can't create SSH connection with {}", dnsName)
         return false
       }
@@ -56,7 +55,9 @@ class SshSession extends JSch {
       dnsName = null
       userName = null
       removeAllIdentity
-      session.disconnect
+      if (session != null) {
+        session.disconnect
+      }
     }
     catch {
       case e: Exception => {
@@ -70,7 +71,6 @@ class SshSession extends JSch {
 
   def sendFile(f: File, remoteFileName: String): Int = {
     try {
-      1
       //logger.debug("Sending local file {} to remote machine as {}", f.getCanonicalFile, remoteFileName)
       var fis: FileInputStream = null
       var command: String = "scp -p -t " + remoteFileName
