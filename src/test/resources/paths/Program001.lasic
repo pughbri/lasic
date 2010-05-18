@@ -1,0 +1,17 @@
+system  "sys" {
+
+    node "a" {
+        props {
+            count: 1
+        }
+    }
+
+
+    system "subsystem 1" {
+        node "b" {
+            props {
+                count: 3
+            }
+        }
+    }
+}

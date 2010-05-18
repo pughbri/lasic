@@ -1,6 +1,7 @@
 package com.lasic
 
 import junit.framework._
+import model.{SystemGroup, SystemInstance}
 import parser.{LasicCompiler};
 import org.apache.commons.io.IOUtils
 
@@ -16,7 +17,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val path = "/parser/Program%03d.lasic".format(i)
     val is = getClass.getResourceAsStream(path)
     val program = IOUtils.toString(is);
-    LasicCompiler.compile(program)
+    LasicCompiler.compile(program).root.children(0)
   }
 
   /* utility */
@@ -123,9 +124,19 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
       // test scp
     }
 
-    assertEquals(1, program.subsystems.size )
-    assertEquals(List("subsystem 1"), program.subsystems.toList.map {x => x.name})
-    assertEquals(1, program.subsystems(0).instances.size )
-    assertEquals(0, program.subsystems(0).instances(0).nodegroups.size )
+    var inst:SystemInstance = program.instances.head
+    var subsysList = inst.subsystems
+    var subSys = subsysList.head
+    assertEquals(List("subsystem 1"), subsysList.map {x => x.name})
+    assertEquals( 1, subSys.count)
+    assertEquals( 1, subSys.instances.size )
+
+    inst = program.instances.tail.head
+    subsysList = inst.subsystems
+    subSys = subsysList.head
+    assertEquals(List("subsystem 1"), subsysList.map {x => x.name})
+    assertEquals( 1, subSys.count)
+    assertEquals( 1, subSys.instances.size )
+
   }
 }

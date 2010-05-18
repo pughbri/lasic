@@ -2,9 +2,9 @@ package com.lasic.parser
 
 import ast.{ASTNode, ASTSystem}
 import collection.mutable.ListBuffer
-import com.lasic.model.{NodeInstance, NodeGroup, SystemInstance, SystemGroup}
 import scala.util.matching.Regex
 import org.apache.commons.io.IOUtils
+import com.lasic.model._
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,24 +48,23 @@ object LasicCompiler {
       systemInstance =>
         systemInstance.nodegroups = ast.nodes.toList.map {
           case node =>
-            val nodeGroup = compile(node);
-            nodeGroup.parent = systemInstance
+            val nodeGroup:NodeGroup = compile(node);
+            nodeGroup.parentSystemInstance = systemInstance
             nodeGroup
         }
     }
   }
 
   private def createSubsystems(ast: ASTSystem, sysGroup: SystemGroup) = {
-    // For each subsystem, create the stuff
-    sysGroup.subsystems = ast.subsystems.toList.map {
-      subsys =>
-        val subsysSystemGroup = compile(subsys)
-        subsysSystemGroup.parent = sysGroup
-        subsysSystemGroup
+    sysGroup.instances.foreach {
+      instance:SystemInstance =>
+        instance.subsystems = ast.subsystems.toList.map {
+          subsys:ASTSystem => compile(subsys, instance)
+        }
     }
   }
 
-  def compile(program: String): SystemGroup = {
+  def compile(program: String): LasicProgram = {
     val reducedProgram = stripComments(program)
     val p = new LasicParser()
     p.parseAll(p.system, reducedProgram) match {
@@ -74,9 +73,16 @@ object LasicCompiler {
     }
   }
 
-  private def compile(ast: ASTSystem): SystemGroup = {
+  private def compile(ast:ASTSystem):LasicProgram = {
+    val lp = new LasicProgram
+    val rootSystem = compile(ast,lp)
+    lp.rootGroup = rootSystem
+    lp
+  }
+
+  private def compile(ast: ASTSystem, parent:Pathable): SystemGroup = {
     // Create the group
-    val sysGroup = new SystemGroup
+    val sysGroup = new SystemGroup(parent)
     sysGroup.name = ast.name
     sysGroup.count = ast.count
 
@@ -95,9 +101,8 @@ object LasicCompiler {
     //      instance =>
     //        for()
     //    }
-
-
     sysGroup
+
   }
 
   private def compile(ast: ASTNode): NodeGroup = {

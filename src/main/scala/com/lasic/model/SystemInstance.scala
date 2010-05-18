@@ -10,8 +10,11 @@ import collection.mutable.ListBuffer
  * To change this template use File | Settings | File Templates.
  */
 
-class SystemInstance(_parent:SystemGroup, index:Int) {
-  val parent:SystemGroup = _parent 
-  var nodegroups = List[NodeGroup]() 
+class SystemInstance(var parent:SystemGroup, index:Int) extends Pathable {
+  var nodegroups = List[NodeGroup]()
+  var subsystems = List[SystemGroup]()
+  
+  def path = { parent.path +"[%d]".format(index)}
+  def children =  nodegroups ::: subsystems
 
 }

@@ -14,11 +14,21 @@ import collection.immutable.HashMap
  */
 
 
-class SystemGroup extends SystemProperties {
-  var parent:SystemGroup = null
+class SystemGroup(val systemOrProgramParent:Pathable) extends SystemProperties with Pathable {
+  // var systemOrProgramParent:Any = null;
+
+  def parent:Pathable = systemOrProgramParent
+
   var instances = List[SystemInstance]()
-  var subsystems = List[SystemGroup]()
 
+  def children:List[SystemInstance] = instances
 
+  def path:String = {
+    parent match {
+      case prog:LasicProgram => prog.path + "system['%s']".format(name)
+      case group:SystemInstance => group.path + "/system['%s']".format(name)
+      case _ => name
+    }
+  }
 
 }

@@ -8,4 +8,9 @@ package com.lasic.model
  * To change this template use File | Settings | File Templates.
  */
 
-class NodeInstance(parent:NodeGroup,idx:Int)
+class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable {
+  def parent = parentGroup
+  def path = { parentGroup.name + "[%d]".format(idx) }
+  def children = List()
+
+}

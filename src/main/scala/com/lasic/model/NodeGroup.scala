@@ -10,8 +10,12 @@ import com.lasic.parser.ast.NodeProperties
  * To change this template use File | Settings | File Templates.
  */
 
-class NodeGroup extends NodeProperties {
-  var parent:SystemInstance = null
+class NodeGroup extends NodeProperties with Pathable {
+  var parentSystemInstance:SystemInstance = null
   var instances:List[NodeInstance] = List()
+
+  def parent = parentSystemInstance
+  def path = { parent.path +"/" + name}
+  def children = instances
   
 }
