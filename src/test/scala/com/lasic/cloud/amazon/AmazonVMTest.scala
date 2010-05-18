@@ -4,7 +4,7 @@ import junit.framework.TestCase
 import java.lang.String
 import java.io.File
 import com.lasic.cloud.ssh.SshSession
-import com.lasic.cloud.{MachineState, MachineDescription, LaunchConfiguration}
+import com.lasic.cloud.{MachineDescription, MachineState, LaunchConfiguration}
 
 /**
  *
@@ -15,6 +15,7 @@ import com.lasic.cloud.{MachineState, MachineDescription, LaunchConfiguration}
 class AmazonVMTest extends TestCase("AmazonCloudTest") {
   def testCopyTo() = {
 
+    //setup
     val sourceFileURL = classOf[Application].getResource("/lasic.properties")
     val sourceFile: File = new File(sourceFileURL.toURI)
     val remoteFile: String = "/some/path/and/file.txt"
@@ -27,23 +28,32 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
       }
 
       override def connect(dnsName: String, userName: String, pemFile: File) = {true}
+
       override def disconnect = {}
     }
 
+
     val lc: LaunchConfiguration = new LaunchConfiguration()
-    lc.machineImage = "ami-714ba518" //base ubuntu image
     lc.key = "some"
+    var state = MachineState.Unknown
     val vm: AmazonVM = new AmazonVM(null, lc) {
       override protected def createSshSession = {
         new MockSshSession
+      }
+
+
+      override def getState() = {
+        state
       }
     }
 
     vm.baseLasicDir = sourceFile.getParent
 
+
+    //test1: fail on non-initalized vm
     try {
       vm.copyTo(sourceFile, remoteFile)
-      assert(false, "should have got IllegalStateException")
+      assert(false, "should have got IllegalStateException: VM hasn't been initialized")
     }
     catch {
       case t: IllegalStateException => { //expected
@@ -53,9 +63,23 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
       }
     }
 
-    vm.machineDescription = new MachineDescription("id", MachineState.Running, "my-machine", "my-private-machine")
-    vm.copyTo(sourceFile, remoteFile)
+    //test2: set machine to valid state of running
+    try {
+      state = MachineState.Running
+      vm.copyTo(sourceFile, remoteFile)
+      assert(false, "should have got IllegalStateException: VM hasn't been initialized")
+    }
+    catch {
+      case t: IllegalStateException => { //expected
+      }
+      case t: Throwable => {
+        assert(false, "unexpected exception " + t)
+      }
+    }
 
+    //test3: all is good now
+    vm.machineDescription = new MachineDescription("id", "public-name", "private-name")
+    vm.copyTo(sourceFile, remoteFile)
 
   }
 

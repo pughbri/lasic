@@ -34,4 +34,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
     vms.foreach(vm => System.out.println("shutting down vm [" + vm + "]...."))
   }
 
+  def getState(vm: VM) = {
+    MachineState.Unknown
+  }
 }

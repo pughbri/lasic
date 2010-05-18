@@ -2,7 +2,7 @@ package com.lasic.cloud.amazon
 
 import com.lasic.VM
 import junit.framework.TestCase
-import com.lasic.cloud.{LaunchConfiguration, AmazonCloud}
+import com.lasic.cloud.{MachineState, LaunchConfiguration, AmazonCloud}
 
 /**
  * User: pughbc
@@ -11,7 +11,7 @@ import com.lasic.cloud.{LaunchConfiguration, AmazonCloud}
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {
-  def testStart() = { //disable test as it requires real keys and creates real instances
+  def testCloud() : Unit = { //disable test as it requires real keys and creates real instances
     if (false) {
       val cloud = new AmazonCloud()
       val lc: LaunchConfiguration = new LaunchConfiguration()
@@ -19,8 +19,28 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       val vm: VM = new AmazonVM(cloud, lc)
       val vms = Array(vm)
       cloud.start(vms)
+      //waitForVMToStart(vm)
+      //testCopyTo(vm)
       Thread.sleep(20000); //give it a minute to come up
       cloud.terminate(vms)
     }
+
+    def testCopyTo(vm: VM) = {
+     //todo: test that an scp actually works and sends a file to the remote machine
+    }
+
+    
+
+    def waitForVMToStart(vm: VM) {
+      val startTime = System.currentTimeMillis
+      var timedOut = false
+      while( !(vm.getState == MachineState.Running) && !timedOut)  {
+        Thread.sleep(1000)
+        if ((System.currentTimeMillis - startTime) > 120000){
+          timedOut = true
+        }
+      }
+    }
+    null
   }
 }

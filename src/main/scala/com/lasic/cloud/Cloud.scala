@@ -1,6 +1,7 @@
 package com.lasic
 
-import cloud.LaunchConfiguration
+import cloud.{MachineState, LaunchConfiguration}
+
 /**
  * User: Brian Pugh
  * Date: May 10, 2010
@@ -13,6 +14,8 @@ trait Cloud {
   def reboot(vms: Array[VM])
 
   def terminate(vms: Array[VM])
+
+  def getState(vm: VM) : MachineState.Value
 
   protected def createVMs(numVMs: Int, startVM: Boolean) ( createVM: => VM): Array[VM] = {
     var vms = new Array[VM](numVMs)

@@ -8,7 +8,6 @@ package com.lasic.cloud
  */
 
 class MachineDescription(val instanceId: String,
-                         var state: MachineState.Value,
                          val publicDNS: String,
                          val privateDNS: String) {
 

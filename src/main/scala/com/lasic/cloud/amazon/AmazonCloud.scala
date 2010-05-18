@@ -5,8 +5,7 @@ import com.lasic.{LasicProperties, VM, Cloud}
 import java.lang.String
 import com.xerox.amazonws.ec2.{Jec2}
 import com.xerox.amazonws.ec2.ReservationDescription
-import java.util.Iterator
-
+import java.util.{List, Iterator}
 
 /**
  * User: Brian Pugh
@@ -25,8 +24,6 @@ class AmazonCloud extends Cloud {
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
     createVMs(numVMs, startVM) {new AmazonVM(this, launchConfig)}
   }
-
-
 
 
   def start(vms: Array[VM]) {
@@ -49,7 +46,7 @@ class AmazonCloud extends Cloud {
       val instanceId: String = instance.getInstanceId
       println(instanceId)
       vm.machineDescription = new MachineDescription(instanceId,
-        MachineState.valueOf(instance.getState).get,
+//        MachineState.valueOf(instance.getState).get,
         instance.getDnsName,
         instance.getPrivateDnsName)
     }
@@ -81,4 +78,18 @@ class AmazonCloud extends Cloud {
   }
 
 
+  def getState(vm: VM): MachineState.Value = {
+    val list: List[ReservationDescription] = ec2.describeInstances(Array(vm.machineDescription.instanceId))
+    if (list.size != 1) {
+      throw new IllegalStateException("expected a single reservation description for instance id " + vm.machineDescription.instanceId + " but got " + list.size)
+    }
+
+    val instances: List[ReservationDescription#Instance] = list.get(0).getInstances
+    if (list.size != 1) {
+      throw new IllegalStateException("expected a single instance for instance id " + vm.machineDescription.instanceId + " but got " + instances.size)
+    }
+
+    MachineState.valueOf(instances.get(0).getState).get
+
+  }
 }

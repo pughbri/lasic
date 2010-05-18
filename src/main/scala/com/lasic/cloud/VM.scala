@@ -1,7 +1,7 @@
 package com.lasic
 
 import cloud.ssh.SshSession
-import cloud.{MachineDescription, LaunchConfiguration}
+import cloud.{MachineState, MachineDescription, LaunchConfiguration}
 import java.io.File
 import java.lang.String
 
@@ -15,7 +15,7 @@ trait VM {
   val launchConfiguration: LaunchConfiguration
   var machineDescription: MachineDescription = null
 
-  /** lasic configuration directory.  Key files should be in this directory **/
+  /** lasic configuration directory.  Key files should be in this directory fixed to home dire but oveerridable with prop**/
   var baseLasicDir: String = "~"
 
   def start() {
@@ -30,6 +30,10 @@ trait VM {
     cloud.terminate(Array(this))
   }
 
+  def getState(): MachineState.Value = {
+     cloud.getState(this)
+  }
+
   def copyTo(sourceFile: File, destinationAbsPath: String)
   
   def execute(executableAbsPath: String)
@@ -41,14 +45,17 @@ trait VM {
   def withSshSession(callback: SshSession => Unit): Unit = {
     val session: SshSession = createSshSession
     try {
-      if (machineDescription == null) {
-        throw new IllegalStateException("VM hasn't been launched yet.  Cannot operate on it")
+      if (!(getState == MachineState.Running)) {
+        throw new IllegalStateException("VM is in state " + getState + ".  Cannot operate on it unless it is Running")
       }
+       if (machineDescription == null) {
+         throw new IllegalStateException("VM in unexpected state " + getState + " with no public DNS name.")
+       }
       session.connect(machineDescription.publicDNS, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key))
       callback(session)
     }
     finally {
-      //todo: if session is connected
+      //todo: if session is connected, then disconnect
       session.disconnect
     }
 
