@@ -1,6 +1,6 @@
 package com.lasic
 
-import cloud.ssh.SshSession
+import cloud.ssh.{ConnectException, SshSession}
 import cloud.{MachineState, LaunchConfiguration}
 import java.io.File
 import java.lang.String
@@ -16,9 +16,10 @@ trait VM {
   var instanceId: String = null
 
 
-  /**lasic configuration directory.  Key files should be in this directory fixed to home dire but oveerridable with prop**/
+  /**Lasic configuration directory.  Key files should be in this directory.  Defaults to user.home/.lasic but
+  can be overridden by setting the "lasic.config.dir" system property
+   **/
   var baseLasicDir: String = {
-
     var prop = LasicProperties.getProperty("lasic.config.dir")
     if (prop == null) {
       prop = System.getProperty("user.home") + "/.lasic"
@@ -58,8 +59,31 @@ trait VM {
     new SshSession()
   }
 
-  def withSshSession(callback: SshSession => Unit): Unit = {
+  def withSshSession(timeout: Int) (callback: SshSession => Unit): Unit = {
     val session: SshSession = createSshSession
+
+    def connect(publicDns: String): Unit = {
+      var connected = false
+      var numAttempts = 0
+      val startTime = System.currentTimeMillis
+      while (!connected) {
+        try {
+          session.connect(publicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
+          connected = true
+        }
+        catch {
+          //many times the VM hasn't quite started the ssh daemon even though it is up.  Give it a few tries with a
+          //delay between each try
+          case e: ConnectException => {
+            if (System.currentTimeMillis - startTime > (timeout * 1000)) {
+              throw e
+            }
+            Thread.sleep(1000)
+          }
+        }
+      }
+    }
+
     try {
       if (!(getState == MachineState.Running)) {
         throw new IllegalStateException("VM is in state " + getState + ".  Cannot operate on it unless it is Running")
@@ -69,10 +93,7 @@ trait VM {
         throw new IllegalStateException("VM in unexpected state " + getState + " with no public DNS name.")
       }
 
-      //todo:  why should session just throw an exception if it can't connect?  Then I can communicate back why it failed.
-      if (!session.connect(publicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))) {
-        throw new RuntimeException("unable to connect to vm with instance id [" + instanceId + "]")
-      }
+      connect(publicDns)
       callback(session)
     }
     finally {

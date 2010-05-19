@@ -11,19 +11,17 @@ import java.io._
 
 class SshSession extends JSch {
   private var isConnected: Boolean = false
+
   //TODO: something real with output handling
   private val output: OutputStream = System.out
 
-  private var dnsName: String = null
-  private var userName: String = null
   private var session: Session = null
-  private var ch: ChannelExec = null
 
 
-  def connect(dnsName: String, userName: String, pemFile: File): Boolean = {
+  def connect(dnsName: String, userName: String, pemFile: File): Unit = {
     if (isConnected) {
       //logger.error("Attempted to connect to {} but this SSH session is already in use", dnsName)
-      throw new RuntimeException("Attempted to connect to " + dnsName + " but this SSH session is already in use")
+      throw new ConnectException("Attempted to connect to " + dnsName + " but this SSH session is already in use")
     }
     try {
       addIdentity(pemFile.getAbsolutePath)
@@ -38,16 +36,11 @@ class SshSession extends JSch {
       }
 
       session.connect
-      this.dnsName = dnsName
-      this.userName = userName
-      return true
+      isConnected = true      
     }
     catch {
       case e: JSchException => {
-        isConnected = false
-        e.printStackTrace
-        //logger.debug("Can't create SSH connection with {}", dnsName)
-        return false
+        new ConnectException(e)
       }
     }
   }
@@ -55,8 +48,6 @@ class SshSession extends JSch {
 
   def disconnect: Unit = {
     try {
-      dnsName = null
-      userName = null
       removeAllIdentity
       if (session != null) {
         session.disconnect
