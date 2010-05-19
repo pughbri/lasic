@@ -1,7 +1,8 @@
 package com.lasic.cloud.ssh
 
 import com.jcraft.jsch._
-import java.io.{InputStream, FileInputStream, File, OutputStream}
+import java.io._
+
 /**
  *
  * User: Brian Pugh
@@ -10,7 +11,9 @@ import java.io.{InputStream, FileInputStream, File, OutputStream}
 
 class SshSession extends JSch {
   private var isConnected: Boolean = false
-  private val output: OutputStream = null
+  //TODO: something real with output handling
+  private val output: OutputStream = System.out
+
   private var dnsName: String = null
   private var userName: String = null
   private var session: Session = null
@@ -127,26 +130,71 @@ class SshSession extends JSch {
   def sendCommand(cmd: String): Int = {
     var ch: ChannelExec = null
     try {
-      1
-      //        ch = session.openChannel("exec").asInstanceOf[ChannelExec]
-      //        ch.setCommand(". /etc/profile ; " + cmd)
-      //        ch.setInputStream(null)
-      //        ch.connect
-      //        readAllStdOutput(ch)
-      //        output.flush
-      //        ch.disconnect
-      //        return ch.getExitStatus
+      ch = session.openChannel("exec").asInstanceOf[ChannelExec]
+      ch.setCommand(". /etc/profile ; " + cmd)
+      ch.setInputStream(null)
+      ch.connect
+      readAllStdOutput(ch)
+      output.flush
+      ch.disconnect
+      ch.getExitStatus
     }
     catch {
       case e: JSchException => {
         // logger.error("Error received while sending command", e)
         throw new RuntimeException(e)
       }
-      //        case e: IOException => {
-      //          logger.error("Error received while sending command", e)
-      //          throw new RuntimeException(e)
-      //        }
+      case e: IOException => {
+        //logger.error("Error received while sending command", e)
+        e.printStackTrace
+        throw new RuntimeException(e)
+      }
     }
+  }
+
+  private def readAllStdOutput(ch: ChannelExec): Unit = {
+    var in: InputStream = ch.getInputStream
+    var tmp = new Array[Byte](1024)
+    var continue = true;
+    while (continue) {
+      var continue2 = true
+      while (in.available > 0 && continue2) {
+        var i: Int = in.read(tmp, 0, 1024)
+        if (i < 0) {
+          continue2 = false
+        }
+        else {
+          output.write(tmp, 0, i)
+        }
+      }
+
+      if (ch.isClosed) {
+        output.flush
+        continue = false
+      }
+      else {
+        try {
+          Thread.sleep(1000)
+        }
+        catch {
+          case e: Exception => {
+            println("error during readAllStdErrOutput ")
+            e.printStackTrace
+          }
+        }
+      }
+    }
+
+    try {
+      Thread.sleep(1000)
+    }
+    catch {
+      case e: InterruptedException => {
+        e.printStackTrace
+      }
+    }
+    output.flush
+
   }
 
 

@@ -12,8 +12,8 @@ import java.io.File
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {
-  def testCloud(): Unit = { //disable test as it requires real keys and creates real instances
-    if (false) {
+  def testCloud(): Unit = {
+    if (false) { //disable test as it requires real keys and creates real instances
       val cloud = new AmazonCloud()
       val lc: LaunchConfiguration = new LaunchConfiguration()
       lc.machineImage = "ami-714ba518" //base ubuntu image
@@ -25,16 +25,20 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       cloud.start(vms)
       waitForVMToStart(vm)
       testCopyTo(vm)
+      testExecute(vm)
 
       cloud.terminate(vms)
     }
 
     def testCopyTo(vm: VM) = {
-      val sourceFileURL = classOf[Application].getResource("/lasic.properties")
+      val sourceFileURL = classOf[Application].getResource("/lasic2.properties")
       val sourceFile: File = new File(sourceFileURL.toURI)
-      vm.copyTo(sourceFile, "/tmp/text.txt")
+      vm.copyTo(sourceFile, "/tmp/test.txt")
     }
 
+    def testExecute(vm: VM) = {
+      vm.execute("cp /tmp/test.txt /tmp/test2.txt")
+    }
 
 
     def waitForVMToStart(vm: VM) {
@@ -46,7 +50,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
           timedOut = true
         }
       }
-      Thread.sleep(10000); //give it 10 more seconds for the ssh daemon to come up
+      Thread.sleep(20000); //give it 20 more seconds for the ssh daemon to come up
     }
     null
   }
