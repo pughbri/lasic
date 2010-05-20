@@ -1,7 +1,7 @@
 package com.lasic
 
 import cloud.ssh.{ConnectException, SshSession}
-import cloud.{MachineState, LaunchConfiguration}
+import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 import java.io.File
 import java.lang.String
 
@@ -54,6 +54,10 @@ trait VM {
   def copyTo(sourceFile: File, destinationAbsPath: String)
 
   def execute(executableAbsPath: String)
+
+  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
+    cloud.attach(volumeInfo, this, devicePath)
+  }
 
   protected def createSshSession: SshSession = {
     new SshSession()

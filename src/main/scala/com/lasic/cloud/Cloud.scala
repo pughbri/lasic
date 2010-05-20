@@ -1,6 +1,6 @@
 package com.lasic
 
-import cloud.{MachineState, LaunchConfiguration}
+import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 
 /**
  * User: Brian Pugh
@@ -20,6 +20,13 @@ trait Cloud {
   def getPublicDns(vm: VM): String
 
   def getPrivateDns(vm: VM): String
+
+  /**
+   * @param size - size in gigabytes
+   */
+  def createVolume(size: Int, snapID: String, availabilityZone: String): VolumeInfo
+
+  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
 
   protected def createVMs(numVMs: Int, startVM: Boolean)(createVM: => VM): Array[VM] = {
     var vms = new Array[VM](numVMs)

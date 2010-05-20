@@ -1,9 +1,10 @@
 package com.lasic.cloud.amazon
 
-import com.lasic.VM
 import junit.framework.TestCase
-import com.lasic.cloud.{MachineState, LaunchConfiguration, AmazonCloud}
 import java.io.File
+import com.lasic.{Cloud, VM}
+import com.lasic.cloud.{AttachmentInfo, MachineState, LaunchConfiguration, AmazonCloud}
+import java.util.Calendar
 
 /**
  * User: pughbc
@@ -12,6 +13,14 @@ import java.io.File
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {
+
+//  def testCreateVolume(): Unit = {
+//    val cloud = new AmazonCloud()
+//    cloud.createVolume(1, "snap-lasictest", "us-east-1d")
+//  }
+
+
+
   def testCloud(): Unit = {
     if (false) { //disable test as it requires real keys and creates real instances
       val cloud = new AmazonCloud()
@@ -23,11 +32,15 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
       val vms = Array(vm)
       cloud.start(vms)
-      waitForVMToStart(vm)
-      testCopyTo(vm)
-      testExecute(vm)
-
-      cloud.terminate(vms)
+      try {
+        waitForVMToStart(vm)
+        testCopyTo(vm)
+        testExecute(vm)
+        testCreateAndMountVolume(cloud, vm)
+      }
+      finally {
+        cloud.terminate(vms)
+      }
     }
 
     def testCopyTo(vm: VM) = {
@@ -40,6 +53,12 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       vm.execute("cp /tmp/test.txt /tmp/test2.txt")
     }
 
+
+    def testCreateAndMountVolume(cloud: Cloud, vm: VM) = {
+      val volumeInfo = cloud.createVolume(1, "", "us-east-1d")
+      val attachmentInfo = vm.attach(volumeInfo, "/dev/sdh")
+      println(attachmentInfo)
+    }
 
     def waitForVMToStart(vm: VM) {
       val startTime = System.currentTimeMillis
@@ -54,4 +73,5 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
     }
     null
   }
+  
 }

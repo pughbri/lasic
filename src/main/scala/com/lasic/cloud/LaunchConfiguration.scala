@@ -16,7 +16,7 @@ class LaunchConfiguration {
   val instanceType: InstanceType = InstanceType.DEFAULT
   var userName: String = null
   var s3Download: String = null
-  var availabilityZone: String = "us-east-1b"
+  var availabilityZone: String = "us-east-1d"
   //val scpDeclarations: List[ScpDeclaration] = new ArrayList[ScpDeclaration]
   //private ScriptDeclaration script = new ScriptDeclaration();
   //private final val startupScripts: List[ScriptDeclaration] = new ArrayList[ScriptDeclaration]

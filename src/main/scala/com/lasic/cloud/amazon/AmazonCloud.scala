@@ -5,7 +5,7 @@ import com.lasic.{LasicProperties, VM, Cloud}
 import java.lang.String
 import com.xerox.amazonws.ec2.{Jec2}
 import com.xerox.amazonws.ec2.ReservationDescription
-import java.util.{List, Iterator}
+import java.util.Iterator
 
 /**
  * User: Brian Pugh
@@ -75,12 +75,12 @@ class AmazonCloud extends Cloud {
 
 
   private def getInstance(vm: VM): ReservationDescription#Instance = {
-    val list: List[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
+    val list: java.util.List[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
     if (list.size != 1) {
       throw new IllegalStateException("expected a single reservation description for instance id " + vm.instanceId + " but got " + list.size)
     }
 
-    val instances: List[ReservationDescription#Instance] = list.get(0).getInstances
+    val instances: java.util.List[ReservationDescription#Instance] = list.get(0).getInstances
     if (list.size != 1) {
       throw new IllegalStateException("expected a single instance for instance id " + vm.instanceId + " but got " + instances.size)
     }
@@ -98,5 +98,34 @@ class AmazonCloud extends Cloud {
 
   def getPrivateDns(vm: VM): String = {
     getInstance(vm).getPrivateDnsName
+  }
+
+
+  def createVolume(size: Int, snapID: String, availabilityZone: String): VolumeInfo = {
+    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(size.toString, snapID, availabilityZone)
+
+    val typicaAttachmentInfoList = vi.getAttachmentInfo
+    var attachmentInfoList = List[AttachmentInfo]()
+    val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
+    while (iterator.hasNext()) {
+      val attachmentInfo: com.xerox.amazonws.ec2.AttachmentInfo = iterator.next
+      val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
+        attachmentInfo.getInstanceId,
+        attachmentInfo.getDevice,
+        attachmentInfo.getStatus,
+        attachmentInfo.getAttachTime)
+      
+      attachmentInfoList = info :: attachmentInfoList
+    }
+
+
+    new VolumeInfo(vi.getVolumeId, vi.getSize, vi.getSnapshotId, vi.getZone, vi.getStatus, vi.getCreateTime, attachmentInfoList)
+
+  }
+
+
+  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo  = {
+    var info: com.xerox.amazonws.ec2.AttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
   }
 }
