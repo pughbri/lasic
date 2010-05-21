@@ -5,6 +5,7 @@ import collection.mutable.ListBuffer
 import scala.util.matching.Regex
 import org.apache.commons.io.IOUtils
 import com.lasic.model._
+import io.Source
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,6 +65,11 @@ object LasicCompiler {
     }
   }
 
+  def compile(program:Source):LasicProgram = {
+    val b = new StringBuilder
+    program.addString(b,"","","")
+    compile(b.toString)
+  }
   def compile(program: String): LasicProgram = {
     val reducedProgram = stripComments(program)
     val p = new LasicParser()
