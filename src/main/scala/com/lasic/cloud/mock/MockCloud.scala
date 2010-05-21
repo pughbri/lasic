@@ -4,7 +4,7 @@ package com.lasic.cloud
 import mock.MockVM
 import com.lasic.{VM, Cloud}
 import java.lang.String
-import java.util.Calendar
+import java.util.{Random, Calendar}
 
 /**
  * User: Brian Pugh
@@ -54,7 +54,36 @@ class MockCloud(startupDelay: Int) extends Cloud {
   }
 
 
-  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo =  {
-     new AttachmentInfo("volumeid", "instanceid","/some/device","good",Calendar.getInstance)
+  def deleteVolume(volumeId: String) = {
+    println("deleted volume " + volumeId)
+  }
+
+  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+    new AttachmentInfo("volumeid", "instanceid", "/some/device", "good", Calendar.getInstance)
+  }
+
+  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
+     new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
+    
+  }
+
+  def associateAddress(vm: VM, ip: String) {
+    println("associate ip [" + ip + "] with instance [" + vm.instanceId + "]")
+  }
+
+
+  def disassociateAddress(ip: String) = {
+    println("disassociate ip [" + ip + "]")
+
+  }
+
+  def allocateAddress() = {
+    val random: Random = new Random()
+    "10.255." + + random.nextInt(200) + "." + random.nextInt(200);
+  }
+
+
+  def releaseAddress(ip: String) = {
+    println("release ip [" + ip + "]")
   }
 }

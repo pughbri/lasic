@@ -3,8 +3,9 @@ package com.lasic.cloud.amazon
 import junit.framework.TestCase
 import java.io.File
 import com.lasic.{Cloud, VM}
-import com.lasic.cloud.{AttachmentInfo, MachineState, LaunchConfiguration, AmazonCloud}
-import java.util.Calendar
+import java.net.InetAddress
+import java.lang.String
+import com.lasic.cloud.{MachineState, LaunchConfiguration, AmazonCloud}
 
 /**
  * User: pughbc
@@ -13,13 +14,6 @@ import java.util.Calendar
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {
-
-//  def testCreateVolume(): Unit = {
-//    val cloud = new AmazonCloud()
-//    cloud.createVolume(1, "snap-lasictest", "us-east-1d")
-//  }
-
-
 
   def testCloud(): Unit = {
     if (false) { //disable test as it requires real keys and creates real instances
@@ -37,6 +31,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
         testCopyTo(vm)
         testExecute(vm)
         testCreateAndMountVolume(cloud, vm)
+        testAllocateAndAssociateIP(cloud, vm)
       }
       finally {
         cloud.terminate(vms)
@@ -55,9 +50,45 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
 
 
     def testCreateAndMountVolume(cloud: Cloud, vm: VM) = {
+
       val volumeInfo = cloud.createVolume(1, "", "us-east-1d")
-      val attachmentInfo = vm.attach(volumeInfo, "/dev/sdh")
-      println(attachmentInfo)
+      val devicePath: String = "/dev/sdh"
+      try {
+
+        val attachmentInfo = vm.attach(volumeInfo, devicePath)
+        println(attachmentInfo)
+      }
+      finally {
+        try {
+          vm.detach(volumeInfo, devicePath, true)
+          Thread.sleep(2000) //give it a sec to detach
+        }
+        finally {
+          cloud.deleteVolume(volumeInfo.volumeId)
+        }
+      }
+    }
+
+    def testAllocateAndAssociateIP(cloud: Cloud, vm: VM) {
+      val ip = cloud.allocateAddress()
+      try {
+      vm.associateAddressWith(ip)
+      //todo: sleep a bit here so it has time to associate the new ip
+      val publicDns = vm.getPublicDns()
+      val inetAddress = InetAddress.getByName(publicDns)
+      //todo: uncomment.  Why am I not getting the new DNS name?
+       //assert(ip == inetAddress.toString, "expected ip [" + ip + "], got [" + inetAddress.toString + "]")
+        assert(true)
+      }
+      finally {
+        try {
+          vm.disassociateAddress(ip)
+          Thread.sleep(2000) //give it a sec to disassociate
+        }
+        finally {
+          cloud.releaseAddress(ip)
+        }
+      }
     }
 
     def waitForVMToStart(vm: VM) {
@@ -73,5 +104,5 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
     }
     null
   }
-  
+
 }

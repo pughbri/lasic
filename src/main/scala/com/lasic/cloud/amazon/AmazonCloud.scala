@@ -6,6 +6,8 @@ import java.lang.String
 import com.xerox.amazonws.ec2.{Jec2}
 import com.xerox.amazonws.ec2.ReservationDescription
 import java.util.Iterator
+import java.util.{List => JList}
+import com.xerox.amazonws.ec2.{AttachmentInfo => XAttachmentInfo}
 
 /**
  * User: Brian Pugh
@@ -75,12 +77,12 @@ class AmazonCloud extends Cloud {
 
 
   private def getInstance(vm: VM): ReservationDescription#Instance = {
-    val list: java.util.List[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
+    val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
     if (list.size != 1) {
       throw new IllegalStateException("expected a single reservation description for instance id " + vm.instanceId + " but got " + list.size)
     }
 
-    val instances: java.util.List[ReservationDescription#Instance] = list.get(0).getInstances
+    val instances: JList[ReservationDescription#Instance] = list.get(0).getInstances
     if (list.size != 1) {
       throw new IllegalStateException("expected a single instance for instance id " + vm.instanceId + " but got " + instances.size)
     }
@@ -93,11 +95,11 @@ class AmazonCloud extends Cloud {
   }
 
   def getPublicDns(vm: VM): String = {
-    getInstance(vm).getDnsName
+    getInstance(vm).getDnsName()
   }
 
   def getPrivateDns(vm: VM): String = {
-    getInstance(vm).getPrivateDnsName
+    getInstance(vm).getPrivateDnsName()
   }
 
 
@@ -108,13 +110,13 @@ class AmazonCloud extends Cloud {
     var attachmentInfoList = List[AttachmentInfo]()
     val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
     while (iterator.hasNext()) {
-      val attachmentInfo: com.xerox.amazonws.ec2.AttachmentInfo = iterator.next
+      val attachmentInfo: XAttachmentInfo= iterator.next
       val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
         attachmentInfo.getInstanceId,
         attachmentInfo.getDevice,
         attachmentInfo.getStatus,
         attachmentInfo.getAttachTime)
-      
+
       attachmentInfoList = info :: attachmentInfoList
     }
 
@@ -124,8 +126,36 @@ class AmazonCloud extends Cloud {
   }
 
 
-  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo  = {
-    var info: com.xerox.amazonws.ec2.AttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+  def deleteVolume(volumeId: String) = {
+    ec2.deleteVolume(volumeId)
+  }
+
+  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+    var info: XAttachmentInfo= ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
     new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+  }
+
+  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
+    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
+    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+  }
+
+
+  def associateAddress(vm: VM, ip: String) = {
+    ec2.associateAddress(vm.instanceId, ip)
+  }
+
+
+  def disassociateAddress(ip: String) = {
+    ec2.disassociateAddress(ip)
+  }
+
+  def allocateAddress() = {
+    ec2.allocateAddress()
+  }
+
+
+  def releaseAddress(ip: String) = {
+    ec2.releaseAddress(ip)
   }
 }

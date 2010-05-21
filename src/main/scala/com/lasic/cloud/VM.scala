@@ -27,6 +27,10 @@ trait VM {
     prop
   }
 
+
+  /*==========================================================================================================
+   Cloud operation methods
+  ==========================================================================================================*/
   def start() {
     cloud.start(Array(this))
   }
@@ -39,6 +43,33 @@ trait VM {
     cloud.terminate(Array(this))
   }
 
+  def copyTo(sourceFile: File, destinationAbsPath: String)
+
+  def execute(executableAbsPath: String)
+
+  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
+    cloud.attach(volumeInfo, this, devicePath)
+  }
+
+  def detach(volumeInfo: VolumeInfo, devicePath: String, force: Boolean): AttachmentInfo = {
+    cloud.detach(volumeInfo, this, devicePath, force)
+  }
+
+  def associateAddressWith(ip: String)  {
+    cloud.associateAddress(this, ip)
+  }
+
+  def disassociateAddress(ip: String) {
+     cloud.disassociateAddress(ip)
+  }
+
+  
+
+
+
+  /*==========================================================================================================
+   State of vm methods
+  ==========================================================================================================*/
   def getState(): MachineState.Value = {
     cloud.getState(this)
   }
@@ -51,19 +82,11 @@ trait VM {
     cloud.getPrivateDns(this)
   }
 
-  def copyTo(sourceFile: File, destinationAbsPath: String)
-
-  def execute(executableAbsPath: String)
-
-  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
-    cloud.attach(volumeInfo, this, devicePath)
-  }
-
   protected def createSshSession: SshSession = {
     new SshSession()
   }
 
-  def withSshSession(timeout: Int) (callback: SshSession => Unit): Unit = {
+  def withSshSession(timeout: Int)(callback: SshSession => Unit): Unit = {
     val session: SshSession = createSshSession
 
     def connect(publicDns: String): Unit = {

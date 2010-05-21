@@ -21,10 +21,22 @@ trait Cloud {
 
   def getPrivateDns(vm: VM): String
 
+  def allocateAddress(): String
+
+  def releaseAddress(ip: String)
+
+  def associateAddress(vm: VM, ip: String)
+
+  def disassociateAddress(ip: String)
+
+  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
+
   /**
    * @param size - size in gigabytes
    */
   def createVolume(size: Int, snapID: String, availabilityZone: String): VolumeInfo
+
+  def deleteVolume(volumeId: String)
 
   def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
 

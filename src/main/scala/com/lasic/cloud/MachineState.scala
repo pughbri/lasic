@@ -18,6 +18,6 @@ object MachineState extends Enumeration {
     for (ms <- elements) {
       if (s.toLowerCase.equals(ms.toString.toLowerCase)) return ms
     }
-    return Unknown
+    Unknown
   }
 }

@@ -3,6 +3,7 @@ package com.lasic.cloud.mock
 import java.io.File
 import com.lasic.{Cloud, VM}
 import com.lasic.cloud.LaunchConfiguration
+import java.lang.String
 
 /**
  * User: Brian Pugh
@@ -39,6 +40,5 @@ class MockVM(delay: Int, cloudInst: Cloud) extends VM {
     Thread.sleep(delay* 1000)
     callback
   }
-
 
 }
