@@ -14,11 +14,11 @@ import java.util.{Random, Calendar}
 class MockCloud(startupDelay: Int) extends Cloud {
   def this() = this (2);
 
-  override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
+  override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
     createVMs(numVMs, startVM) {new MockVM(startupDelay, this)}
   }
 
-  def start(vms: Array[VM]) {
+  def start(vms: List[VM]) {
     vms.foreach(vm => System.out.println("starting vm [" + vm + "]...."))
   }
 
@@ -26,12 +26,12 @@ class MockCloud(startupDelay: Int) extends Cloud {
     startupDelay
   }
 
-  def reboot(vms: Array[VM]) {
+  def reboot(vms: List[VM]) {
 
     vms.foreach(vm => System.out.println("rebooting vm [" + vm + "]...."))
   }
 
-  def terminate(vms: Array[VM]) {
+  def terminate(vms: List[VM]) {
     vms.foreach(vm => System.out.println("shutting down vm [" + vm + "]...."))
   }
 

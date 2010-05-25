@@ -23,7 +23,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       lc.userName = "ubuntu"
       val vm: VM = new AmazonVM(cloud, lc, 20)
       vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
-      val vms = Array(vm)
+      val vms = List(vm)
       cloud.start(vms)
       try {
         waitForVMToStart(vm)
@@ -77,7 +77,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
           val publicDns = vm.getPublicDns()
           val inetAddress = InetAddress.getByName(publicDns)
           //todo: still getting the old dns name. Why?
-//          assert(ip == inetAddress.getHostAddress, "expected ip [" + ip + "], got [" + inetAddress.getHostAddress + "]")
+          //          assert(ip == inetAddress.getHostAddress, "expected ip [" + ip + "], got [" + inetAddress.getHostAddress + "]")
           assert(true)
         }
         // assert(true)
@@ -130,4 +130,12 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
 
   }
 
+
+  def testAmazonCloudInitialization() {
+    val cloud = new AmazonCloud()
+    val (key, secret) = cloud.ec2Keys
+    assert (key == "test")
+    assert (secret == "value")
+
+  }
 }

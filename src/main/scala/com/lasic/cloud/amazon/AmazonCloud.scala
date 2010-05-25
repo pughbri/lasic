@@ -3,11 +3,9 @@ package com.lasic.cloud
 import amazon.AmazonVM
 import com.lasic.{LasicProperties, VM, Cloud}
 import java.lang.String
-import com.xerox.amazonws.ec2.{Jec2}
-import com.xerox.amazonws.ec2.ReservationDescription
 import java.util.Iterator
 import java.util.{List => JList}
-import com.xerox.amazonws.ec2.{AttachmentInfo => XAttachmentInfo}
+import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
 
 /**
  * User: Brian Pugh
@@ -15,20 +13,31 @@ import com.xerox.amazonws.ec2.{AttachmentInfo => XAttachmentInfo}
  */
 
 class AmazonCloud extends Cloud {
-  val ec2: Jec2 = {
+  lazy val ec2: Jec2 = {
+    val (key, secret) = ec2Keys
+    new Jec2(key, secret);
+  }
+
+  lazy val autoscaling: AutoScaling = {
+    val (key, secret) = ec2Keys
+    new AutoScaling(key, secret);    
+  }
+
+
+  def ec2Keys = {
     val key: String = LasicProperties.getProperty("AWS_ACCESS_KEY")
     val secret: String = LasicProperties.getProperty("AWS_SECRET_KEY")
     if (key == null || secret == null)
       throw new Exception("must provide both ACCESS_KEY and SECRET_KEY in properties file")
-    new Jec2(key, secret);
+    (key, secret)
   }
 
-  override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM] = {
+  override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
     createVMs(numVMs, startVM) {new AmazonVM(this, launchConfig)}
   }
 
 
-  def start(vms: Array[VM]) {
+  def start(vms: List[VM]) {
     //todo: don't just iterate.  Batching things together and making a single call with params is MUCH more efficient
     vms.foreach(vm => {startVM(vm)})
   }
@@ -60,12 +69,12 @@ class AmazonCloud extends Cloud {
     launchConfig
   }
 
-  def reboot(vms: Array[VM]) {
+  def reboot(vms: List[VM]) {
     val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration())
     println(vm.launchConfiguration)
   }
 
-  def terminate(vms: Array[VM]) {
+  def terminate(vms: List[VM]) {
     vms.foreach(vm => {
       println("termination " + vm.instanceId)
       var instances = new java.util.ArrayList[String]

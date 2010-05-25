@@ -7,13 +7,13 @@ import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
  * Date: May 10, 2010
  */
 trait Cloud {
-  def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): Array[VM]
+  def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM]
 
-  def start(vms: Array[VM])
+  def start(vms: List[VM])
 
-  def reboot(vms: Array[VM])
+  def reboot(vms: List[VM])
 
-  def terminate(vms: Array[VM])
+  def terminate(vms: List[VM])
 
   def getState(vm: VM): MachineState.Value
 
@@ -31,6 +31,8 @@ trait Cloud {
 
   def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
 
+//  def createLaunchConfiguration(config: LaunchConfiguration)
+
   /**
    * @param size - size in gigabytes
    */
@@ -40,10 +42,10 @@ trait Cloud {
 
   def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
 
-  protected def createVMs(numVMs: Int, startVM: Boolean)(createVM: => VM): Array[VM] = {
-    var vms = new Array[VM](numVMs)
+  protected def createVMs(numVMs: Int, startVM: Boolean)(createVM: => VM): List[VM] = {
+    var vms = List[VM]()
     for (i <- 0 until numVMs) {
-      vms(i) = createVM
+      vms = createVM :: vms
     }
 
     if (startVM) {

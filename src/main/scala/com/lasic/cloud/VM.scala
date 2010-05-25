@@ -32,15 +32,15 @@ trait VM {
    Cloud operation methods
   ==========================================================================================================*/
   def start() {
-    cloud.start(Array(this))
+    cloud.start(List(this))
   }
 
   def reboot() {
-    cloud.reboot(Array(this))
+    cloud.reboot(List(this))
   }
 
   def shutdown() {
-    cloud.terminate(Array(this))
+    cloud.terminate(List(this))
   }
 
   def copyTo(sourceFile: File, destinationAbsPath: String)

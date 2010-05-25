@@ -17,7 +17,7 @@ class MockCloudTest extends TestCase("MockCloudTest") {
     val cloud = new MockCloud(1)
     val time1 = System.currentTimeMillis();
     val numInstances: Int = 3
-    val vms: Array[VM] = cloud.createVMs(new LaunchConfiguration(), numInstances, true)
+    val vms: List[VM] = cloud.createVMs(new LaunchConfiguration(), numInstances, true)
     val time2 = System.currentTimeMillis();
     assert( (((time2 - time1) * 1000) * numInstances) >= (cloud.getStartupDelay() * numInstances) )
     assert(vms.size == numInstances);
