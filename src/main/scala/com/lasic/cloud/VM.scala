@@ -11,7 +11,9 @@ import java.lang.String
  */
 
 trait VM {
-  val cloud: Cloud
+  protected val cloud: Cloud
+  protected var sshUp: Boolean = false
+
   val launchConfiguration: LaunchConfiguration
   var instanceId: String = null
 
@@ -31,7 +33,7 @@ trait VM {
   /*==========================================================================================================
    Cloud operation methods
   ==========================================================================================================*/
-  def start() {
+  def startup() {
     cloud.start(List(this))
   }
 
@@ -55,15 +57,15 @@ trait VM {
     cloud.detach(volumeInfo, this, devicePath, force)
   }
 
-  def associateAddressWith(ip: String)  {
+  def associateAddressWith(ip: String) {
     cloud.associateAddress(this, ip)
   }
 
   def disassociateAddress(ip: String) {
-     cloud.disassociateAddress(ip)
+    cloud.disassociateAddress(ip)
   }
 
-  
+
 
 
 
@@ -72,6 +74,31 @@ trait VM {
   ==========================================================================================================*/
   def getState(): MachineState.Value = {
     cloud.getState(this)
+  }
+
+  /**
+   * indicates that the server is up and the ssh daemon is running
+   */
+  def isInitialized(): Boolean = {
+    if (sshUp) {
+      sshUp
+    }
+    else {
+      val session: SshSession = createSshSession
+      try {
+        connect(session, 0)
+        true
+      }
+      catch {
+        case e: IllegalStateException => false
+        case e: ConnectException => false
+        case t: Throwable => throw t
+      }
+      finally {
+        session.disconnect
+      }
+    }
+
   }
 
   def getPublicDns(): String = {
@@ -88,45 +115,46 @@ trait VM {
 
   def withSshSession(timeout: Int)(callback: SshSession => Unit): Unit = {
     val session: SshSession = createSshSession
-
-    def connect(publicDns: String): Unit = {
-      var connected = false
-      var numAttempts = 0
-      val startTime = System.currentTimeMillis
-      while (!connected) {
-        try {
-          session.connect(publicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
-          connected = true
-        }
-        catch {
-          //many times the VM hasn't quite started the ssh daemon even though it is up.  Give it a few tries with a
-          //delay between each try
-          case e: ConnectException => {
-            if (System.currentTimeMillis - startTime > (timeout * 1000)) {
-              throw e
-            }
-            Thread.sleep(1000)
-          }
-        }
-      }
-    }
-
     try {
-      if (!(getState == MachineState.Running)) {
-        throw new IllegalStateException("VM is in state " + getState + ".  Cannot operate on it unless it is Running")
-      }
-      val publicDns = getPublicDns
-      if (publicDns == null) {
-        throw new IllegalStateException("VM in unexpected state " + getState + " with no public DNS name.")
-      }
-
-      connect(publicDns)
+      connect(session, timeout)
       callback(session)
     }
     finally {
       session.disconnect
     }
 
+  }
+
+  def connect(session: SshSession, timeout: Int): Unit = {
+
+    if (!(getState == MachineState.Running)) {
+      throw new IllegalStateException("VM is in state " + getState + ".  Cannot open ssh connection unless it is Running")
+    }
+    val publicDns = getPublicDns
+    if (publicDns == null) {
+      throw new IllegalStateException("VM in unexpected state " + getState + " with no public DNS name. Cannot open ssh connection")
+    }
+
+    var connected = false
+    var numAttempts = 0
+    val startTime = System.currentTimeMillis
+    while (!connected) {
+      try {
+        session.connect(getPublicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
+        connected = true
+        sshUp = true
+      }
+      catch {
+        //many times the VM hasn't quite started the ssh daemon even though it is up.  Give it a few tries with a
+        //delay between each try
+        case e: ConnectException => {
+          if (System.currentTimeMillis - startTime > (timeout * 1000)) {
+            throw e
+          }
+          Thread.sleep(1000)
+        }
+      }
+    }
   }
 
 }

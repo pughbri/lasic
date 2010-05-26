@@ -49,7 +49,7 @@ class SshSession extends JSch {
   def disconnect: Unit = {
     try {
       removeAllIdentity
-      if (session != null) {
+      if (session != null && session.isConnected) {
         session.disconnect
       }
     }
