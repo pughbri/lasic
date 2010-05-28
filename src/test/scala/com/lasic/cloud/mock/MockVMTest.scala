@@ -20,11 +20,15 @@ class MockVMTest extends TestCase("MockVMTest") {
     assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
 
     vm.reboot()
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getState() == MachineState.Pending || vm.getState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getState())
     Thread.sleep(1000)
     assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
     Thread.sleep(2000)
     assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
+
+
+    vm.shutdown()
+    assert(vm.getState() == MachineState.ShuttingDown|| vm.getState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getState())
 
   }
 }

@@ -18,32 +18,30 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
 
   def this(delay: Int, cloud: Cloud) = this (delay, null, cloud)
 
+  case class StateChange(state: MachineState.Value, delay: Int)
+  
   val cloud: Cloud = cloudInst
   var machineState = MachineState.Unknown
 
-  //todo: I don't need this... just send the MachineState.RUNNING object
-  private val RUNNING="RUNNING"
-
   override def startup() {
-    withDelay(super.startup())
-    machineState = MachineState.Pending
     start()
-    this ! "start timer"
+    this ! StateChange(MachineState.Pending, 0)
+    withDelay(super.startup())
+    this ! StateChange(MachineState.Running, delay)
   }
 
   override def reboot() {
-    machineState = MachineState.Rebooting
+    this ! StateChange(MachineState.Rebooting, 0)
     withDelay(super.reboot())
-    machineState = MachineState.Pending
+    this ! StateChange(MachineState.Pending, 0)
 
-    this ! "start timer"
+    this ! StateChange(MachineState.Running, delay)
   }
 
   override def shutdown() {
-    //todo: make the transition from shuttingdown to terminated non-blocking (like pending to running)
-    machineState = MachineState.ShuttingDown
+    this ! StateChange(MachineState.ShuttingDown,0)
     withDelay(super.shutdown())
-    machineState = MachineState.Terminated
+    this ! StateChange(MachineState.Terminated,0)
   }
 
   override def copyTo(sourceFile: File, destinationAbsPath: String) {
@@ -65,19 +63,19 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
 
   def act() {
     loop {
-      react{
-        case RUNNING =>
-          machineState = MachineState.Running
-        case msg => setServerRunningWithDelay(delay)
+      react {
+        case StateChange(state, 0) => machineState = state
+        case StateChange(state, delaySecs) => setServerRunningWithDelay(state, delay)
+        case state: MachineState.Value => machineState = state
       }
     }
   }
 
-  def setServerRunningWithDelay(delay: int) {
+  def setServerRunningWithDelay(state: MachineState.Value, delay: Int) {
     val mainActor = self
     actor {
       Thread.sleep(delay * 1000)
-      mainActor ! RUNNING
+      mainActor ! state
     }
   }
 
