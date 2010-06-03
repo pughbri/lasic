@@ -31,4 +31,6 @@ class SystemGroup(val systemOrProgramParent:Pathable) extends SystemProperties w
     }
   }
 
+  override def toString = path + " " + instances.mkString(", ")
+
 }

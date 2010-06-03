@@ -2,12 +2,13 @@ package com.lasic.cloud
 
 import com.xerox.amazonws.ec2.InstanceType
 import com.lasic.model.NodeInstance
+import com.lasic.LasicProperties
 
 /**
  * User: Brian Pugh
  * Date: May 10, 2010
  */
-class LaunchConfiguration(node:NodeInstance) {
+class LaunchConfiguration(node: NodeInstance) {
   var name: String = null
   var machineImage: String = null
   var ramdiskId: String = null
@@ -17,10 +18,10 @@ class LaunchConfiguration(node:NodeInstance) {
   val instanceType: InstanceType = InstanceType.DEFAULT
   var userName: String = null
   var s3Download: String = null
-  var availabilityZone: String = "us-east-1d"
+  var availabilityZone: String = LasicProperties.getProperty("availability_zone", "us-east-1d")
 
-  if ( node!=null ) {
-       name = node.parent.name
+  if (node != null) {
+    name = node.parent.name
     machineImage = node.parent.machineimage
     ramdiskId = node.parent.ramdiskid
     kernelId = node.parent.kernelid
@@ -34,4 +35,4 @@ class LaunchConfiguration(node:NodeInstance) {
   //val scpDeclarations: List[ScpDeclaration] = new ArrayList[ScpDeclaration]
   //private ScriptDeclaration script = new ScriptDeclaration();
   //private final val startupScripts: List[ScriptDeclaration] = new ArrayList[ScriptDeclaration]
-  }
+}

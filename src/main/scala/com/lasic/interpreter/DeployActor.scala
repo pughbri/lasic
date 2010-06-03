@@ -2,7 +2,7 @@ package com.lasic.interpreter
 
 import actors._
 import com.lasic.model.{NodeInstance, LasicProgram}
-import ParallelSimulation._
+//import ParallelSimulation._
 import collection.mutable.ListBuffer
 import scala.actors.Actor._
 import com.lasic.{Cloud, VM}

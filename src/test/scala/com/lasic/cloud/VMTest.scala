@@ -62,10 +62,10 @@ class VMTest extends TestCase("VMTest") {
     vm.connect(mockSshSession, 2)
 
 
-    //test3: have mock pause longer than timeout so fails
-    mockSshSession = new MockSshSession(3)
+    //test3: have mock just keep failing so it take more time than the timeout
+    mockSshSession = new MockSshSession(1000)
     try {
-      vm.connect(mockSshSession, 2)
+      vm.connect(mockSshSession, 1)
       assert(false, "should have got ConnectException")
     }
     catch {
@@ -79,7 +79,7 @@ class VMTest extends TestCase("VMTest") {
 
 
     //test4: make mock pause less that timeout so pass
-    mockSshSession = new MockSshSession(1)
+    mockSshSession = new MockSshSession(0)
     vm.connect(mockSshSession, 2)
 
 

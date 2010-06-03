@@ -20,7 +20,15 @@ class MockCloud(startupDelay: Int) extends Cloud {
   }
 
   def start(vms: List[VM]) {
-    vms.foreach(vm => System.out.println("starting vm [" + vm + "]...."))
+    vms.foreach(vm => {
+      vm match {
+        case mvm: MockVM => {
+          mvm ! mvm.StateChange(MachineState.Pending, 0)
+          mvm ! mvm.StateChange(MachineState.Running, startupDelay)
+        }
+        case _ => println("starting vm " + vm)
+      }
+    })
   }
 
   def getStartupDelay(): Int = {
@@ -29,15 +37,32 @@ class MockCloud(startupDelay: Int) extends Cloud {
 
   def reboot(vms: List[VM]) {
 
-    vms.foreach(vm => System.out.println("rebooting vm [" + vm + "]...."))
+    vms.foreach(vm => {
+      vm match {
+        case mvm: MockVM => {
+          mvm ! mvm.StateChange(MachineState.Rebooting, 0)
+          mvm ! mvm.StateChange(MachineState.Pending, 0)
+          mvm ! mvm.StateChange(MachineState.Running, startupDelay)
+        }
+        case _ => println("rebooting vm " + vm)
+      }
+    })
   }
 
   def terminate(vms: List[VM]) {
-    vms.foreach(vm => System.out.println("shutting down vm [" + vm + "]...."))
+    vms.foreach(vm => {
+      vm match {
+        case mvm: MockVM => {
+          mvm ! mvm.StateChange(MachineState.ShuttingDown, 0)
+          mvm ! mvm.StateChange(MachineState.Terminated, 0)
+        }
+        case _ => println("shutting down vm " + vm)
+      }
+    })
   }
 
   def getState(vm: VM) = {
-    MachineState.Unknown
+    vm.getState()
   }
 
   def getPublicDns(vm: VM): String = {
@@ -64,8 +89,8 @@ class MockCloud(startupDelay: Int) extends Cloud {
   }
 
   def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
-     new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
-    
+    new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
+
   }
 
   def associateAddress(vm: VM, ip: String) {
@@ -80,7 +105,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
 
   def allocateAddress() = {
     val random: Random = new Random()
-    "10.255." + + random.nextInt(200) + "." + random.nextInt(200);
+    "10.255." + +random.nextInt(200) + "." + random.nextInt(200);
   }
 
 

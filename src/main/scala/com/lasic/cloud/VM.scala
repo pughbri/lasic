@@ -136,7 +136,6 @@ trait VM {
     }
 
     var connected = false
-    var numAttempts = 0
     val startTime = System.currentTimeMillis
     while (!connected) {
       try {

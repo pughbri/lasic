@@ -3,26 +3,26 @@ package com.lasic.interpreter.actors
 import scala.actors.Actor
 import com.lasic.model.NodeInstance
 import com.lasic.cloud.LaunchConfiguration
-import ParallelSimulation._
+//import ParallelSimulation._
 import com.lasic.{Cloud, VM}
 
 case class NodeLaunch
 
-class NodeActor(node:NodeInstance, val clock:Clock, cloud:Cloud) extends Simulant {
-  val lc = new LaunchConfiguration(node)
+class NodeActor {
+  //val lc = new LaunchConfiguration(node)
 
   var vm:VM = null
 
-  def handleSimMessage(msg: Any) {
-    msg match {
-      case x:NodeLaunch  => { 
-
-        vm = cloud.createVMs(lc, 1, true)(0)
-        
-      }
-    }
-
-  }
+//  def handleSimMessage(msg: Any) {
+//    msg match {
+//      case x:NodeLaunch  => {
+//
+//        vm = cloud.createVMs(lc, 1, true)(0)
+//
+//      }
+//    }
+//
+//  }
 
 //
   def asLaunchConfiguration(node:NodeInstance) = {

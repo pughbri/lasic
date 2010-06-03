@@ -14,6 +14,8 @@ import actors.Actor
  */
 
 class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst: Cloud) extends VM with Actor {
+  start()
+
   def this(cloud: Cloud) = this (2, null, cloud)
 
   def this(delay: Int, cloud: Cloud) = this (delay, null, cloud)
@@ -24,24 +26,15 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   var machineState = MachineState.Unknown
 
   override def startup() {
-    start()
-    this ! StateChange(MachineState.Pending, 0)
     withDelay(super.startup())
-    this ! StateChange(MachineState.Running, delay)
   }
 
   override def reboot() {
-    this ! StateChange(MachineState.Rebooting, 0)
     withDelay(super.reboot())
-    this ! StateChange(MachineState.Pending, 0)
-
-    this ! StateChange(MachineState.Running, delay)
   }
 
   override def shutdown() {
-    this ! StateChange(MachineState.ShuttingDown,0)
     withDelay(super.shutdown())
-    this ! StateChange(MachineState.Terminated,0)
   }
 
   override def copyTo(sourceFile: File, destinationAbsPath: String) {
@@ -64,9 +57,18 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   def act() {
     loop {
       react {
-        case StateChange(state, 0) => machineState = state
-        case StateChange(state, delaySecs) => setServerRunningWithDelay(state, delay)
-        case state: MachineState.Value => machineState = state
+        case StateChange(state, 0) => {
+          machineState = state
+          println(machineState)
+        }
+        case StateChange(state, delaySecs) => {
+          setServerRunningWithDelay(state, delay)
+          println(machineState)
+        }
+        case state: MachineState.Value => {
+          machineState = state
+          println(machineState)
+        }
       }
     }
   }
