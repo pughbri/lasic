@@ -1,7 +1,7 @@
 package com.lasic.cloud.mock
 
 import junit.framework.TestCase
-import com.lasic.cloud.{MachineState, MockCloud}
+import com.lasic.cloud.{LaunchConfiguration, MachineState}
 
 /**
  *
@@ -31,4 +31,13 @@ class MockVMTest extends TestCase("MockVMTest") {
     assert(vm.getState() == MachineState.ShuttingDown|| vm.getState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getState())
 
   }
+
+  def testStartVMFromCloud() = {
+    val cloud = new MockCloud(1)
+    val vm = cloud.createVMs(new LaunchConfiguration(null), 1, true)(0)
+    //println(vm.getState)
+    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+
+  }
+  
 }

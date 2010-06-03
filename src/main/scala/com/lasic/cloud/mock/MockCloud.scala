@@ -1,10 +1,11 @@
-package com.lasic.cloud
+package com.lasic.cloud.mock
 
 
-import mock.MockVM
+//import mock.MockVM
 import com.lasic.{VM, Cloud}
 import java.lang.String
 import java.util.{Random, Calendar}
+import com.lasic.cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 
 /**
  * User: Brian Pugh

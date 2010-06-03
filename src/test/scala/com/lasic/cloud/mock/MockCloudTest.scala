@@ -1,7 +1,8 @@
 package com.lasic.cloud
 
 import junit.framework._
-import com.lasic.VM;
+import com.lasic.VM
+import mock.MockCloud
 
 
 /**
@@ -17,11 +18,12 @@ class MockCloudTest extends TestCase("MockCloudTest") {
     val cloud = new MockCloud(1)
     val time1 = System.currentTimeMillis();
     val numInstances: Int = 3
-    val vms: List[VM] = cloud.createVMs(new LaunchConfiguration(), numInstances, true)
+    val vms: List[VM] = cloud.createVMs(new LaunchConfiguration(null), numInstances, true)
     val time2 = System.currentTimeMillis();
     assert( (((time2 - time1) * 1000) * numInstances) >= (cloud.getStartupDelay() * numInstances) )
     assert(vms.size == numInstances);
     //todo: test that cloud.startup was called with the Array[VM]
 
   }
+
 }

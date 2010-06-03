@@ -3,8 +3,9 @@ package com.lasic.cloud.amazon
 import junit.framework.TestCase
 import java.lang.String
 import java.io.File
-import com.lasic.cloud.{MockCloud, MachineState, LaunchConfiguration}
+import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.cloud.ssh.{ConnectException, SshSession}
+import com.lasic.cloud.mock.MockCloud
 
 /**
  *
@@ -44,7 +45,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
   def testCopyTo() = {
 
 
-    val lc: LaunchConfiguration = new LaunchConfiguration()
+    val lc: LaunchConfiguration = new LaunchConfiguration(null)
     lc.key = "some"
     var state = MachineState.Unknown
     var mockSshSession = new MockSshSession

@@ -3,43 +3,47 @@ package com.lasic.interpreter.actors
 import scala.actors.Actor
 import com.lasic.model.NodeInstance
 import com.lasic.cloud.LaunchConfiguration
-import com.lasic.VM
+import ParallelSimulation._
+import com.lasic.{Cloud, VM}
 
+case class NodeLaunch
 
-case class NodeLaunch(node:NodeInstance, actor:Actor)
+class NodeActor(node:NodeInstance, val clock:Clock, cloud:Cloud) extends Simulant {
+  val lc = new LaunchConfiguration(node)
 
-object NodeActor  extends Actor {
-  def asLaunchConfiguration(node:NodeInstance) = {
-    val lc = new LaunchConfiguration
-      lc.name = node.parent.name
-      lc.machineImage = node.parent.machineimage
-      lc.ramdiskId = node.parent.ramdiskid
-      lc.kernelId = node.parent.kernelid
-      lc.key = node.parent.key
-      //lc.groups = node.parent.groups
-      //lc.instanceType = node.parent.instancetype
-      lc.userName = node.parent.user
-      //lc.availabilityZone = node.parent.
-      //lc.s3Download = ??
-    lc
-  }
+  var vm:VM = null
 
-  def launch(node:NodeInstance, actor:Actor) = {
+  def handleSimMessage(msg: Any) {
+    msg match {
+      case x:NodeLaunch  => { 
 
-      CloudActor ! CloudNodeLaunch(asLaunchConfiguration(node), actor, node)
-    
-  }
-
-  def launched(vm:VM) = {
-    println("was launched!!")
-  }
-
-  def act() {
-    Actor.loop {
-      react {
-        case NodeLaunch(node, actor) => launch(node, actor)
-        case msg => println("Unknown msg sent to cloud actor: "+msg)
+        vm = cloud.createVMs(lc, 1, true)(0)
+        
       }
     }
+
   }
+
+//
+  def asLaunchConfiguration(node:NodeInstance) = {
+  }
+//
+//  def launch(node:NodeInstance, actor:Actor) = {
+//
+//      CloudActor ! CloudNodeLaunch(asLaunchConfiguration(node), actor, node)
+//
+//  }
+//
+//  def launched(vm:VM) = {
+//    println("was launched!!")
+//  }
+//
+//  def act() {
+//    Actor.loop {
+//      react {
+//        case NodeLaunch(node, actor) => launch(node, actor)
+//        case msg => println("Unknown msg sent to cloud actor: "+msg)
+//      }
+//    }
+//  }
 }

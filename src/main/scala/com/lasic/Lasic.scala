@@ -1,11 +1,11 @@
 package com.lasic
 
-import cloud.MockCloud
-import interpreter.actors.{NodeActor, CloudActor}
+import interpreter.actors.{NodeActor}
 import interpreter.{Deploy, DeployActor}
 import java.io.File
 import parser.LasicCompiler
 import io.Source
+import com.lasic.cloud.mock.MockCloud
 
 
 //object Foo {
@@ -26,17 +26,9 @@ object Lasic {
     println(s.toString())
     val program = LasicCompiler.compile(s)
 
-
-    CloudActor.start( new MockCloud(1) )
-    NodeActor.start()
-    DeployActor.start()
-
-    DeployActor ! Deploy(program)
-
-    var foo = 3
-    val a = mk(foo)
-    foo = 100
-    println(a(1))
+    val cloud = new MockCloud(1)
+    val deploy = new DeployActor(cloud)
+    deploy.deploy(program)
 
 
 

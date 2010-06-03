@@ -1,7 +1,7 @@
 package com.lasic.cloud
 
 import junit.framework.TestCase
-import mock.MockVM
+import mock.{MockCloud, MockVM}
 import ssh.{ConnectException, SshSession}
 import java.io.File
 
@@ -33,7 +33,7 @@ class VMTest extends TestCase("VMTest") {
 
   def testConnect() = {
 
-    val lc: LaunchConfiguration = new LaunchConfiguration()
+    val lc: LaunchConfiguration = new LaunchConfiguration(null)
     lc.key = "some"
     var state = MachineState.Unknown
     var mockSshSession = new MockSshSession
@@ -87,7 +87,7 @@ class VMTest extends TestCase("VMTest") {
 
   def testIsInitialized() = {
 
-    val lc: LaunchConfiguration = new LaunchConfiguration()
+    val lc: LaunchConfiguration = new LaunchConfiguration(null)
     lc.key = "some"
     var mockSshSession = new MockSshSession(3)
 

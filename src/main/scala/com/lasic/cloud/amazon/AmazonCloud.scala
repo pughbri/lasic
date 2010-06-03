@@ -70,7 +70,7 @@ class AmazonCloud extends Cloud {
   }
 
   def reboot(vms: List[VM]) {
-    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration())
+    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
     println(vm.launchConfiguration)
   }
 
