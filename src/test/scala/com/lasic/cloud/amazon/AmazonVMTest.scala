@@ -82,7 +82,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
 
 
     //test3: fail too many times
-    mockSshSession = new MockSshSession(3)
+    mockSshSession = new MockSshSession(1000)
     try {
       vm.copyTo(sourceFile, remoteFile)
       assert(false, "should have got ConnectException")
@@ -97,8 +97,8 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
     }
 
 
-    //test4: fail only twice, then succeed
-    mockSshSession = new MockSshSession(1)
+    //test4: Don't fail
+    mockSshSession = new MockSshSession(0)
     vm.copyTo(sourceFile, remoteFile)
 
 
