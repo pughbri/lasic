@@ -7,6 +7,9 @@ import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
  * Date: May 10, 2010
  */
 trait Cloud {
+  def createVM(launchConfig:LaunchConfiguration, startVM:Boolean) = {
+    createVMs(launchConfig,1,startVM)(0)
+  }
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM]
 
   def start(vms: List[VM])

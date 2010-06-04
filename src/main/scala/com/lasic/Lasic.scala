@@ -1,7 +1,7 @@
 package com.lasic
 
-import interpreter.actors.{NodeActor}
-import interpreter.{Deploy, DeployActor}
+//import interpreter.actors.{NodeActor}
+//import interpreter.{Deploy, DeployActor}
 import java.io.File
 import parser.LasicCompiler
 import io.Source
@@ -27,8 +27,8 @@ object Lasic {
     val program = LasicCompiler.compile(s)
 
     val cloud = new MockCloud(1)
-    val deploy = new DeployActor(cloud)
-    deploy.deploy(program)
+//    val deploy = new DeployActor(cloud)
+//    deploy.deploy(program)
 
 
 
@@ -38,6 +38,6 @@ object Lasic {
     //    val program = LasicCompiler.compile(argv(0))
     //    val interpreter = new DeployActor
 
-
+     3
   }
 }
