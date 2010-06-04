@@ -62,7 +62,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
   }
 
   def getState(vm: VM) = {
-    vm.getState()
+    vm.getMachineState()
   }
 
   def getPublicDns(vm: VM): String = {

@@ -97,7 +97,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
     def waitForVMToStart(vm: VM) {
       val startTime = System.currentTimeMillis
       var timedOut = false
-      while (!(vm.getState == MachineState.Running) && !timedOut) {
+      while (!(vm.getMachineState == MachineState.Running) && !timedOut) {
         Thread.sleep(3000)
         if ((System.currentTimeMillis - startTime) > 120000) {
           timedOut = true

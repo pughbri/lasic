@@ -38,7 +38,7 @@ class VMTest extends TestCase("VMTest") {
     var state = MachineState.Unknown
     var mockSshSession = new MockSshSession
     val vm = new MockVM(2, lc, new MockCloud(0)) {
-      override def getState() = {
+      override def getMachineState() = {
         state
       }
     }
@@ -92,7 +92,7 @@ class VMTest extends TestCase("VMTest") {
     var mockSshSession = new MockSshSession(3)
 
     val vm = new MockVM(2, lc, new MockCloud(0)) {
-      override def getState() = {
+      override def getMachineState() = {
         MachineState.Running
       }
 

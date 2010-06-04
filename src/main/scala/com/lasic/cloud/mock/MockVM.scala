@@ -6,7 +6,7 @@ import java.lang.String
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import scala.actors.Actor._
 import actors.Actor
-
+import com.lasic.cloud.MachineState._
 
 /**
  * User: Brian Pugh
@@ -23,7 +23,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   case class StateChange(state: MachineState.Value, delay: Int)
   
   val cloud: Cloud = cloudInst
-  var machineState = MachineState.Unknown
+  var machineState:MachineState = Unknown
 
   override def startup() {
     withDelay(super.startup())
@@ -46,7 +46,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   }
 
 
-  override def getState() = machineState
+  override def getMachineState() = machineState
 
   private def withDelay(callback: => Unit): Unit = {
     Thread.sleep(delay * 1000)

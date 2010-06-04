@@ -4,6 +4,7 @@ import cloud.ssh.{ConnectException, SshSession}
 import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 import java.io.File
 import java.lang.String
+import com.lasic.cloud.MachineState._
 
 /**
  * User: Brian Pugh
@@ -72,7 +73,7 @@ trait VM {
   /*==========================================================================================================
    State of vm methods
   ==========================================================================================================*/
-  def getState(): MachineState.Value = {
+  def getMachineState(): MachineState = {
     cloud.getState(this)
   }
 
@@ -127,12 +128,12 @@ trait VM {
 
   def connect(session: SshSession, timeout: Int): Unit = {
 
-    if (!(getState == MachineState.Running)) {
-      throw new IllegalStateException("VM is in state " + getState + ".  Cannot open ssh connection unless it is Running")
+    if (!(getMachineState == MachineState.Running)) {
+      throw new IllegalStateException("VM is in state " + getMachineState + ".  Cannot open ssh connection unless it is Running")
     }
     val publicDns = getPublicDns
     if (publicDns == null) {
-      throw new IllegalStateException("VM in unexpected state " + getState + " with no public DNS name. Cannot open ssh connection")
+      throw new IllegalStateException("VM in unexpected state " + getMachineState + " with no public DNS name. Cannot open ssh connection")
     }
 
     var connected = false

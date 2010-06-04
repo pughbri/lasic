@@ -1,12 +1,15 @@
 package com.lasic
 
 import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
+import com.lasic.cloud.MachineState._
+
 
 /**
  * User: Brian Pugh
  * Date: May 10, 2010
  */
 trait Cloud {
+
   def createVM(launchConfig:LaunchConfiguration, startVM:Boolean) = {
     createVMs(launchConfig,1,startVM)(0)
   }
@@ -18,7 +21,7 @@ trait Cloud {
 
   def terminate(vms: List[VM])
 
-  def getState(vm: VM): MachineState.Value
+  def getState(vm: VM): MachineState
 
   def getPublicDns(vm: VM): String
 

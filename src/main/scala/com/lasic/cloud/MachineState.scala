@@ -7,6 +7,7 @@ package com.lasic.cloud
  */
 
 object MachineState extends Enumeration {
+  type MachineState = Value
   val Unknown = Value("unknown")
   val Pending = Value("pending")
   val Running = Value("running")
@@ -15,7 +16,7 @@ object MachineState extends Enumeration {
   val Terminated = Value("terminated")
 
   def string2State(s: String): MachineState.Value = {
-    for (ms <- elements) {
+    for (ms <- iterator) {
       if (s.toLowerCase.equals(ms.toString.toLowerCase)) return ms
     }
     Unknown

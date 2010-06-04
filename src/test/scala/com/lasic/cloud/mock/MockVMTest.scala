@@ -15,24 +15,24 @@ class MockVMTest extends TestCase("MockVMTest") {
     val vm = new MockVM(new MockCloud(2))
     vm.startup()
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(2000)
-    assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
     vm.reboot()
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.Pending || vm.getState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(2000)
-    assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
 
     vm.shutdown()
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.ShuttingDown|| vm.getState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.ShuttingDown|| vm.getMachineState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getMachineState())
 
   }
 
@@ -41,24 +41,24 @@ class MockVMTest extends TestCase("MockVMTest") {
     val vms: List[VM] = cloud.createVMs(new LaunchConfiguration(null), 1, true)
     val vm = vms(0)
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(2000)
-    assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
     cloud.reboot(vms)
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.Pending || vm.getState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getState() == MachineState.Pending, "expected pending, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
     Thread.sleep(2000)
-    assert(vm.getState() == MachineState.Running, "expected Running, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
 
     cloud.terminate(vms)
     Thread.sleep(200)
-    assert(vm.getState() == MachineState.ShuttingDown|| vm.getState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getState())
+    assert(vm.getMachineState() == MachineState.ShuttingDown|| vm.getMachineState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getMachineState())
 
 
   }

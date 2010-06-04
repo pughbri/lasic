@@ -55,7 +55,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
       }
 
 
-      override def getState() = {
+      override def getMachineState() = {
         state
       }
     }
