@@ -1,0 +1,24 @@
+system "www.familysearch.org" {
+
+  node "www-web-drupal" {
+    props {
+        groups: "default"
+        key: "default"
+        instancetype: "small"
+        count: 1
+        machineimage: "ami-850fe6ec"
+        user: "ubuntu"
+    }
+
+
+    scp {
+       "file:www-web-drupal-install.sh":"~/www-web-drupal-install.sh"
+    }
+
+    scripts {
+       "~/www-web-drupal-install.sh": {
+          REF: "$REFERENCE"
+        }
+     }
+  }
+}

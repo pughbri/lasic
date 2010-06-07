@@ -1,7 +1,7 @@
 package com.lasic
 
 import junit.framework._
-import model.{SystemGroup, SystemInstance}
+import model.{SystemInstance}
 import parser.{LasicCompiler};
 import org.apache.commons.io.IOUtils
 
@@ -59,7 +59,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
    * Ensure that SCP statements are parsed
    */
   def testScp() = {
-    val program= getLasicProgram(4);
+    val program = getLasicProgram(4);
     assertEquals(2, program.instances(0).nodegroups(0).scpMap.size)
     assertEquals("dest1", program.instances(0).nodegroups(0).scpMap("src1"))
     assertEquals("dest2", program.instances(0).nodegroups(0).scpMap("src2"))
@@ -69,7 +69,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
    * Ensure that script statements are parsed
    */
   def testScripts() = {
-    val program= getLasicProgram(5);
+    val program = getLasicProgram(5);
     assertEquals(2, program.instances(0).nodegroups(0).scriptMap.size)
 
     var map = program.instances(0).nodegroups(0).scriptMap("some_script")
@@ -81,7 +81,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   }
 
   def testVolumes() = {
-   val program= getLasicProgram(6);
+    val program = getLasicProgram(6);
     assertEquals(3, program.instances(0).nodegroups(0).volumeMap.size)
     assertEquals("/dev/sdh", program.instances(0).nodegroups(0).volumeMap("device"))
     assertEquals("/home/fs/lotsofdata", program.instances(0).nodegroups(0).volumeMap("mount"))
@@ -118,7 +118,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
       // test scripts
       val scriptMap = nodeGroup.scriptMap
-      assertEquals(2,scriptMap.size)
+      assertEquals(2, scriptMap.size)
       var map = scriptMap("some_script")
       assertEquals(0, map.size)
       map = scriptMap("another")
@@ -132,19 +132,19 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
       // test scp
     }
 
-    var inst:SystemInstance = program.instances.head
+    var inst: SystemInstance = program.instances.head
     var subsysList = inst.subsystems
     var subSys = subsysList.head
     assertEquals(List("subsystem 1"), subsysList.map {x => x.name})
-    assertEquals( 1, subSys.count)
-    assertEquals( 1, subSys.instances.size )
+    assertEquals(1, subSys.count)
+    assertEquals(1, subSys.instances.size)
 
     inst = program.instances.tail.head
     subsysList = inst.subsystems
     subSys = subsysList.head
     assertEquals(List("subsystem 1"), subsysList.map {x => x.name})
-    assertEquals( 1, subSys.count)
-    assertEquals( 1, subSys.instances.size )
+    assertEquals(1, subSys.count)
+    assertEquals(1, subSys.instances.size)
 
   }
 }
