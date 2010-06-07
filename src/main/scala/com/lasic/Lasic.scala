@@ -24,12 +24,11 @@ object Lasic {
 
   def main(argv: Array[String]) {
     val s = Source.fromFile( new File(argv(0)))
-    println(s.toString())
     val program = LasicCompiler.compile(s)
 
     val cloud = new MockCloud(1)
     val deploy = new DeployVerb(cloud,program)
-    deploy.deploy
+    deploy.doit
 //    val deploy = new DeployActor(cloud)
 //    deploy.deploy(program)
 
