@@ -26,6 +26,7 @@ import com.lasic.Cloud
   case class QueryNodeState() extends NodeCommand
   case class QueryID() extends NodeCommand
   case class SetBootState(isInitialized:Boolean) extends NodeCommand
+  case class StopVMActor extends NodeCommand
 //}
 
 import VMActorState._
@@ -69,19 +70,29 @@ class VMActor(cloud: Cloud) extends Actor {
   var sleeper = actorOf[Sleeper].start
 
 
+  def handleQueryID: Unit = {
+    if (vm != null) {
+      val id = vm.instanceId
+      if (id != null)
+        self.reply(id)
+      else
+        self.reply(null)
+    } else self.reply(null)
+  }
+
+  def handleStopVMActor: Unit = {
+    sleeper.stop;
+    self.stop
+  }
+
   def receive = {
 //    case (Launch,x:LaunchConfiguration) => handleLaunch(x)
     case Launch(lc)           => handleLaunch(lc)
     case SetVM(vm)            => handleVM(vm)
     case QueryNodeState       => self.reply(nodeState)
     case SetBootState(booted) => handleWake(booted)
-    case QueryID              => if ( vm!=null ) {
-                                  val id = vm.instanceId
-                                  if ( id!=null )
-                                    self.reply(id)
-                                  else
-                                    self.reply(null)
-                                } else self.reply(null)
+    case QueryID              => handleQueryID
+    case StopVMActor          => handleStopVMActor
     case _                    => println("something else")
   }
 

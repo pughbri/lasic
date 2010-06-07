@@ -57,7 +57,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb {
   }
 
   private def stopAllActors {
-    //todo:
+    nodeTrackers.foreach { tracker => tracker.actor ! StopVMActor }
   }
 
   private def launchAllAMIs {

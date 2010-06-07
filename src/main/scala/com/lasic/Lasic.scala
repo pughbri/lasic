@@ -29,6 +29,7 @@ object Lasic {
     val cloud = new MockCloud(1)
     val deploy = new DeployVerb(cloud,program)
     deploy.doit
+    System.exit(0)
 //    val deploy = new DeployActor(cloud)
 //    deploy.deploy(program)
 
