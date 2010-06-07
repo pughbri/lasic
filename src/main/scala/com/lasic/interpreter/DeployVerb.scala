@@ -81,7 +81,15 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb {
   private def waitForVolumes {}
   private def attachAllVolumes {}
   private def waitForVolumesToAttach {}
-  private def runScpStatements {}
+
+  private def runScpStatements {
+    nodeTrackers.foreach {
+      tracker =>
+        val scp = tracker.node.parent.scpMap
+        tracker.actor ! RunSCP( Map.empty ++ scp )
+    }
+  }
+  
   private def runSetupScripts {}
   //createScaleGroups();
   private def printBoundLasicProgram {}

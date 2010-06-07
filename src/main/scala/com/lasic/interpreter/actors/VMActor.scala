@@ -6,6 +6,7 @@ import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.Actor
 import com.lasic.Cloud
+import java.io.File
 
 
 //object VMActor {
@@ -14,7 +15,7 @@ import com.lasic.Cloud
    */
   object VMActorState extends Enumeration {
     type NodeStates = Value
-    val Blank, WaitingForVM, WaitingForBoot, Booted, Configured = Value
+    val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, Configured = Value
   }
 
   /**
@@ -27,6 +28,8 @@ import com.lasic.Cloud
   case class QueryID() extends NodeCommand
   case class SetBootState(isInitialized:Boolean) extends NodeCommand
   case class StopVMActor extends NodeCommand
+  case class RunSCP(scp:Map[String,String]) extends NodeCommand
+
 //}
 
 import VMActorState._
@@ -48,6 +51,13 @@ private class Sleeper extends Actor {
     case ("createVM", lc: LaunchConfiguration, cloud: Cloud) => {
       val vm = cloud.createVM(lc, true)
       self.reply(SetVM(vm))
+    }
+
+    case ("scp", vm:VM, scp:Map[String,String]) => {
+      scp.foreach {
+        foo =>
+          vm.copyTo(new File(foo._1), foo._2)
+      }
     }
 
   }
@@ -85,6 +95,15 @@ class VMActor(cloud: Cloud) extends Actor {
     self.stop
   }
 
+  def handleRunSCP(scp:Map[String,String])  {
+    nodeState match {
+      case Booted => {
+        nodeState = RunningSCP
+        sleeper ! ("scp", vm, scp)
+
+      }
+    }
+  }
   def receive = {
 //    case (Launch,x:LaunchConfiguration) => handleLaunch(x)
     case Launch(lc)           => handleLaunch(lc)
@@ -93,6 +112,7 @@ class VMActor(cloud: Cloud) extends Actor {
     case SetBootState(booted) => handleWake(booted)
     case QueryID              => handleQueryID
     case StopVMActor          => handleStopVMActor
+    case RunSCP(lc)           => handleRunSCP(lc)
     case _                    => println("something else")
   }
 
