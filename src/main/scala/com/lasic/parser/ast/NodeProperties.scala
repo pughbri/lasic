@@ -14,6 +14,7 @@ trait NodeProperties {
   var instancetype: String    = null
   var scpMap                  = Map[String,String]()
   var scriptMap               = Map[String,Map[String,String]]()
+  var volumeMap               = Map[String,String]()
 
 }
 

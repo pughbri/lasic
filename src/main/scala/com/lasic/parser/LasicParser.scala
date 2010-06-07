@@ -1,10 +1,7 @@
 package com.lasic.parser
 
-import ast.{ASTScript, ASTScp, ASTNode, ASTSystem}
-import util.parsing.combinator.syntactical.StdTokenParsers
-import util.parsing.combinator.lexical.StdLexical
+import ast._
 import util.parsing.combinator.JavaTokenParsers
-import util.matching.Regex
 import scala.collection.mutable._
 import com.lasic.LasicProperties
 
@@ -48,8 +45,9 @@ class LasicParser extends JavaTokenParsers {
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
-          case astScp:ASTScp => sys.scpMap = astScp.scpMap
-          case astScript:ASTScript => sys.scriptMap = astScript.scpMap
+          case astScp: ASTScp => sys.scpMap = astScp.scpMap
+          case astScript: ASTScript => sys.scriptMap = astScript.scpMap
+          case astVolume: ASTVolume => sys.volumeMap = astVolume.params
           case _ =>
         }
     }
@@ -103,7 +101,7 @@ class LasicParser extends JavaTokenParsers {
 
   }
 
-  def node_body = rep(node_props | scripts | scp)
+  def node_body = rep(node_props | scripts | scp | volume)
 
   def node_props = "props" ~> "{" ~> rep(node_prop) <~ "}" ^^ {
     list_o_props => Map() ++ list_o_props
@@ -138,7 +136,7 @@ class LasicParser extends JavaTokenParsers {
 
   def scripts_body = rep(script_stmnt)
 
-  def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace  ^^ {
+  def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace ^^ {
     case name ~ _ ~ _ ~ arg_list ~ _ =>
       val argMap = Map() ++ arg_list
       (name -> argMap)
@@ -146,7 +144,7 @@ class LasicParser extends JavaTokenParsers {
 
   def script_param = ident ~ ":" ~ aString ^^ {
     case from ~ _ ~ to =>
-      ( from -> to )
+      (from -> to)
   }
 
   def scp = "scp" ~ lbrace ~ scp_body ~ rbrace ^^ {
@@ -156,15 +154,31 @@ class LasicParser extends JavaTokenParsers {
       x
   }
 
-  def scp_body = rep(scp_line) 
-  def scp_line = aString ~ ":" ~ aString ^^ { case from ~ _ ~ to => ( from -> to )}
+  def scp_body = rep(scp_line)
+
+  def scp_line = aString ~ ":" ~ aString ^^ {case from ~ _ ~ to => (from -> to)}
+
+  def volume = "volume" ~ lbrace ~ volume_body ~ rbrace ^^ {
+    case _ ~ _ ~ vol_body ~ _ =>
+      val astVolume = new ASTVolume
+      astVolume.params = vol_body
+      astVolume
+  }
+
+  def volume_body = rep(volume_param) ^^ {
+    case params => Map() ++ params  
+  }
+
+  def volume_param = {"size" | "device" | "mount"} ~ ":" ~ aString ^^ {case label ~ _ ~ value => (label -> value)}
+
+
   /*==========================================================================================================
     Misc bnf
    ==========================================================================================================*/
   def aString = stringLiteral ^^ {
     x =>
-      val y=LasicProperties.resolveProperty(x);
-      val z=y.substring(1, y.length - 1)
+      val y = LasicProperties.resolveProperty(x);
+      val z = y.substring(1, y.length - 1)
       z
   }
 

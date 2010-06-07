@@ -1,0 +1,17 @@
+/* Tests system variable substitution */
+system  "sys1" {
+    node "node1" {
+       volume {
+            size: "100g"
+            device: "/dev/sdh"
+            mount: "/home/fs/lotsofdata"
+        }
+      	scripts {
+			"some_script": {}
+			"another": {
+				foo:"bar"
+			}
+		}
+    }
+
+}

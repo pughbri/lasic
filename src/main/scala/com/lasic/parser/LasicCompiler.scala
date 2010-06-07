@@ -125,6 +125,7 @@ object LasicCompiler {
     nodeGroup.instancetype = ast.instancetype
     nodeGroup.scpMap = ast.scpMap
     nodeGroup.scriptMap = ast.scriptMap
+    nodeGroup.volumeMap = ast.volumeMap
 
 
     createInstances(nodeGroup)

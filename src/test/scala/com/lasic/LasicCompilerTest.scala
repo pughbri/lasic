@@ -22,7 +22,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
   /* utility */
   def assertEquals(a: Any, b: Any) = {
-    assert(a == b)
+    assert(a == b, "expected " + a + " got " + b)
   }
 
   /**
@@ -78,6 +78,14 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     map = program.instances(0).nodegroups(0).scriptMap("another")
     assertEquals(1, map.size)
     assertEquals("bar", map("foo"))
+  }
+
+  def testVolumes() = {
+   val program= getLasicProgram(6);
+    assertEquals(3, program.instances(0).nodegroups(0).volumeMap.size)
+    assertEquals("/dev/sdh", program.instances(0).nodegroups(0).volumeMap("device"))
+    assertEquals("/home/fs/lotsofdata", program.instances(0).nodegroups(0).volumeMap("mount"))
+
   }
 
   /**
