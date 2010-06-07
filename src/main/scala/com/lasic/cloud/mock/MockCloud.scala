@@ -25,6 +25,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
         case mvm: MockVM => {
           mvm ! mvm.StateChange(MachineState.Pending, 0)
           mvm ! mvm.StateChange(MachineState.Running, startupDelay)
+          mvm ! ("init",true,startupDelay)
         }
         case _ => println("starting vm " + vm)
       }

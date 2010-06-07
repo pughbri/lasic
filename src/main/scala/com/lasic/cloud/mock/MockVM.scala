@@ -7,6 +7,7 @@ import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import scala.actors.Actor._
 import actors.Actor
 import com.lasic.cloud.MachineState._
+import util.Random
 
 /**
  * User: Brian Pugh
@@ -15,6 +16,7 @@ import com.lasic.cloud.MachineState._
 
 class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst: Cloud) extends VM with Actor {
   start()
+  var isInit = false
 
   def this(cloud: Cloud) = this (2, null, cloud)
 
@@ -53,24 +55,36 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
     callback
   }
 
+  override def isInitialized(): Boolean = {
+    Thread.sleep(delay * 1000)
+    isInit
+  }
 
   def act() {
     loop {
       react {
         case StateChange(state, 0) => {
-          machineState = state
-          println(machineState)
+          assignState(state)
+          //println(machineState)
         }
         case StateChange(state, delaySecs) => {
           setServerRunningWithDelay(state, delay)
-          println(machineState)
+          //println(machineState)
         }
         case state: MachineState.Value => {
-          machineState = state
-          println(machineState)
+          assignState(state)
+          //println(machineState)
         }
+        case ("init",initValue:Boolean,delay:Int) => setInitWithDelay(initValue,delay)
+        case ("init",initValue:Boolean) => isInit = initValue
       }
     }
+  }
+
+  def assignState(s:MachineState.Value) {
+    if ( instanceId==null )
+      instanceId = "i-" + new Random().nextInt(5000)
+    machineState = s
   }
 
   def setServerRunningWithDelay(state: MachineState.Value, delay: Int) {
@@ -81,4 +95,11 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
     }
   }
 
+  def setInitWithDelay(init:Boolean, delay:Int) {
+    val mainActor = self
+    actor {
+      Thread.sleep(delay * 1000)
+      mainActor ! ("init",init)
+    }
+  }
 }

@@ -1,23 +1,11 @@
 package com.lasic.interpreter
 
+import actors._
 import com.lasic.model.{NodeInstance, LasicProgram}
 import com.lasic.{Cloud, VM}
-import se.scalablesolutions.akka.actor.Actor
+import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud.LaunchConfiguration
-
-object NodeCommand extends Enumeration {
-      type WeekDay = Value
-      val Launch, RunScripts = Value
-    }
-
-    import NodeCommand._
-
-class NodeActor extends Actor {
-  def receive = {
-    case "test" => println("test")
-    case _ => println("something else")
-  }
-}
+import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 
 
 //class NodeActor(cloud:Cloud, node:NodeInstance) extends Actor {
@@ -35,7 +23,93 @@ class NodeActor extends Actor {
 //}
 
 
+object DeployState extends Enumeration {
+  type DeployState = Value
+  val Start, CreatingVMs, Finished = Value
+}
 
+object DeployCommand extends Enumeration {
+  type DeployCommand = Value
+  val Go, DeployStateQ = Value
+}
+
+
+
+class NodeTracker(val actor:ActorRef, val node:NodeInstance) {
+  var _instanceID:String = null
+  def instanceID:String = {
+    if ( _instanceID==null ) {
+      val x:Option[Nothing] = actor !! QueryID
+      val y:String = x.get
+      if ( y!=null )
+        _instanceID = y.toString
+    }
+    _instanceID
+  }
+}
+
+
+class DeployVerb(cloud: Cloud, program: LasicProgram) {
+  //  var deployState = Start
+  //
+  //  def receive = {
+  //    case (DeployStateQ, a:Actor) => a ! deployState
+  //    case Go => {
+  //      deployState match {
+  //        case Start => deploy()
+  //        case _ => // no state change
+  //      }
+  //    }
+  //    case x => println("What are you talking about? "+x)
+  //  }
+
+  def notBootedList(nodes:List[NodeTracker])= {
+    nodes.filter {
+      tuple =>
+        tuple.actor !! QueryNodeState match {
+          case Some(VMActorState.Booted) =>  false
+          case x => true
+        }
+    }
+  }
+
+  def vmIDs(nodes:List[NodeTracker])= {
+    nodes.map {
+      traker =>
+        val s:String = traker.instanceID
+        if ( s!=null )
+          s
+        else
+          "(id not assigned)"
+
+    }
+  }
+
+  def deploy() {
+    val nodes1 = program.find("//node[*][*]")
+    val nodes = nodes1.map {
+      _node =>
+        val node = _node.asInstanceOf[NodeInstance]
+        val actor = Actor.actorOf(new VMActor(cloud)).start
+        actor ! new Launch(new LaunchConfiguration(node))
+        new NodeTracker(actor,node)
+    }
+    var waiting = notBootedList(nodes)
+    while( !waiting.isEmpty ) {
+      val descriptions:List[String] = vmIDs(waiting);
+      println("Waiting for machines to boot: " + descriptions)
+      Thread.sleep(500)
+      waiting = notBootedList(nodes)
+    }
+    println("All booted!!!")
+    println(vmIDs(nodes))
+
+    //    val futureList = prog.find("//node[*][*]").map {x => setupNode(x.asInstanceOf[NodeInstance])}
+
+
+  }
+
+}
 //case class Deploy(program: LasicProgram)
 //
 //
