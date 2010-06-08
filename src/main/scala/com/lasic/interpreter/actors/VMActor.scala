@@ -6,81 +6,30 @@ import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.Actor
 import com.lasic.Cloud
+import VMActor._
 import java.io.File
 
-
-//object VMActor {
-  /**
-   * These are the FSM states held by the NodeActor
-   */
-  object VMActorState extends Enumeration {
-    type NodeStates = Value
-    val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, Configured = Value
-  }
-
-  /**
-   * These are commands, which cause state transitions, that can be sent to the NodeActor
-   */
-  case class NodeCommand()
-  case class Launch(lc:LaunchConfiguration) extends NodeCommand
-  case class SetVM(vm:VM) extends NodeCommand
-  case class QueryNodeState() extends NodeCommand
-  case class QueryID() extends NodeCommand
-  case class SetBootState(isInitialized:Boolean) extends NodeCommand
-  case class StopVMActor extends NodeCommand
-  case class RunSCP(scp:Map[String,String]) extends NodeCommand
-
-//}
-
-import VMActorState._
 /**
- * A private actor which performs all the blocking operations on a node.   A NodeActor delegates all blocking
- * operations to an instance of this actor -- enabling the NodeActor to 1) appear to complete all operations
- * asynchronously and 2) allow the NodeActor to be queried for status while long running (and blocking)
- * operations are occurring.
- */
-private class Sleeper extends Actor {
-
-  def receive = {
-
-    case ("checkBootState", vm: VM) => {
-      Thread.sleep(500);
-      self.reply(SetBootState(vm.isInitialized))
-    }
-
-    case ("createVM", lc: LaunchConfiguration, cloud: Cloud) => {
-      val vm = cloud.createVM(lc, true)
-      self.reply(SetVM(vm))
-    }
-
-    case ("scp", vm:VM, scp:Map[String,String]) => {
-      scp.foreach {
-        foo =>
-          vm.copyTo(new File(foo._1), foo._2)
-      }
-    }
-
-  }
-}
-
-/**
- * An Actor which is also a finite state machine for nodes in the cloud.   An instance of NodeActor represents
- * a specific NodeInstance and will perform asynchronous operations on that NodeInstance based on messages
- * sent to the Actor.   For this to operate correctly, it is important to clearly document and maintain the FSM.
- * The FSM is included in this source code distribution as XXX
+ * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents
+ * a specific VM (and corresponding machine in the cloud) and will perform asynchronous operations on that
+ * VM based on messages sent to the Actor.   For this to operate correctly, it is important to clearly document and
+ * maintain the FSM.  The FSM is included in this source code distribution as XXX
  */
 class VMActor(cloud: Cloud) extends Actor {
-//  object NodeCommand extends Enumeration {
-//    type WeekDay = Value
-//    val QueryNodeState, Launch, SetVM, SetBootState, RunScripts = Value
-//  }
 
+  /**Current state of the FSM */
   var nodeState = VMActorState.Blank
+
+  /**The VM we are manipulating **/
   var vm: VM = null
+
+  /**The actor which does all the blocking operations */
   var sleeper = actorOf[Sleeper].start
 
-
-  def handleQueryID: Unit = {
+  /**
+   * Send back a reply of the VM id, if there is one, otherwise null
+   */
+  def replyWithVMId {
     if (vm != null) {
       val id = vm.instanceId
       if (id != null)
@@ -90,58 +39,122 @@ class VMActor(cloud: Cloud) extends Actor {
     } else self.reply(null)
   }
 
-  def handleStopVMActor: Unit = {
-    sleeper.stop;
-    self.stop
-  }
 
-  def handleRunSCP(scp:Map[String,String])  {
-    nodeState match {
-      case Booted => {
-        nodeState = RunningSCP
-        sleeper ! ("scp", vm, scp)
+  /**
+   * Stop this actor and the sleeper actor from running.  This will unconditionally stop
+   * both actors regardless of their current state
+   */
+  def stopEverything { sleeper.stop; self.stop }
+  def startAsyncLaunch(lc: LaunchConfiguration) {  sleeper ! MsgSleeperCreateVM(lc,cloud) }
+  def startAsyncSCP(configData:ConfigureData) { sleeper ! MsgSleeperSCP(vm,configData) }
+  def startAsyncScripts(configData:ConfigureData) { sleeper ! MsgSleeperScripts(vm,configData) }
+  def startAsyncBootWait       { sleeper ! MsgSleeperBootWait(vm) }
 
+  /**
+   * The message receiver / dispatcher for this actor
+   */
+  def receive = { case x => respondToMessage(x) }
+
+  import VMActorState._
+  
+  /**
+   * This is the heart of the state machine -- the transitions from one state to another is accomplished here
+   * (and only here!).
+   */
+  private def respondToMessage(msg:Any) {
+    nodeState =
+      (nodeState,msg) match {
+        case (_,              MsgQueryID)               =>  { replyWithVMId;                  nodeState       }
+        case (_,              MsgQueryState)            =>  { self.reply(nodeState);          nodeState       }
+        case (_,              MsgStop)                  =>  { stopEverything;                 Froggy      }
+        case (Blank,          MsgLaunch(lc))            =>  { startAsyncLaunch(lc);           WaitingForVM    }
+        case (Booted,         MsgConfigure(config))     =>  { startAsyncSCP(config);          RunningSCP      }
+        case (RunningSCP,     MsgSCPCompleted(config))  =>  { startAsyncScripts(config);      RunningScripts  }
+        case (RunningScripts, MsgScriptsCompleted(x))   =>  {                                 Configured      }
+        case (WaitingForBoot, MsgSetBootState(false))   =>  { startAsyncBootWait;             WaitingForBoot  }
+        case (WaitingForBoot, MsgSetBootState(true))    =>  {                                 Booted          }
+        case (WaitingForVM,   MsgSetVM(avm))             =>  { vm=avm; startAsyncBootWait;  WaitingForBoot  }
+        case _                                          =>  {                                 nodeState       }
       }
-    }
   }
-  def receive = {
-//    case (Launch,x:LaunchConfiguration) => handleLaunch(x)
-    case Launch(lc)           => handleLaunch(lc)
-    case SetVM(vm)            => handleVM(vm)
-    case QueryNodeState       => self.reply(nodeState)
-    case SetBootState(booted) => handleWake(booted)
-    case QueryID              => handleQueryID
-    case StopVMActor          => handleStopVMActor
-    case RunSCP(lc)           => handleRunSCP(lc)
-    case _                    => println("something else")
+}
+
+/**
+ *  A VMActor is a
+ */
+object VMActor {
+  object VMActorState extends Enumeration {
+    type VMActorState = Value
+    val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
   }
 
-  def handleVM(x: VM) {
-    nodeState match {
-      case WaitingForVM => {vm = x; nodeState = WaitingForBoot; asyncCheckIfVMIsBooted}
-    }
-  }
+  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, String]])
 
-  def asyncCheckIfVMIsBooted {
-    sleeper ! ("checkBootState", vm)
-  }
+  /**
+   * These are public commands, which cause state transitions, that can be sent to the NodeActor as part
+   * of its public API
+   */
+  case class MsgConfigure(configData: ConfigureData)
+  case class MsgLaunch(lc: LaunchConfiguration)
+  case class MsgQueryState()
+  case class MsgQueryID()
+  case class MsgStop()
 
-  def handleWake(bootState: Boolean) = {
-    nodeState match {
-      case WaitingForBoot => {
-        if (bootState) nodeState = Booted
-        else asyncCheckIfVMIsBooted
+  // Messages involving the Sleeper
+
+  // Messages sent *TO* the sleeper
+  private case class MsgSleeperSCP(vm:VM, configureData: ConfigureData)
+  private case class MsgSleeperScripts(vm:VM, configureData: ConfigureData)
+  private case class MsgSleeperBootWait(vm: VM)
+  private case class MsgSleeperCreateVM(lc: LaunchConfiguration, cloud: Cloud)
+  private case class MsgSleeperStop
+
+  // Messages sent *FROM* the sleeper
+  private case class MsgSCPCompleted(val cd: ConfigureData)
+  private case class MsgScriptsCompleted(val cd: ConfigureData)
+  private case class MsgSetVM(vm: VM)
+  private case class MsgSetBootState(isInitialized: Boolean)
+
+
+  /**
+   *  A private actor which performs all the blocking operations on a node.   A NodeActor delegates all blocking
+   * operations to an instance of this actor -- enabling the NodeActor to 1) appear to complete all operations
+   * asynchronously and 2) allow the NodeActor to be queried for status while long running (and blocking)
+   * operations are occurring.
+   */
+  private class Sleeper extends Actor {
+    def receive = {
+      case MsgSleeperBootWait(vm) => {
+        Thread.sleep(500);
+        self.reply(MsgSetBootState(vm.isInitialized))
       }
+
+      case MsgSleeperCreateVM(lc, cloud) => {
+        val vm = cloud.createVM(lc, true)
+        self.reply(MsgSetVM(vm))
+      }
+
+      case MsgSleeperSCP(vm,configData) => {
+        configData.scp.foreach {
+          foo =>
+            vm.copyTo(new File(foo._1), foo._2)
+        }
+        self.reply(MsgSCPCompleted(configData))
+      }
+
+      case MsgSleeperScripts(vm,configData) => {
+        configData.scripts.foreach {
+          script =>
+            val scriptName = script._1
+            val argMap = script._2
+            vm.execute(scriptName)
+        }
+        self.reply(MsgScriptsCompleted(configData))
+      }
+
+      case MsgSleeperStop => self.stop
+
     }
   }
 
-  def handleLaunch(lc:LaunchConfiguration) = {
-    nodeState match {
-      case Blank => {
-        nodeState = WaitingForVM
-        sleeper ! ("createVM", lc, cloud)
-      }
-      case _ => // no state change
-    }
-  }
 }
