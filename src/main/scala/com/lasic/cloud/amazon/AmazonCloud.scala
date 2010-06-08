@@ -6,6 +6,8 @@ import java.lang.String
 import java.util.Iterator
 import java.util.{List => JList}
 import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
+import scala.collection.JavaConversions.asBuffer
+import com.lasic.cloud.MachineState._
 
 /**
  * User: Brian Pugh
@@ -45,16 +47,7 @@ class AmazonCloud extends Cloud {
   private def startVM(vm: VM) {
     val amazonLC = createLaunchConfiguration(vm.launchConfiguration)
     val rd: ReservationDescription = ec2.runInstances(amazonLC)
-
-    //todo: how do I cleanly deal with java collections?
-    //      val instances = List(rd.getInstances())
-    //      instances.foreach(desc => println(desc.getInstanceId()))
-
-    val iterator: Iterator[ReservationDescription#Instance] = rd.getInstances().iterator()
-    while (iterator.hasNext()) {
-      val instance: ReservationDescription#Instance = iterator.next
-      vm.instanceId = instance.getInstanceId
-    }
+    rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
   }
 
   private def createLaunchConfiguration(lasicLC: LaunchConfiguration): com.xerox.amazonws.ec2.LaunchConfiguration = {
@@ -97,8 +90,8 @@ class AmazonCloud extends Cloud {
     instances.get(0)
   }
 
-  def getState(vm: VM): MachineState.Value = {
-    MachineState.valueOf(getInstance(vm).getState).get
+  def getState(vm: VM): MachineState = {
+    MachineState.withName(getInstance(vm).getState)
   }
 
   def getPublicDns(vm: VM): String = {
