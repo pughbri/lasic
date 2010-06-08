@@ -2,6 +2,7 @@ package com.lasic.cloud.ssh
 
 import com.jcraft.jsch._
 import java.io._
+import com.lasic.util.Logging
 
 /**
  *
@@ -9,7 +10,7 @@ import java.io._
  * Date: May 13, 2010
  */
 
-class SshSession extends JSch {
+class SshSession extends JSch with Logging {
   private var isConnected: Boolean = false
 
   //TODO: something real with output handling
@@ -20,7 +21,6 @@ class SshSession extends JSch {
 
   def connect(dnsName: String, userName: String, pemFile: File): Unit = {
     if (isConnected) {
-      //logger.error("Attempted to connect to {} but this SSH session is already in use", dnsName)
       throw new ConnectException("Attempted to connect to " + dnsName + " but this SSH session is already in use")
     }
     try {
@@ -55,8 +55,7 @@ class SshSession extends JSch {
     }
     catch {
       case e: Exception => {
-        //logger.error("Error received trying to disconnect", e)
-        throw new RuntimeException(e)
+        throw new RuntimeException("Error received trying to disconnect", e)
       }
     }
     isConnected = false
@@ -65,7 +64,7 @@ class SshSession extends JSch {
 
   def sendFile(f: File, remoteFileName: String): Int = {
     try {
-      //logger.debug("Sending local file {} to remote machine as {}", f.getCanonicalFile, remoteFileName)
+      logger.debug("Sending local file {} to remote machine as {}", f.getCanonicalFile, remoteFileName)
       var fis: FileInputStream = null
       var command: String = "scp -p -t " + remoteFileName
       var channel: Channel = session.openChannel("exec")
@@ -74,8 +73,7 @@ class SshSession extends JSch {
       var in: InputStream = channel.getInputStream
       channel.connect
       if (checkAck(in) != 0) {
-        //        logger.warn("checkAck returned non-zero")
-        throw new RuntimeException("Send file failed")
+        throw new RuntimeException("Send file failed: checkAck returned non-zero")
       }
       var filesize: Long = f.length
       command = "C0644 " + filesize + " " + f.getName
@@ -83,7 +81,7 @@ class SshSession extends JSch {
       out.write(command.getBytes)
       out.flush
       if (checkAck(in) != 0) {
-        throw new RuntimeException
+        throw new RuntimeException("Send file failed: checkAck returned non-zero")
       }
       fis = new FileInputStream(f)
       var buf = new Array[Byte](1024)
@@ -111,8 +109,7 @@ class SshSession extends JSch {
     }
     catch {
       case e: Exception => {
-        //logger.error("Error received while sending file", e)
-        throw new RuntimeException(e)
+        throw new RuntimeException("Error received while sending file", e)
       }
     }
   }
@@ -132,13 +129,10 @@ class SshSession extends JSch {
     }
     catch {
       case e: JSchException => {
-        // logger.error("Error received while sending command", e)
-        throw new RuntimeException(e)
+        throw new RuntimeException("Error received while sending command", e)
       }
       case e: IOException => {
-        //logger.error("Error received while sending command", e)
-        e.printStackTrace
-        throw new RuntimeException(e)
+        throw new RuntimeException("Error received while sending command", e)
       }
     }
   }
@@ -169,8 +163,7 @@ class SshSession extends JSch {
         }
         catch {
           case e: Exception => {
-            println("error during readAllStdErrOutput ")
-            e.printStackTrace
+            logger.error("error during readAllStdErrOutput", e)
           }
         }
       }
@@ -181,7 +174,7 @@ class SshSession extends JSch {
     }
     catch {
       case e: InterruptedException => {
-        e.printStackTrace
+        logger.error("error during readAllStdErrOutput",e)
       }
     }
     output.flush
@@ -212,8 +205,7 @@ class SshSession extends JSch {
     }
     catch {
       case e: Exception => {
-        //        logger.error("Error received during checkAck (sending file)", e)
-        throw new RuntimeException(e)
+        throw new RuntimeException("Error received during checkAck (sending file)", e)
       }
     }
   }

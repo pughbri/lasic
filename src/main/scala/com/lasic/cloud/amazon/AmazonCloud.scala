@@ -8,13 +8,14 @@ import java.util.{List => JList}
 import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
 import scala.collection.JavaConversions.asBuffer
 import com.lasic.cloud.MachineState._
+import com.lasic.util.Logging
 
 /**
- * User: Brian Pugh
+ * @author Brian Pugh
  * Date: May 10, 2010
  */
 
-class AmazonCloud extends Cloud {
+class AmazonCloud extends Cloud with Logging {
   lazy val ec2: Jec2 = {
     val (key, secret) = ec2Keys
     new Jec2(key, secret);
@@ -61,13 +62,13 @@ class AmazonCloud extends Cloud {
   }
 
   def reboot(vms: List[VM]) {
-    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
-    println(vm.launchConfiguration)
+//    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
+//   logger.info(vm.launchConfiguration)
   }
 
   def terminate(vms: List[VM]) {
     vms.foreach(vm => {
-      println("termination " + vm.instanceId)
+      logger.info("terminating " + vm.instanceId)
       var instances = new java.util.ArrayList[String]
       instances.add(vm.instanceId)
       ec2.terminateInstances(instances)
