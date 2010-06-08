@@ -45,7 +45,6 @@ class AmazonCloud extends Cloud {
   private def startVM(vm: VM) {
     val amazonLC = createLaunchConfiguration(vm.launchConfiguration)
     val rd: ReservationDescription = ec2.runInstances(amazonLC)
-    println(rd.getReservationId())
 
     //todo: how do I cleanly deal with java collections?
     //      val instances = List(rd.getInstances())
@@ -55,7 +54,6 @@ class AmazonCloud extends Cloud {
     while (iterator.hasNext()) {
       val instance: ReservationDescription#Instance = iterator.next
       vm.instanceId = instance.getInstanceId
-      println(vm.instanceId)
     }
   }
 

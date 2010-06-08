@@ -157,4 +157,6 @@ trait VM {
     }
   }
 
+
+  override def toString = if (instanceId != null) instanceId else "unknown vm id"
 }

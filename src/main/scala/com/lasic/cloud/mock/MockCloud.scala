@@ -6,13 +6,14 @@ import com.lasic.{VM, Cloud}
 import java.lang.String
 import java.util.{Random, Calendar}
 import com.lasic.cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
+import com.lasic.util.Logging
 
 /**
  * User: Brian Pugh
  * Date: May 10, 2010
  */
 
-class MockCloud(startupDelay: Int) extends Cloud {
+class MockCloud(startupDelay: Int) extends Cloud with Logging {
   def this() = this (2);
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
@@ -22,12 +23,12 @@ class MockCloud(startupDelay: Int) extends Cloud {
   def start(vms: List[VM]) {
     vms.foreach(vm => {
       vm match {
-        case mvm: MockVM => {
+        case mvm: MockVM => {          
           mvm ! mvm.StateChange(MachineState.Pending, 0)
           mvm ! mvm.StateChange(MachineState.Running, startupDelay)
           mvm ! ("init",true,startupDelay)
         }
-        case _ => println("starting vm " + vm)
+        case _ => logger.info("starting vm " + vm)
       }
     })
   }
@@ -45,7 +46,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
           mvm ! mvm.StateChange(MachineState.Pending, 0)
           mvm ! mvm.StateChange(MachineState.Running, startupDelay)
         }
-        case _ => println("rebooting vm " + vm)
+        case _ => logger.info("rebooting vm " + vm)
       }
     })
   }
@@ -57,7 +58,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
           mvm ! mvm.StateChange(MachineState.ShuttingDown, 0)
           mvm ! mvm.StateChange(MachineState.Terminated, 0)
         }
-        case _ => println("shutting down vm " + vm)
+        case _ => logger.info("shutting down vm " + vm)
       }
     })
   }
@@ -82,7 +83,7 @@ class MockCloud(startupDelay: Int) extends Cloud {
 
 
   def deleteVolume(volumeId: String) = {
-    println("deleted volume " + volumeId)
+    logger.info("deleted volume " + volumeId)
   }
 
   def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
@@ -95,12 +96,12 @@ class MockCloud(startupDelay: Int) extends Cloud {
   }
 
   def associateAddress(vm: VM, ip: String) {
-    println("associate ip [" + ip + "] with instance [" + vm.instanceId + "]")
+    logger.info("associate ip [" + ip + "] with instance [" + vm.instanceId + "]")
   }
 
 
   def disassociateAddress(ip: String) = {
-    println("disassociate ip [" + ip + "]")
+    logger.info("disassociate ip [" + ip + "]")
 
   }
 
@@ -111,6 +112,6 @@ class MockCloud(startupDelay: Int) extends Cloud {
 
 
   def releaseAddress(ip: String) = {
-    println("release ip [" + ip + "]")
+    logger.info("release ip [" + ip + "]")
   }
 }
