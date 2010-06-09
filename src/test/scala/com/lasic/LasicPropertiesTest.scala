@@ -48,7 +48,7 @@ class LasicPropertiesTest extends TestCase("MockCloudTest") {
 
 
   def testResolveProperty() = {
-    val property: String = LasicProperties.resolveProperty("${this} string has ${two} variables in ${it}")
+    val property: String = LasicProperties.resolveProperty("${this} string${unknown_variable_should_dissappear} has ${two} variables in ${it}")
     assert(property == "my string has 2 variables in itself", "got: " + property)
   }
 

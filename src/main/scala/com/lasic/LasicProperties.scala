@@ -1,13 +1,14 @@
 package com.lasic
 
 import java.lang.String
+import util.Logging
 
 /**
  * User: pughbc
  * Date: May 12, 2010
  */
 //TODO: is there a scala thing out there like groovy ConfigurationHolder
-object LasicProperties {
+object LasicProperties extends Logging {
 
     /** The name of the System properties that specifies the name of the properties file**/
   val SYSTEM_PROPERTY_FOR_FILENAME = "properties.file"
@@ -42,7 +43,12 @@ object LasicProperties {
 
     for(x:String <- regex findAllIn text) {
       val target = x.substring(2,x.length-1)
-      val propValue = getProperty(target)
+      var propValue = getProperty(target)
+      if (propValue == null) {
+        logger.warn("property " + target + " is not set")
+        propValue = ""
+      }
+
       result = result.replaceAll("\\$\\{"+target+"\\}",propValue)
     }
     result;

@@ -18,7 +18,7 @@ system  "sys" {
 		scripts {
 			"some_script": {}
 			"another": {
-				foo:"bar"
+				foo:"bar${number}"				
 			}
 		}
 
