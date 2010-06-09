@@ -1,0 +1,12 @@
+/* Tests system variable substitution */
+system  "sys1" {
+    node "node1" {
+      	scripts {
+			"some_script": {}
+			"another": {
+				foo:"bar"
+			}
+		}
+    }
+
+}
