@@ -2,8 +2,6 @@ package com.lasic.parser
 
 import ast.{ASTNode, ASTSystem}
 import collection.mutable.ListBuffer
-import scala.util.matching.Regex
-import org.apache.commons.io.IOUtils
 import com.lasic.model._
 import io.Source
 
@@ -18,15 +16,33 @@ import io.Source
 object LasicCompiler {
   var blockComment = """(/\*([^*]|(\*+[^*/]))*\*+/)|(//.*)""".r
 
-  private def stripComments(s:String) = {
+  private def stripComments(s: String) = {
     blockComment.replaceAllIn(s, " ")
   }
-  
-  private def createInstances(nodeGroup: NodeGroup) = {
+
+  private def createVolumeInstances(nodeInstance: NodeInstance, volumeProperties: Map[String, String]) = {
+    val device = {
+      if (volumeProperties.contains("device")) volumeProperties("device") else null
+    }
+    val mount = {
+      if (volumeProperties.contains("mount")) volumeProperties("mount") else null
+    }
+
+    val volumeInstance = new VolumeInstance(nodeInstance,
+      volumeProperties("name"),
+      volumeProperties("size"),
+      device,
+      mount)
+    
+    nodeInstance.volumes = volumeInstance :: nodeInstance.volumes
+  }
+
+  private def createInstances(nodeGroup: NodeGroup, ast: ASTNode) = {
     // Create all the instances
     val lb = new ListBuffer[NodeInstance]()
     for (i <- 0 until nodeGroup.count) {
       val nodeInstance = new NodeInstance(nodeGroup, i)
+      ast.volumes.foreach(volume => createVolumeInstances(nodeInstance, Map.empty ++ volume))
       lb += nodeInstance
     }
     nodeGroup.instances = lb.toList
@@ -49,7 +65,7 @@ object LasicCompiler {
       systemInstance =>
         systemInstance.nodegroups = ast.nodes.toList.map {
           case node =>
-            val nodeGroup:NodeGroup = compile(node);
+            val nodeGroup: NodeGroup = compile(node);
             nodeGroup.parentSystemInstance = systemInstance
             nodeGroup
         }
@@ -58,18 +74,19 @@ object LasicCompiler {
 
   private def createSubsystems(ast: ASTSystem, sysGroup: SystemGroup) = {
     sysGroup.instances.foreach {
-      instance:SystemInstance =>
+      instance: SystemInstance =>
         instance.subsystems = ast.subsystems.toList.map {
-          subsys:ASTSystem => compile(subsys, instance)
+          subsys: ASTSystem => compile(subsys, instance)
         }
     }
   }
 
-  def compile(program:Source):LasicProgram = {
+  def compile(program: Source): LasicProgram = {
     val b = new StringBuilder
-    program.addString(b,"","","")
+    program.addString(b, "", "", "")
     compile(b.toString)
   }
+
   def compile(program: String): LasicProgram = {
     val reducedProgram = stripComments(program)
     val p = new LasicParser()
@@ -79,14 +96,14 @@ object LasicCompiler {
     }
   }
 
-  private def compile(ast:ASTSystem):LasicProgram = {
+  private def compile(ast: ASTSystem): LasicProgram = {
     val lp = new LasicProgram
-    val rootSystem = compile(ast,lp)
+    val rootSystem = compile(ast, lp)
     lp.rootGroup = rootSystem
     lp
   }
 
-  private def compile(ast: ASTSystem, parent:Pathable): SystemGroup = {
+  private def compile(ast: ASTSystem, parent: Pathable): SystemGroup = {
     // Create the group
     val sysGroup = new SystemGroup(parent)
     sysGroup.name = ast.name
@@ -125,10 +142,9 @@ object LasicCompiler {
     nodeGroup.instancetype = ast.instancetype
     nodeGroup.scpMap = ast.scpMap
     nodeGroup.scriptMap = ast.scriptMap
-    nodeGroup.volumeMap = ast.volumeMap
 
 
-    createInstances(nodeGroup)
+    createInstances(nodeGroup, ast)
     nodeGroup
 
 

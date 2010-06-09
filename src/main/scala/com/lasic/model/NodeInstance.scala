@@ -9,8 +9,9 @@ package com.lasic.model
  */
 
 class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable {
+  var volumes:List[VolumeInstance] = List()
   def parent = parentGroup
   def path = { parentGroup.name + "[%d]".format(idx) }
-  def children = List()
+  def children = volumes
 
 }

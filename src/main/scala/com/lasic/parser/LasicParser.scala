@@ -47,7 +47,7 @@ class LasicParser extends JavaTokenParsers {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
           case astScp: ASTScp => sys.scpMap = astScp.scpMap
           case astScript: ASTScript => sys.scriptMap = astScript.scpMap
-          case astVolume: ASTVolume => sys.volumeMap = astVolume.params
+          case astVolume: ASTVolume => sys.volumes= astVolume.params :: sys.volumes 
           case _ =>
         }
     }
@@ -158,10 +158,10 @@ class LasicParser extends JavaTokenParsers {
 
   def scp_line = aString ~ ":" ~ aString ^^ {case from ~ _ ~ to => (from -> to)}
 
-  def volume = "volume" ~ lbrace ~ volume_body ~ rbrace ^^ {
-    case _ ~ _ ~ vol_body ~ _ =>
+  def volume = "volume" ~ aString ~ lbrace ~ volume_body ~ rbrace ^^ {
+    case _ ~ name ~ _ ~ vol_body ~ _ =>
       val astVolume = new ASTVolume
-      astVolume.params = vol_body
+      astVolume.params = vol_body += ("name" -> name)      
       astVolume
   }
 
