@@ -10,9 +10,7 @@ package com.lasic.model
 
 trait Pathable {
   def path: String
-
   def parent: Pathable
-
   def children: List[Pathable]
 
   def root:LasicProgram = {

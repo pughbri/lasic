@@ -1,6 +1,6 @@
 package com.lasic.parser.ast
 
-import scala.collection.mutable._
+import com.lasic.model.ScriptArgument
 
 trait NodeProperties {
   var name                    = ""
@@ -13,7 +13,7 @@ trait NodeProperties {
   var user: String            = null
   var instancetype: String    = null
   var scpMap                  = Map[String,String]()
-  var scriptMap               = Map[String,Map[String,String]]()
+  var scriptMap               = Map[String,Map[String,ScriptArgument]]()
   var volumes                 = List[Map[String,String]]()
 
 }

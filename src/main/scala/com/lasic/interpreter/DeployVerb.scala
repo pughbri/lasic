@@ -105,17 +105,18 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb {
   private def startAsyncNodeConfigure {
     nodeTrackers.foreach {
       tracker =>
-        val scp = Map.empty ++ tracker.node.parent.scpMap
-        val x = tracker.node.parent.scriptMap
-        val theList = x.map {
-          tuple =>
-            val key = tuple._1
-            val value = Map.empty ++ tuple._2
-            (key,value)
-        }
-        val scripts = Map.empty ++ theList
-        //val scripts = Map.empty ++ tracker.node.parent.scriptMap
-        val configData = new ConfigureData(scp,scripts)
+//        val scp = Map.empty ++ tracker.node.parent.scpMap
+//        val x = tracker.node.parent.scriptMap
+//        val theList = x.map {
+//          tuple =>
+//            val key = tuple._1
+//            val value = Map.empty ++ tuple._2
+//            (key,value)
+//        }
+//        val scripts = Map.empty ++ theList
+//        //val scripts = Map.empty ++ tracker.node.parent.scriptMap
+//        val configData = new ConfigureData(scp,scripts)
+        val configData = new ConfigureData(tracker.node.parent.scpMap, tracker.node.parent.scriptMap)
         tracker.actor ! MsgConfigure(configData)
     }
   }

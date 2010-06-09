@@ -1,8 +1,10 @@
 package com.lasic
 
 import junit.framework._
-import model.{SystemInstance}
-import parser.{LasicCompiler};
+import model.{PathScriptArgument, LiteralScriptArgument, NodeInstance, SystemInstance}
+import parser.ast.ASTSystem
+import parser.{LasicParser, LasicCompiler}
+
 import org.apache.commons.io.IOUtils
 
 /**
@@ -32,6 +34,25 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val program = getLasicProgram(1);
   }
 
+  def testPathAsScriptArgument() {
+//
+//    val p = new LasicParser()
+//    p.parseAll(p.path, "/system['foo']/node['bar'][0]") match {
+//      case x =>
+//        println(x)
+//    }
+//
+    val program = getLasicProgram(7);
+    val node = program.find(("//node[*][*]"))(0).asInstanceOf[NodeInstance]
+    val scripts = node.parent.scriptMap
+    val args = scripts("another")
+    assertEquals( 2, args.size)
+    assertEquals( true, args("foo").isInstanceOf[LiteralScriptArgument])
+    assertEquals( true, args("foo2").isInstanceOf[PathScriptArgument])
+    val s:String = args("foo2").literal
+    assertEquals( "/system['sys1']/node['node1'][0]", s );
+
+  }
   /**
    * Ensure that an empty program, but with repeated "arity" produces objects
    */

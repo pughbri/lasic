@@ -1,14 +1,13 @@
 package com.lasic.interpreter.actors
 
+import com.lasic.model.{NodeInstance, LasicProgram}
 import com.lasic.{Cloud, VM}
 import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.Actor
 import com.lasic.Cloud
-import VMActor._
+import VolumeActor._
 import java.io.File
-import com.lasic.util.Logging
-import com.lasic.model.{ScriptArgument, NodeInstance, LasicProgram}
 
 /**
  * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents
@@ -16,7 +15,7 @@ import com.lasic.model.{ScriptArgument, NodeInstance, LasicProgram}
  * VM based on messages sent to the Actor.   For this to operate correctly, it is important to clearly document and
  * maintain the FSM.  The FSM is included in this source code distribution as XXX
  */
-class VMActor(cloud: Cloud) extends Actor with Logging {
+class VolumeActor(cloud: Cloud) extends Actor {
 
   /**Current state of the FSM */
   var nodeState = VMActorState.Blank
@@ -83,13 +82,13 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
 /**
  *  A VMActor is a
  */
-object VMActor {
+object VolumeActor {
   object VMActorState extends Enumeration {
     type VMActorState = Value
     val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
   }
 
-  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, ScriptArgument]])
+  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, String]])
 
   /**
    * These are public commands, which cause state transitions, that can be sent to the NodeActor as part

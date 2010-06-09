@@ -4,6 +4,7 @@ import ast._
 import util.parsing.combinator.JavaTokenParsers
 import scala.collection.mutable._
 import com.lasic.LasicProperties
+import com.lasic.model.{ScriptArgument, PathScriptArgument, LiteralScriptArgument}
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,9 +46,15 @@ class LasicParser extends JavaTokenParsers {
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
-          case astScp: ASTScp => sys.scpMap = astScp.scpMap
-          case astScript: ASTScript => sys.scriptMap = astScript.scpMap
-          case astVolume: ASTVolume => sys.volumes= astVolume.params :: sys.volumes 
+          case astScp: ASTScp => sys.scpMap = scala.collection.Map.empty ++ astScp.scpMap
+          case astScript: ASTScript =>
+              sys.scriptMap = scala.collection.Map.empty ++ astScript.scpMap.map {
+                tuple =>  (tuple._1, scala.collection.Map.empty ++ tuple._2 )
+
+              }
+          case astVolume: ASTVolume =>
+              val immutableMap = scala.collection.Map.empty ++ astVolume.params
+              sys.volumes= immutableMap :: sys.volumes 
           case _ =>
         }
     }
@@ -138,14 +145,26 @@ class LasicParser extends JavaTokenParsers {
 
   def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace ^^ {
     case name ~ _ ~ _ ~ arg_list ~ _ =>
-      val argMap = Map() ++ arg_list
+      val argMap = Map[String,ScriptArgument]() ++ arg_list
       (name -> argMap)
   }
 
-  def script_param = ident ~ ":" ~ aString ^^ {
+  def script_param:Parser[Tuple2[String,ScriptArgument]] = script_param_literal | script_param_path
+
+  def script_param_literal = ident ~ ":" ~ aString ^^ {
     case from ~ _ ~ to =>
-      (from -> to)
+      (from -> new LiteralScriptArgument(to))
   }
+
+  def path:Parser[String] = """/(((system|node)\['[a-zA-Z0-9 -_]+'\](\[[0-9]+\])?)|/)*""".r
+//  def path:Parser[String] = """/((system\['[a-zA-Z0-9 -_]+'\])|/)*""".r
+
+  def script_param_path = ident ~ ":" ~ path ^^ {
+    case from ~ _ ~ to =>
+      (from -> new PathScriptArgument(to))
+  }
+
+
 
   def scp = "scp" ~ lbrace ~ scp_body ~ rbrace ^^ {
     case _ ~ _ ~ list_body ~ _ =>
