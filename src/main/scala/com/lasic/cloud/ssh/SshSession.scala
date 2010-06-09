@@ -36,11 +36,20 @@ class SshSession extends JSch with Logging {
       }
 
       session.connect
-      isConnected = true      
+      isConnected = true
     }
     catch {
       case e: JSchException => {
-        new ConnectException(e)
+        e.getMessage match {
+          case "Auth fail" => throw new AuthFailureException("Authentication failed.  Please check your credentials:  Username ["
+                  + userName + "] Host [" + dnsName + "] key [" + pemFile.getAbsolutePath + "]", e)
+          case _ =>
+        }
+
+        e.getCause match {
+          case e: FileNotFoundException => throw new AuthFailureException("Authentication failed.  Key file not found", e)
+          case _ => throw new ConnectException(e.getMessage, e)
+        }
       }
     }
   }
@@ -63,6 +72,7 @@ class SshSession extends JSch with Logging {
 
 
   def sendFile(f: File, remoteFileName: String): Int = {
+    require(isConnected, "connect must be called before session can be used")
     try {
       logger.debug("Sending local file {} to remote machine as {}", f.getCanonicalFile, remoteFileName)
       var fis: FileInputStream = null
@@ -174,7 +184,7 @@ class SshSession extends JSch with Logging {
     }
     catch {
       case e: InterruptedException => {
-        logger.error("error during readAllStdErrOutput",e)
+        logger.error("error during readAllStdErrOutput", e)
       }
     }
     output.flush

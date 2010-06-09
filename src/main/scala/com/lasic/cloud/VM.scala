@@ -1,17 +1,18 @@
 package com.lasic
 
-import cloud.ssh.{ConnectException, SshSession}
+import cloud.ssh.{AuthFailureException, ConnectException, SshSession}
 import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 import java.io.File
 import java.lang.String
 import com.lasic.cloud.MachineState._
+import util.Logging
 
 /**
  * User: Brian Pugh
  * Date: May 10, 2010
  */
 
-trait VM {
+trait VM extends Logging {
   protected val cloud: Cloud
   protected var sshUp: Boolean = false
 
@@ -91,8 +92,16 @@ trait VM {
         true
       }
       catch {
+        case e: AuthFailureException => {
+          //there seems to be a very short period of time when you get an auth failure
+          //because things aren't entirely initialized.  Give it one more shot to validate that this
+          //really is an authentication issue, not just a connection issue
+          logger.warn("isInitialized got an authentication failure.  Giving it one more shot with 10 second timeout to ensure this really is an authentication issue")
+          connect(session, 10)
+          true
+        }
         case e: IllegalStateException => false
-        case e: ConnectException => false
+        case e: ConnectException => {logger.debug("VM in valid state, but not initialized: ", e); false}
         case t: Throwable => throw t
       }
       finally {
@@ -138,6 +147,8 @@ trait VM {
 
     var connected = false
     val startTime = System.currentTimeMillis
+
+
     while (!connected) {
       try {
         session.connect(getPublicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
@@ -147,12 +158,17 @@ trait VM {
       catch {
         //many times the VM hasn't quite started the ssh daemon even though it is up.  Give it a few tries with a
         //delay between each try
-        case e: ConnectException => {
-          if (System.currentTimeMillis - startTime > (timeout * 1000)) {
-            throw e
-          }
-          Thread.sleep(1000)
+        case e: ConnectException => retryWithDelay(e)
+        case e: AuthFailureException => retryWithDelay(e)
+      }
+    }
+
+    def retryWithDelay(e: Exception): Unit = {
+      {
+        if (System.currentTimeMillis - startTime > (timeout * 1000)) {
+          throw e
         }
+        Thread.sleep(1000)
       }
     }
   }

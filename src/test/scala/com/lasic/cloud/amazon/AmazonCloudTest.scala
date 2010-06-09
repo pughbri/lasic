@@ -38,6 +38,10 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
     }
 
     def testCopyTo(vm: VM) = {
+      while (!vm.isInitialized) {
+         Thread.sleep(2000)
+      }
+
       val sourceFileURL = classOf[Application].getResource("/lasic2.properties")
       val sourceFile: File = new File(sourceFileURL.toURI)
       vm.copyTo(sourceFile, "/tmp/test.txt")
