@@ -18,12 +18,30 @@ trait Pathable {
     else parent.root
   }
 
-  def find(path: String) = {
-    everything.filter{ thing => thing.matches(path)}
+  def find(path: String):List[Pathable] = {
+    if ( path.startsWith("/") && this!=root )
+      root.find(path)
+    else {
+      val x = everything
+      val y = x.filter{
+        thing =>
+          thing.matches(path)
+      }
+      y
+
+    }
+
 //    path match {
 //      case "//node[*][*]" => allNodeInstances(root)
 //      case _ => List()
 //    }
+  }
+
+  def findNodes(path:String):List[NodeInstance] = {
+    val a = find(path)
+    val b = a.filter{ z=> z.isInstanceOf[NodeInstance] }
+    val c= b.map{ _.asInstanceOf[NodeInstance]}
+    c
   }
 
   def matches(path:String) = {
@@ -32,7 +50,10 @@ trait Pathable {
       case ("//node[*]", thing:NodeGroup) => true
       case ("//system[*][*]", thing:SystemInstance) => true
       case ("//system[*]", thing:SystemGroup) => true
-      case (path,thing) => path==thing.path
+      case (path,thing) => {
+        val mypath = thing.path
+        path.equals(mypath)
+      }
     }
   }
   

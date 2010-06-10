@@ -24,6 +24,9 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   /**The VM we are manipulating **/
   var vm: VM = null
 
+  /** The private DNS of the VM we are manipulating */
+  var privateDNS:String = null
+
   /**The actor which does all the blocking operations */
   var sleeper = actorOf[Sleeper].start
 
@@ -65,17 +68,18 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   private def respondToMessage(msg:Any) {
     nodeState =
       (nodeState,msg) match {
-        case (_,              MsgQueryID)               =>  { replyWithVMId;                  nodeState       }
-        case (_,              MsgQueryState)            =>  { self.reply(nodeState);          nodeState       }
-        case (_,              MsgStop)                  =>  { stopEverything;                 Froggy      }
-        case (Blank,          MsgLaunch(lc))            =>  { startAsyncLaunch(lc);           WaitingForVM    }
-        case (Booted,         MsgConfigure(config))     =>  { startAsyncSCP(config);          RunningSCP      }
-        case (RunningSCP,     MsgSCPCompleted(config))  =>  { startAsyncScripts(config);      RunningScripts  }
-        case (RunningScripts, MsgScriptsCompleted(x))   =>  {                                 Configured      }
-        case (WaitingForBoot, MsgSetBootState(false))   =>  { startAsyncBootWait;             WaitingForBoot  }
-        case (WaitingForBoot, MsgSetBootState(true))    =>  {                                 Booted          }
-        case (WaitingForVM,   MsgSetVM(avm))             =>  { vm=avm; startAsyncBootWait;  WaitingForBoot  }
-        case _                                          =>  {                                 nodeState       }
+        case (_,              MsgQueryID)               =>  { replyWithVMId;                              nodeState       }
+        case (_,              MsgQueryState)            =>  { self.reply(nodeState);                      nodeState       }
+        case (_,              MsgQueryPrivateDNS)       =>  { self.reply(privateDNS);                     nodeState       }
+        case (_,              MsgStop)                  =>  { stopEverything;                             Froggy          }
+        case (Blank,          MsgLaunch(lc))            =>  { startAsyncLaunch(lc);                       WaitingForVM    }
+        case (Booted,         MsgConfigure(config))     =>  { startAsyncSCP(config);                      RunningSCP      }
+        case (RunningSCP,     MsgSCPCompleted(config))  =>  { startAsyncScripts(config);                  RunningScripts  }
+        case (RunningScripts, MsgScriptsCompleted(x))   =>  {                                             Configured      }
+        case (WaitingForBoot, MsgSetBootState(false))   =>  { startAsyncBootWait;                         WaitingForBoot  }
+        case (WaitingForBoot, MsgSetBootState(true))    =>  {                                             Booted          }
+        case (WaitingForVM,   MsgSetVM(avm,dns))        =>  { vm=avm; privateDNS=dns; startAsyncBootWait; WaitingForBoot  }
+        case _                                          =>  {                                             nodeState       }
       }
   }
 }
@@ -89,7 +93,7 @@ object VMActor {
     val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
   }
 
-  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, ScriptArgument]])
+  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, List[String]]])
 
   /**
    * These are public commands, which cause state transitions, that can be sent to the NodeActor as part
@@ -99,6 +103,8 @@ object VMActor {
   case class MsgLaunch(lc: LaunchConfiguration)
   case class MsgQueryState()
   case class MsgQueryID()
+  case class MsgQueryPrivateDNS()
+//  case class MsgQueryVM()
   case class MsgStop()
 
   // Messages involving the Sleeper
@@ -113,7 +119,7 @@ object VMActor {
   // Messages sent *FROM* the sleeper
   private case class MsgSCPCompleted(val cd: ConfigureData)
   private case class MsgScriptsCompleted(val cd: ConfigureData)
-  private case class MsgSetVM(vm: VM)
+  private case class MsgSetVM(vm: VM, privateDNS:String)
   private case class MsgSetBootState(isInitialized: Boolean)
 
 
@@ -132,7 +138,8 @@ object VMActor {
 
       case MsgSleeperCreateVM(lc, cloud) => {
         val vm = cloud.createVM(lc, true)
-        self.reply(MsgSetVM(vm))
+        val dns = vm.getPrivateDns
+        self.reply(MsgSetVM(vm,dns))
       }
 
       case MsgSleeperSCP(vm,configData) => {

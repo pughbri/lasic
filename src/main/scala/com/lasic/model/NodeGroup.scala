@@ -15,7 +15,7 @@ class NodeGroup extends NodeProperties with Pathable {
   var instances:List[NodeInstance] = List()
 
   def parent = parentSystemInstance
-  def path = { parent.path +"/" + name}
+  def path = { parent.path +"/node['" + name+"']" }
   def children = instances
 
   override def toString = this.getClass().getSimpleName() + ": " + name + children.mkString(", ")

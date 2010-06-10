@@ -35,13 +35,6 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   }
 
   def testPathAsScriptArgument() {
-//
-//    val p = new LasicParser()
-//    p.parseAll(p.path, "/system['foo']/node['bar'][0]") match {
-//      case x =>
-//        println(x)
-//    }
-//
     val program = getLasicProgram(7);
     val node = program.find(("//node[*][*]"))(0).asInstanceOf[NodeInstance]
     val scripts = node.parent.scriptMap
