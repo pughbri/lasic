@@ -1,7 +1,7 @@
 package com.lasic
 
 import junit.framework._
-import model.{PathScriptArgument, LiteralScriptArgument, NodeInstance, SystemInstance}
+import model.{PathScriptArgumentValue, LiteralScriptArgumentValue, NodeInstance, SystemInstance}
 import parser.ast.ASTSystem
 import parser.{LasicParser, LasicCompiler}
 
@@ -40,8 +40,8 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val scripts = node.parent.scriptMap
     val args = scripts("another")
     assertEquals( 2, args.size)
-    assertEquals( true, args("foo").isInstanceOf[LiteralScriptArgument])
-    assertEquals( true, args("foo2").isInstanceOf[PathScriptArgument])
+    assertEquals( true, args("foo").isInstanceOf[LiteralScriptArgumentValue])
+    assertEquals( true, args("foo2").isInstanceOf[PathScriptArgumentValue])
     val s:String = args("foo2").literal
     assertEquals( "/system['sys1']/node['node1'][0]", s );
 

@@ -42,12 +42,12 @@ private class NodeTracker(val actor: ActorRef, val node: NodeInstance) {
 
   }
 
-  def resolveScriptArguments(args: Map[String, ScriptArgument]): Map[String, List[String]] = {
+  def resolveScriptArguments(args: Map[String, ScriptArgumentValue]): Map[String, List[String]] = {
     Map.empty ++ args.map {
-      argTuple: Tuple2[String, ScriptArgument] =>
+      argTuple: Tuple2[String, ScriptArgumentValue] =>
         val values: List[String] = argTuple._2 match {
-          case x: LiteralScriptArgument => List(x.literal)
-          case x: PathScriptArgument => {
+          case x: LiteralScriptArgumentValue => List(x.literal)
+          case x: PathScriptArgumentValue => {
             val a = x.literal
             val b = node.findNodes(a)
             val c = b.map { _.privateDNS }
