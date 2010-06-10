@@ -19,7 +19,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
   val sourceFile: File = new File(sourceFileURL.toURI)
   val remoteFile: String = "/some/path/and/file.txt"
 
-  class MockSshSession(numTimesToFailOnConnect: Int) extends SshSession {
+  class MockSshSession(numTimesToFailOnConnect: Int) extends SshSession("dns", "uname", new File("")) {
     def this() = this (0)
     
     var currentNumFailures = 0
@@ -30,7 +30,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
       1
     }
 
-    override def connect(dnsName: String, userName: String, pemFile: File) = {
+    override def connect() = {
       if (numTimesToFailOnConnect > currentNumFailures) {
         currentNumFailures += 1
         throw new ConnectException("test failure:  " + currentThread + " out of " + numTimesToFailOnConnect + " have occurred", new RuntimeException())

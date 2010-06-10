@@ -4,6 +4,9 @@ import junit.framework.TestCase
 import mock.{MockCloud, MockVM}
 import ssh.{ConnectException, SshSession}
 import java.io.File
+import com.lasic.{Cloud, VM}
+import collection.immutable.{List, Map}
+import java.lang.String
 
 /**
  *
@@ -14,15 +17,15 @@ import java.io.File
 class VMTest extends TestCase("VMTest") {
   //setup
 
-  class MockSshSession(numTimesToFailOnConnect: Int) extends SshSession {
+  class MockSshSession(numTimesToFailOnConnect: Int) extends SshSession("dns", "uname", new File("")) {
     def this() = this (0)
 
     var currentNumFailures = 0
 
-    override def connect(dnsName: String, userName: String, pemFile: File) = {
+    override def connect() = {
       if (numTimesToFailOnConnect > currentNumFailures) {
         currentNumFailures += 1
-        throw new ConnectException("test failure:  " + currentThread + " out of " + numTimesToFailOnConnect + " have occurred", new RuntimeException())
+        throw new ConnectException("test failure:  " + currentNumFailures + " out of " + numTimesToFailOnConnect + " have occurred", new RuntimeException())
       }
       currentNumFailures = 0
       true
@@ -85,13 +88,20 @@ class VMTest extends TestCase("VMTest") {
 
   }
 
+
+  class InitializationMockVM(delay: Int, val launchConfiguration: LaunchConfiguration,val cloud: Cloud) extends VM {
+    def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) = null
+    def execute(executableAbsPath: String) = null
+    def copyTo(sourceFile: File, destinationAbsPath: String) = null
+  }
+
   def testIsInitialized() = {
 
     val lc: LaunchConfiguration = new LaunchConfiguration(null)
     lc.key = "some"
     var mockSshSession = new MockSshSession(3)
 
-    val vm = new MockVM(2, lc, new MockCloud(0)) {
+    val vm = new InitializationMockVM(2, lc, new MockCloud(0)) {
       override def getMachineState() = {
         MachineState.Running
       }
@@ -103,7 +113,7 @@ class VMTest extends TestCase("VMTest") {
 
     assert(vm.isInitialized() == false, "expect to be not initialized when couldn't connect because mock delay is longer than timeout")
 
-    mockSshSession = new MockSshSession(1)
+    mockSshSession = new MockSshSession(0)
     assert(vm.isInitialized() == true, "expect to be initialized after connect")
 
   }

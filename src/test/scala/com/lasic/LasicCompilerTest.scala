@@ -91,7 +91,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
     map = program.instances(0).nodegroups(0).scriptMap("another")
     assertEquals(1, map.size)
-    assertEquals("bar", map("foo"))
+    assertEquals("bar", map("foo").literal)
   }
 
   def testVolumes() = {
@@ -145,7 +145,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
       assertEquals(0, map.size)
       map = scriptMap("another")
       assertEquals(1, map.size)
-      assertEquals("bar", map("foo"))
+      assertEquals("bar", map("foo").literal)
 
       val scpMap = nodeGroup.scpMap
       assertEquals("dest1", scpMap("src1"))

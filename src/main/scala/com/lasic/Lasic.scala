@@ -56,7 +56,7 @@ object Lasic {
     }
   }
 
-  def main(args: Array[String]) {
+  def runLasic(args: Array[String]): Unit = {
     parseArgs(args)
 
     val s = Source.fromFile(new File(lasicFile))
@@ -70,6 +70,10 @@ object Lasic {
 
     val deploy = new DeployVerb(cloud, program)
     deploy.doit
+  }
+
+  def main(args: Array[String]) {
+    runLasic(args)
     System.exit(0)
 
 

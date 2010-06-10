@@ -10,7 +10,11 @@ import com.lasic.util.Logging
  * Date: May 13, 2010
  */
 
-class SshSession extends JSch with Logging {
+class SshSession(val dnsName: String, val userName: String, val pemFile: File) extends JSch with Logging {
+  require(dnsName != null && !dnsName.isEmpty, "dnsName must be provided")
+  require(userName!= null && !userName.isEmpty, "userName must be provided")
+  require(pemFile != null, "pemFile must be provided")
+
   private var isConnected: Boolean = false
 
   //TODO: something real with output handling
@@ -19,7 +23,7 @@ class SshSession extends JSch with Logging {
   private var session: Session = null
 
 
-  def connect(dnsName: String, userName: String, pemFile: File): Unit = {
+  def connect(): Unit = {
     if (isConnected) {
       throw new ConnectException("Attempted to connect to " + dnsName + " but this SSH session is already in use")
     }
@@ -128,8 +132,9 @@ class SshSession extends JSch with Logging {
   def sendCommand(cmd: String): Int = {
     var ch: ChannelExec = null
     try {
+      logger.debug("Sending command {} to remote machine {}", cmd, session.getHost)
       ch = session.openChannel("exec").asInstanceOf[ChannelExec]
-      ch.setCommand(". /etc/profile ; " + cmd)
+      //ch.setCommand(". /etc/profile ; " + cmd)
       ch.setInputStream(null)
       ch.connect
       readAllStdOutput(ch)

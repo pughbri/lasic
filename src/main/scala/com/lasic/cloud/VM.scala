@@ -51,6 +51,8 @@ trait VM extends Logging {
 
   def execute(executableAbsPath: String)
 
+  def executeScript(scriptAbsPath: String, variables: Map[String, List[String]])
+
   def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
     cloud.attach(volumeInfo, this, devicePath)
   }
@@ -120,7 +122,7 @@ trait VM extends Logging {
   }
 
   protected def createSshSession: SshSession = {
-    new SshSession()
+    new SshSession(getPublicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
   }
 
   def withSshSession(timeout: Int)(callback: SshSession => Unit): Unit = {
@@ -132,26 +134,19 @@ trait VM extends Logging {
     finally {
       session.disconnect
     }
-
   }
 
   def connect(session: SshSession, timeout: Int): Unit = {
-
     if (!(getMachineState == MachineState.Running)) {
       throw new IllegalStateException("VM is in state " + getMachineState + ".  Cannot open ssh connection unless it is Running")
-    }
-    val publicDns = getPublicDns
-    if (publicDns == null) {
-      throw new IllegalStateException("VM in unexpected state " + getMachineState + " with no public DNS name. Cannot open ssh connection")
     }
 
     var connected = false
     val startTime = System.currentTimeMillis
 
-
     while (!connected) {
       try {
-        session.connect(getPublicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
+        session.connect()
         connected = true
         sshUp = true
       }

@@ -9,6 +9,7 @@ import VMActor._
 import java.io.File
 import com.lasic.util.Logging
 import com.lasic.model.{ScriptArgumentValue, NodeInstance, LasicProgram}
+import java.net.URI
 
 /**
  * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents
@@ -60,7 +61,7 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   def receive = { case x => respondToMessage(x) }
 
   import VMActorState._
-  
+
   /**
    * This is the heart of the state machine -- the transitions from one state to another is accomplished here
    * (and only here!).
@@ -132,7 +133,7 @@ object VMActor {
   private class Sleeper extends Actor {
     def receive = {
       case MsgSleeperBootWait(vm) => {
-        Thread.sleep(500);
+        Thread.sleep(2000);
         self.reply(MsgSetBootState(vm.isInitialized))
       }
 
@@ -145,7 +146,7 @@ object VMActor {
       case MsgSleeperSCP(vm,configData) => {
         configData.scp.foreach {
           foo =>
-            vm.copyTo(new File(foo._1), foo._2)
+            vm.copyTo(build(new URI(foo._1)), foo._2)
         }
         self.reply(MsgSCPCompleted(configData))
       }
@@ -162,6 +163,10 @@ object VMActor {
 
       case MsgSleeperStop => self.stop
 
+    }
+
+    def build(uri: URI): File = {
+      if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
     }
   }
 
