@@ -8,7 +8,7 @@ import com.lasic.Cloud
 import VMActor._
 import java.io.File
 import com.lasic.util.Logging
-import com.lasic.model.{ScriptArgument, NodeInstance, LasicProgram}
+import com.lasic.model.{ScriptArgumentValue, NodeInstance, LasicProgram}
 
 /**
  * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents

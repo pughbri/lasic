@@ -4,7 +4,7 @@ import ast._
 import util.parsing.combinator.JavaTokenParsers
 import scala.collection.mutable._
 import com.lasic.LasicProperties
-import com.lasic.model.{ScriptArgument, PathScriptArgument, LiteralScriptArgument}
+import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScriptArgumentValue}
 
 /**
  * Created by IntelliJ IDEA.
@@ -145,15 +145,15 @@ class LasicParser extends JavaTokenParsers {
 
   def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace ^^ {
     case name ~ _ ~ _ ~ arg_list ~ _ =>
-      val argMap = Map[String,ScriptArgument]() ++ arg_list
+      val argMap = Map[String,ScriptArgumentValue]() ++ arg_list
       (name -> argMap)
   }
 
-  def script_param:Parser[Tuple2[String,ScriptArgument]] = script_param_literal | script_param_path
+  def script_param:Parser[Tuple2[String,ScriptArgumentValue]] = script_param_literal | script_param_path
 
   def script_param_literal = ident ~ ":" ~ aString ^^ {
     case from ~ _ ~ to =>
-      (from -> new LiteralScriptArgument(to))
+      (from -> new LiteralScriptArgumentValue(to))
   }
 
   def path:Parser[String] = """/(((system|node)\['[a-zA-Z0-9 -_]+'\](\[[0-9]+\])?)|/)*""".r
@@ -161,7 +161,7 @@ class LasicParser extends JavaTokenParsers {
 
   def script_param_path = ident ~ ":" ~ path ^^ {
     case from ~ _ ~ to =>
-      (from -> new PathScriptArgument(to))
+      (from -> new PathScriptArgumentValue(to))
   }
 
 
