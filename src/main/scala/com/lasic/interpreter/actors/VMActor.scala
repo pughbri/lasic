@@ -156,7 +156,8 @@ object VMActor {
           script =>
             val scriptName = script._1
             val argMap = script._2
-            vm.execute(scriptName)
+            //vm.execute(scriptName)
+          vm.executeScript(scriptName, argMap)
         }
         self.reply(MsgScriptsCompleted(configData))
       }
