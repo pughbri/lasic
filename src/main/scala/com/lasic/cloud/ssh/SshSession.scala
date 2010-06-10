@@ -134,6 +134,7 @@ class SshSession(val dnsName: String, val userName: String, val pemFile: File) e
     try {
       logger.debug("Sending command {} to remote machine {}", cmd, session.getHost)
       ch = session.openChannel("exec").asInstanceOf[ChannelExec]
+      ch.setCommand(cmd)
       //ch.setCommand(". /etc/profile ; " + cmd)
       ch.setInputStream(null)
       ch.connect

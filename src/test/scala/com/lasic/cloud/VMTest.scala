@@ -53,7 +53,7 @@ class VMTest extends TestCase("VMTest") {
       assert(false, "should have got IllegalStateException: VM hasn't been initialized")
     }
     catch {
-      case t: IllegalStateException => { //expected
+      case t: IllegalArgumentException => { //expected
       }
       case t: Throwable => {
         assert(false, "unexpected exception " + t)

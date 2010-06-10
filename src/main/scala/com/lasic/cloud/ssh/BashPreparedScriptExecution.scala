@@ -39,7 +39,7 @@ class BashPreparedScriptExecution(session: SshSession,
    */
   def prepareRemoteScript() = {
 
-    var chmodCommand: String = prefaceWithSudo("chmod +x " + script)
+    var chmodCommand: String = prefaceWithSudo("chmod +x " + script + " 2>&1")
     val result = session.sendCommand(chmodCommand)
     if (result != 0) {
       logger.warn("Error {} executing chmod on {}@{}:{}", Array[Any](result, session.userName, session.dnsName, script))

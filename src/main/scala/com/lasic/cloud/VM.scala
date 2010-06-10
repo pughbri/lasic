@@ -88,8 +88,10 @@ trait VM extends Logging {
       sshUp
     }
     else {
-      val session: SshSession = createSshSession
+
+      var session: SshSession = null
       try {
+        session = createSshSession
         connect(session, 0)
         true
       }
@@ -102,12 +104,15 @@ trait VM extends Logging {
           connect(session, 10)
           true
         }
-        case e: IllegalStateException => false
+        case e: IllegalArgumentException => false //VM isn't running yet
         case e: ConnectException => {logger.debug("VM in valid state, but not initialized: ", e); false}
         case t: Throwable => throw t
       }
       finally {
-        session.disconnect
+        if (session != null) {
+          session.disconnect
+        }
+
       }
     }
 
@@ -122,7 +127,11 @@ trait VM extends Logging {
   }
 
   protected def createSshSession: SshSession = {
-    new SshSession(getPublicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
+    require(getMachineState == MachineState.Running, "VM is in state " + getMachineState + ".  Cannot open ssh connection unless it is Running")
+    val publicDns: String = getPublicDns()
+    require(publicDns != null, "VM in unexpected state " + getMachineState + " with no public DNS name. Cannot open ssh connection")
+
+    new SshSession(publicDns, launchConfiguration.userName, new File(baseLasicDir, launchConfiguration.key + ".pem"))
   }
 
   def withSshSession(timeout: Int)(callback: SshSession => Unit): Unit = {
@@ -137,9 +146,7 @@ trait VM extends Logging {
   }
 
   def connect(session: SshSession, timeout: Int): Unit = {
-    if (!(getMachineState == MachineState.Running)) {
-      throw new IllegalStateException("VM is in state " + getMachineState + ".  Cannot open ssh connection unless it is Running")
-    }
+    require(getMachineState == MachineState.Running, "VM is in state " + getMachineState + ".  Cannot open ssh connection unless it is Running")
 
     var connected = false
     val startTime = System.currentTimeMillis
