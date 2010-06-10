@@ -11,7 +11,7 @@ class LasicTest extends TestCase("lasic") {
 
   def testDeploy() = {
     val sourceFileURL = classOf[Application].getResource("/parser/Program201.lasic")
-    Lasic.main(Array("-c=mock", sourceFileURL.getPath))
+    Lasic.runLasic(Array("-c=mock", sourceFileURL.getPath))
   }
 
   def testParseArgs() = {

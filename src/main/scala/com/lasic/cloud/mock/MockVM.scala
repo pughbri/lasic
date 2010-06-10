@@ -47,6 +47,9 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
     withDelay(println("executing " + executableAbsPath))
   }
 
+  override def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) {
+    withDelay(println("executing " + scriptAbsPath + ".  Env vars: " + variables.mkString(", ")))
+  }
 
   override def getMachineState() = machineState
 
