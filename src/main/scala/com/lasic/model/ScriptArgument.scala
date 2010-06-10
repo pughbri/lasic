@@ -18,6 +18,7 @@ object LiteralScriptArgument {
 
 case class PathScriptArgument(val literal:String) extends ScriptArgument {
   def asCmdlineArgument(node:NodeInstance):String = {
+    
     "nothing"
   }
 }
