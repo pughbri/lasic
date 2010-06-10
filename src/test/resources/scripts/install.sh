@@ -1,1 +1,1 @@
-echo "running install script...." > /tmp/install.log 2>&1
+echo "running install script for $REF...." > /tmp/install.log 2>&1
