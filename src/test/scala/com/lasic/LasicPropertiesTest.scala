@@ -12,6 +12,10 @@ import java.lang.String
  */
 
 class LasicPropertiesTest extends TestCase("MockCloudTest") {
+  override def setUp = {
+    LasicProperties.propFilename = classOf[Application].getResource("/lasic.properties").getPath()
+  }
+
   def testGetProperty() = {
     val prop1: String = LasicProperties.getProperty("ACCESS_KEY")
     assert("access_key1" == prop1, "expected access_key1 got " + prop1)
