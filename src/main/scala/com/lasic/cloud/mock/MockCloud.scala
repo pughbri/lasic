@@ -68,7 +68,7 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
   def getPublicDns(vm: VM): String = {
-    "mock-public-dns"
+    if (vm.getMachineState == MachineState.Running) "mock-public-dns" else ""
   }
 
   def getPrivateDns(vm: VM): String = {

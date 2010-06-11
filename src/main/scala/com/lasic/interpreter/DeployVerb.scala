@@ -8,6 +8,7 @@ import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 import com.lasic.model._
+import com.lasic.util.Logging
 
 private class NodeTracker(val actor: ActorRef, val node: NodeInstance) {
   var _instanceID: String = null
@@ -66,7 +67,7 @@ private class NodeTracker(val actor: ActorRef, val node: NodeInstance) {
 }
 
 
-class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb {
+class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
   private val foo: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
   private val nodeTrackers: List[NodeTracker] = foo.map {
     node =>
@@ -140,7 +141,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb {
     nodeTrackers.foreach {
       tracker =>
         tracker.node.privateDNS = (tracker.actor !! MsgQueryPrivateDNS).get.toString
-        println("asdf")
+        logger.debug("assigning private dns [" + tracker.node.privateDNS + "] to " + tracker.node.path)
     }
   }
 

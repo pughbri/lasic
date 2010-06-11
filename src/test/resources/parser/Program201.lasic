@@ -21,4 +21,27 @@ system "www.lasic.com" {
         }
      }
   }
+
+  node "www-lasic-load-balancer" {
+    props {
+        groups: "default"
+        key: "default"
+        instancetype: "small"
+        count: 1
+        machineimage: "ami-714ba518"
+        user: "ubuntu"
+    }
+
+
+    scp {
+       "file:target/test-classes/scripts/install2.sh":"~/install-lasic-lb.sh"
+    }
+
+    scripts {
+       "~/install-lasic-lb.sh": {
+          WEBAPP: /system['www.lasic.com'][0]/node['www-lasic-webapp'][0]
+          REF: "${REFERENCE}"
+        }
+     }
+  }
 }
