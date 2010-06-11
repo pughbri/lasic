@@ -8,6 +8,7 @@ import scala.actors.Actor._
 import actors.Actor
 import com.lasic.cloud.MachineState._
 import util.Random
+import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
 
 /**
  * User: Brian Pugh
@@ -48,7 +49,17 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   }
 
   override def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) {
-    withDelay(println("executing " + scriptAbsPath + ".  Env vars: " + variables.mkString(", ")))
+    class MockSshSession extends SshSession(getPublicDns, "ubuntu", new File("")) {
+      override def sendCommand(cmd: String) = {
+        println("sending command [" + cmd + "] to " + userName + "@" + dnsName)
+        0
+      }
+    }
+    withDelay{
+      logger.debug("prepare to execute " + scriptAbsPath + ".  Env vars: " + variables.mkString(", "))
+      new BashPreparedScriptExecution(new MockSshSession, scriptAbsPath, variables).execute()
+
+    }
   }
 
   override def getMachineState() = machineState
