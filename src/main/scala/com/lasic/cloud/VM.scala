@@ -105,7 +105,7 @@ trait VM extends Logging {
           true
         }
         case e: IllegalArgumentException => false //VM isn't running yet
-        case e: ConnectException => {logger.debug("VM in valid state, but not initialized: ", e); false}
+        case e: ConnectException => {logger.trace("VM in valid state, but not initialized: ", e); false}
         case t: Throwable => throw t
       }
       finally {

@@ -2,6 +2,7 @@ package com.lasic
 
 import java.lang.String
 import util.Logging
+import java.io.{FileNotFoundException, FileInputStream}
 
 /**
  * User: pughbc
@@ -10,21 +11,43 @@ import util.Logging
 //TODO: is there a scala thing out there like groovy ConfigurationHolder
 object LasicProperties extends Logging {
 
-    /** The name of the System properties that specifies the name of the properties file**/
+  /**The name of the System properties that specifies the name of the properties file**/
   val SYSTEM_PROPERTY_FOR_FILENAME = "properties.file"
 
-  /** The name of the properties file  **/
-  private val propFilename = {
+
+  private[this] var propFilenameInternal = {
     val propFile: String = System.getProperty(SYSTEM_PROPERTY_FOR_FILENAME)
-    if (propFile != null) propFile else "/lasic.properties"
+    if (propFile != null) propFile else System.getProperty("user.home") + "/.lasic/lasic.properties"
   }
 
+  /**The name of the properties file  **/
+  def propFilename = propFilenameInternal
+
+  def propFilename_=(newName: String) {
+    propFilenameInternal = newName
+    props = createNewProperties()
+  }
+
+
   /**The loaded properties */
-  private val props = {
+  private var props = createNewProperties()
+
+  private def createNewProperties(): java.util.Properties = {
     val props = new java.util.Properties
-    val stream = classOf[Application].getResourceAsStream(propFilename)
-    if (stream != null)
-      props.load(stream)
+    var inputStream: FileInputStream = null
+    try {
+      inputStream = new FileInputStream(propFilenameInternal)
+      props.clear
+      props.load(inputStream)
+      logger.debug("Loaded properties from [{}]. Properties: {}", propFilenameInternal, props)
+    }
+    catch {
+      case e: FileNotFoundException => logger.warn("unable to find lasic properties file at ["
+              + propFilenameInternal + "].  No properties will be loaded")
+    }
+    finally {
+      if (inputStream != null) inputStream.close
+    }
     props
   }
 
@@ -41,15 +64,15 @@ object LasicProperties extends Logging {
     val regex = """\$\{[^\}]*\}""".r
     var result = text
 
-    for(x:String <- regex findAllIn text) {
-      val target = x.substring(2,x.length-1)
+    for (x: String <- regex findAllIn text) {
+      val target = x.substring(2, x.length - 1)
       var propValue = getProperty(target)
       if (propValue == null) {
         logger.warn("property " + target + " is not set")
         propValue = ""
       }
 
-      result = result.replaceAll("\\$\\{"+target+"\\}",propValue)
+      result = result.replaceAll("\\$\\{" + target + "\\}", propValue)
     }
     result;
 
