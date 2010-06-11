@@ -18,7 +18,17 @@ import com.lasic.util.Logging
 class AmazonCloud extends Cloud with Logging {
   lazy val ec2: Jec2 = {
     val (key, secret) = ec2Keys
-    new Jec2(key, secret);
+    var cloudApiHost= LasicProperties.getProperty("CLOUD_API_HOST")
+    if (cloudApiHost == null) {
+      new Jec2(key, secret)
+    }
+    else {
+      var cloudApiPath = LasicProperties.getProperty("CLOUD_API_PATH", "/services/Eucalyptus")
+      var ec2tmp = new Jec2(key, secret, false, cloudApiHost, 8773)
+      ec2tmp.setResourcePrefix(cloudApiPath)
+      ec2tmp.setSignatureVersion(1)
+      ec2tmp
+    }
   }
 
   lazy val autoscaling: AutoScaling = {
