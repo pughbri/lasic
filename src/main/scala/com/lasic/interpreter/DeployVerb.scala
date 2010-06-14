@@ -107,17 +107,22 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def waitForAMIsToBoot {
     waitForVMActorState(Booted, "Waiting for machines to boot: ")
-    println("Booted IDs are: " + nodeTrackers.map(t => t.instanceID + ":" + t.nodeState))
+    logger.info("Booted IDs are: " + nodeTrackers.map(t => t.instanceID + ":" + showValue(t.nodeState)))
   }
 
   private def waitForVMActorState(state: VMActorState, statusString: String) {
     var waiting = nodeTrackers.filter(t => !t.isInState(state))
     while (waiting.size > 0) {
-      val descriptions: List[String] = waiting.map(t => t.instanceID + ":" + t.nodeState)
-      println(statusString + descriptions)
-      Thread.sleep(5000)
+      val descriptions: List[String] = waiting.map(t => t.instanceID + ":" + showValue(t.nodeState))
+      logger.info(statusString + descriptions)
+      Thread.sleep(10000)
       waiting = nodeTrackers.filter(t => !t.isInState(state))
     }
+  }
+
+  private def showValue(x: Any) = x match {
+    case Some(s) => s
+    case None => "?"
   }
 
   private def waitForVolumes {}
