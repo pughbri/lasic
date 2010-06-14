@@ -14,7 +14,7 @@ class LaunchConfiguration(node: NodeInstance) {
   var ramdiskId: String = null
   var kernelId: String = null
   var key: String = null
-  var groups: String = null
+  var groups: List[String] = List()
   val instanceType: InstanceType = InstanceType.DEFAULT
   var userName: String = null
   var s3Download: String = null
@@ -26,7 +26,7 @@ class LaunchConfiguration(node: NodeInstance) {
     ramdiskId = node.parent.ramdiskid
     kernelId = node.parent.kernelid
     key = node.parent.key
-    //lc.groups = node.parent.groups
+    groups = node.parent.groups
     //lc.instanceType = node.parent.instancetype
     userName = node.parent.user
     //lc.availabilityZone = node.parent.

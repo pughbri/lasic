@@ -7,6 +7,7 @@ import java.util.Iterator
 import java.util.{List => JList}
 import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
 import scala.collection.JavaConversions.asBuffer
+import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
 
@@ -18,7 +19,7 @@ import com.lasic.util.Logging
 class AmazonCloud extends Cloud with Logging {
   lazy val ec2: Jec2 = {
     val (key, secret) = ec2Keys
-    var cloudApiHost= LasicProperties.getProperty("CLOUD_API_HOST")
+    var cloudApiHost = LasicProperties.getProperty("CLOUD_API_HOST")
     if (cloudApiHost == null) {
       new Jec2(key, secret)
     }
@@ -33,7 +34,7 @@ class AmazonCloud extends Cloud with Logging {
 
   lazy val autoscaling: AutoScaling = {
     val (key, secret) = ec2Keys
-    new AutoScaling(key, secret);    
+    new AutoScaling(key, secret);
   }
 
 
@@ -68,12 +69,13 @@ class AmazonCloud extends Cloud with Logging {
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
     launchConfig.setInstanceType(lasicLC.instanceType)
     launchConfig.setKeyName(lasicLC.key);
+    launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
     launchConfig
   }
 
   def reboot(vms: List[VM]) {
-//    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
-//   logger.info(vm.launchConfiguration)
+    //    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
+    //   logger.info(vm.launchConfiguration)
   }
 
   def terminate(vms: List[VM]) {
@@ -121,7 +123,7 @@ class AmazonCloud extends Cloud with Logging {
     var attachmentInfoList = List[AttachmentInfo]()
     val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
     while (iterator.hasNext()) {
-      val attachmentInfo: XAttachmentInfo= iterator.next
+      val attachmentInfo: XAttachmentInfo = iterator.next
       val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
         attachmentInfo.getInstanceId,
         attachmentInfo.getDevice,
@@ -142,7 +144,7 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-    var info: XAttachmentInfo= ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
     new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
   }
 
