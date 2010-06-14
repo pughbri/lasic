@@ -135,7 +135,13 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
 
   //createScaleGroups();
-  private def printBoundLasicProgram {}
+  private def printBoundLasicProgram {
+    println("paths {")
+    nodeTrackers.foreach( {
+      tracker => println("    " + tracker.node.path + ": " + tracker._instanceID + "  //" + tracker.node.privateDNS)
+    })
+    println("}")
+  }
 
   private def assignPrivateDNS2Nodes {
     nodeTrackers.foreach {
