@@ -15,7 +15,7 @@ class LaunchConfiguration(node: NodeInstance) {
   var kernelId: String = null
   var key: String = null
   var groups: List[String] = List()
-  val instanceType: InstanceType = InstanceType.DEFAULT
+  var instanceType  = "small"
   var userName: String = null
   var s3Download: String = null
   var availabilityZone: String = LasicProperties.getProperty("availability_zone", "us-east-1d")
@@ -29,6 +29,7 @@ class LaunchConfiguration(node: NodeInstance) {
     groups = node.parent.groups
     //lc.instanceType = node.parent.instancetype
     userName = node.parent.user
+    instanceType = node.parent.instancetype
     //lc.availabilityZone = node.parent.
     //lc.s3Download = ??
   }

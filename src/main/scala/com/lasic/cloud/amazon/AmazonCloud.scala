@@ -6,6 +6,7 @@ import java.lang.String
 import java.util.Iterator
 import java.util.{List => JList}
 import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
+import com.xerox.amazonws.ec2.InstanceType
 import scala.collection.JavaConversions.asBuffer
 import collection.JavaConversions
 import com.lasic.cloud.MachineState._
@@ -62,12 +63,27 @@ class AmazonCloud extends Cloud with Logging {
     rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
   }
 
+  protected def getInstanceType(instanceTypeStr: String) = {
+    val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
+    if (instanceType == null) {
+      instanceTypeStr match {
+        case "small" => InstanceType.DEFAULT
+        case "medium" => InstanceType.MEDIUM_HCPU
+        case "large" => InstanceType.LARGE
+        case "xlarge" => InstanceType.XLARGE
+      }
+    }
+    else {
+      instanceType
+    }
+  }
+
   private def createLaunchConfiguration(lasicLC: LaunchConfiguration): com.xerox.amazonws.ec2.LaunchConfiguration = {
     val launchConfig = new com.xerox.amazonws.ec2.LaunchConfiguration(lasicLC.machineImage, 1, 1)
     launchConfig.setKernelId(lasicLC.kernelId)
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
-    launchConfig.setInstanceType(lasicLC.instanceType)
+    launchConfig.setInstanceType(getInstanceType(lasicLC.instanceType))
     launchConfig.setKeyName(lasicLC.key);
     launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
     launchConfig
@@ -80,7 +96,7 @@ class AmazonCloud extends Cloud with Logging {
 
   def terminate(vms: List[VM]) {
     vms.foreach(vm => {
-      logger.info("terminating " + vm.instanceId)
+      logger.debug("terminating " + vm.instanceId)
       var instances = new java.util.ArrayList[String]
       instances.add(vm.instanceId)
       ec2.terminateInstances(instances)
