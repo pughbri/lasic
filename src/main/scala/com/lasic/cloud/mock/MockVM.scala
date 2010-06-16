@@ -41,17 +41,17 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
   }
 
   override def copyTo(sourceFile: File, destinationAbsPath: String) {
-    withDelay(println("copying file " + sourceFile.getAbsoluteFile + " to " + destinationAbsPath))
+    withDelay(logger.info("copying file " + sourceFile.getAbsoluteFile + " to " + destinationAbsPath))
   }
 
   override def execute(executableAbsPath: String) {
-    withDelay(println("executing " + executableAbsPath))
+    withDelay(logger.info("executing " + executableAbsPath))
   }
 
   override def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) {
     class MockSshSession extends SshSession(getPublicDns, "ubuntu", new File("")) {
       override def sendCommand(cmd: String) = {
-        println("sending command [" + cmd + "] to " + userName + "@" + dnsName)
+        logger.info("sending command [" + cmd + "] to " + userName + "@" + dnsName)
         0
       }
     }

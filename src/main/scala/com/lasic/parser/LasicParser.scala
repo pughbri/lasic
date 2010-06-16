@@ -5,6 +5,7 @@ import util.parsing.combinator.JavaTokenParsers
 import scala.collection.mutable._
 import com.lasic.LasicProperties
 import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScriptArgumentValue}
+import com.lasic.util.Logging
 
 /**
  * Created by IntelliJ IDEA.
@@ -14,7 +15,7 @@ import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScr
  * To change this template use File | Settings | File Templates.
  */
 
-class LasicParser extends JavaTokenParsers {
+class LasicParser extends JavaTokenParsers with Logging{
   /*==========================================================================================================
     NON BNF utility methods
    ==========================================================================================================*/
@@ -27,7 +28,7 @@ class LasicParser extends JavaTokenParsers {
           case propertyMap: Map[Any, Any] => initSystemProperties(sys, propertyMap)
           case node: ASTNode => sys.nodes += node
           case system: ASTSystem => sys.subsystems += system
-          case x => println("Unknown object: " + x)
+          case x => logger.warn("Unknown object: " + x)
         }
     }
     sys
@@ -71,7 +72,7 @@ class LasicParser extends JavaTokenParsers {
       case ("key", s: String) => sys.key = s
       case ("user", s: String) => sys.user = s
       case ("instancetype", s: String) => sys.instancetype = s
-      case (x, y) => println("Unknown node property: " + x + " = " + y)
+      case (x, y) => logger.warn("Unknown node property: " + x + " = " + y)
     }
 
   }

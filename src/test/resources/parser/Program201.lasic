@@ -2,7 +2,7 @@ system "www.lasic.com" {
 
   node "www-lasic-webapp" {
     props {
-        groups: "default"
+        groups: "default","web-server"
         key: "default"
         instancetype: "small"
         count: 1

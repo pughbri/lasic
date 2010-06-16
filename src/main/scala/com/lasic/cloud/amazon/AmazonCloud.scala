@@ -6,9 +6,12 @@ import java.lang.String
 import java.util.Iterator
 import java.util.{List => JList}
 import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
+import com.xerox.amazonws.ec2.InstanceType
 import scala.collection.JavaConversions.asBuffer
+import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
+import com.lasic.cloud.AttachmentInfo
 
 /**
  * @author Brian Pugh
@@ -18,7 +21,7 @@ import com.lasic.util.Logging
 class AmazonCloud extends Cloud with Logging {
   lazy val ec2: Jec2 = {
     val (key, secret) = ec2Keys
-    var cloudApiHost= LasicProperties.getProperty("CLOUD_API_HOST")
+    var cloudApiHost = LasicProperties.getProperty("CLOUD_API_HOST")
     if (cloudApiHost == null) {
       new Jec2(key, secret)
     }
@@ -33,7 +36,7 @@ class AmazonCloud extends Cloud with Logging {
 
   lazy val autoscaling: AutoScaling = {
     val (key, secret) = ec2Keys
-    new AutoScaling(key, secret);    
+    new AutoScaling(key, secret);
   }
 
 
@@ -61,24 +64,40 @@ class AmazonCloud extends Cloud with Logging {
     rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
   }
 
+  protected def getInstanceType(instanceTypeStr: String) = {
+    val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
+    if (instanceType == null) {
+      instanceTypeStr match {
+        case "small" => InstanceType.DEFAULT
+        case "medium" => InstanceType.MEDIUM_HCPU
+        case "large" => InstanceType.LARGE
+        case "xlarge" => InstanceType.XLARGE
+      }
+    }
+    else {
+      instanceType
+    }
+  }
+
   private def createLaunchConfiguration(lasicLC: LaunchConfiguration): com.xerox.amazonws.ec2.LaunchConfiguration = {
     val launchConfig = new com.xerox.amazonws.ec2.LaunchConfiguration(lasicLC.machineImage, 1, 1)
     launchConfig.setKernelId(lasicLC.kernelId)
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
-    launchConfig.setInstanceType(lasicLC.instanceType)
+    launchConfig.setInstanceType(getInstanceType(lasicLC.instanceType))
     launchConfig.setKeyName(lasicLC.key);
+    launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
     launchConfig
   }
 
   def reboot(vms: List[VM]) {
-//    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
-//   logger.info(vm.launchConfiguration)
+    //    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
+    //   logger.info(vm.launchConfiguration)
   }
 
   def terminate(vms: List[VM]) {
     vms.foreach(vm => {
-      logger.info("terminating " + vm.instanceId)
+      logger.debug("terminating " + vm.instanceId)
       var instances = new java.util.ArrayList[String]
       instances.add(vm.instanceId)
       ec2.terminateInstances(instances)
@@ -121,7 +140,7 @@ class AmazonCloud extends Cloud with Logging {
     var attachmentInfoList = List[AttachmentInfo]()
     val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
     while (iterator.hasNext()) {
-      val attachmentInfo: XAttachmentInfo= iterator.next
+      val attachmentInfo: XAttachmentInfo = iterator.next
       val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
         attachmentInfo.getInstanceId,
         attachmentInfo.getDevice,
@@ -142,7 +161,7 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-    var info: XAttachmentInfo= ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
     new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
   }
 
