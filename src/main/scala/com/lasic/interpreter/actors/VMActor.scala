@@ -179,6 +179,7 @@ trait VMActorUtil {
   var actor: ActorRef = null
 
   private def asString(x: Any):String = x match {
+    case Some(null) => "?"
     case Some(s) => s.toString
     case None => "?"
   }
