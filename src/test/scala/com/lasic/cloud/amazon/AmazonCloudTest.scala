@@ -21,6 +21,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
       lc.machineImage = "ami-714ba518" //base ubuntu image
       lc.key = "default"
       lc.userName = "ubuntu"
+      lc.groups = List("default","web-server")
       val vm: VM = new AmazonVM(cloud, lc, 20)
       vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
       val vms = List(vm)
