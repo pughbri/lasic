@@ -2,3 +2,4 @@ syntax: glob
 .idea
 target
 lasic.iml
+logs\akka.log
