@@ -3,19 +3,24 @@ package com.lasic
 ;
 
 import junit.framework._
-import java.lang.String;
+
 
 /**
  * Unit test for simple Lasic.
  */
 class LasicTest extends TestCase("lasic") {
+  override def setUp = {
+    Lasic.lasicFile = null
+    Lasic.verb = null
+    Lasic.cloudProvider = Lasic.CloudProvider.Amazon
+  }
 
   def getLasicFilePath(num: Int) = {
     classOf[Application].getResource("/parser/Program" + num + ".lasic").getPath()
   }
 
   def testDeployWithMock() = {
-    Lasic.runLasic(Array("-c=mock", getLasicFilePath(201)))
+    Lasic.runLasic(Array("-c=mock", "deploy", getLasicFilePath(201)))
   }
 
   def testDeployWithAmazon() = {
@@ -24,17 +29,25 @@ class LasicTest extends TestCase("lasic") {
       //1) put real aws keys in src/test/lasic.properties (AWS_ACCESS_KEY and AWS_SECRET_KEY)
       //2) put a "default" key for your account in ~/.lasic/default.pem
       //NOTE: the test does NOT shutdown the instance.  You need to shut it down manually after you run the test
-      Lasic.runLasic(Array("-c=aws", getLasicFilePath(201)))
+      Lasic.runLasic(Array("-c=aws", "deploy", getLasicFilePath(201)))
     }
   }
 
   def testParseArgs() = {
-    Lasic.parseArgs(Array("-c=aws", "myfile"))
-    assert(Lasic.cloudProvider == Lasic.CloudProvider.Amazon, "Expected " + Lasic.CloudProvider.Amazon + " got " + Lasic.cloudProvider)
-    assert("myfile" == Lasic.lasicFile, "Expected myfile got " + Lasic.lasicFile)
 
-    Lasic.parseArgs(Array("--cloud=mock"))
+    Lasic.parseArgs(Array("snapshot", "myscript.lasic"))
+    assert(Lasic.cloudProvider == Lasic.CloudProvider.Amazon, "Expected " + Lasic.CloudProvider.Amazon + " got " + Lasic.cloudProvider)
+    assert("myscript.lasic" == Lasic.lasicFile, "Expected myscript.lasic got " + Lasic.lasicFile)
+    assert("snapshot" == Lasic.verb, "Expected snapshot got " + Lasic.verb)
+
+    Lasic.lasicFile = null
+    Lasic.verb = null
+
+    Lasic.parseArgs(Array("--cloud=mock", "deploy", "someDeploy.lasic"))
     assert(Lasic.cloudProvider == Lasic.CloudProvider.Mock, "Expected " + Lasic.CloudProvider.Mock + " got " + Lasic.cloudProvider)
+    assert("someDeploy.lasic" == Lasic.lasicFile, "Expected someDeploy.lasic got " + Lasic.lasicFile)
+    assert("deploy" == Lasic.verb, "Expected deploy got " + Lasic.verb)
+
   }
 
 

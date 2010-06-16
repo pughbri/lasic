@@ -201,7 +201,6 @@ trait VMActorUtil {
 
   def nodeState: Any = {
     val x = (actor !! MsgQueryState)
-    println(x)
     x match {
       case Some(y) => y.asInstanceOf[VMActorState.State]
       case _ => VMActorState.Blank

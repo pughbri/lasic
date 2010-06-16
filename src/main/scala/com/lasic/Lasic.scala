@@ -22,7 +22,8 @@ object Lasic {
   var verbose = false
 
   var cloudProvider = CloudProvider.Amazon
-  var lasicFile = ""
+  var lasicFile: String = null
+  var verb: String = null
 
   object CloudProvider extends Enumeration {
     type CloudProviders = Value
@@ -30,29 +31,55 @@ object Lasic {
     val Mock = Value("mock")
   }
 
-  object OptionWithValue {
+  object ArgOption {
     def unapply(str: String): Option[(String, String)] = {
-      val parts = str split "="
-      if (parts.length == 2) Some(parts(0),parts(1)) else None
+      if (!(str startsWith "-")) {
+        None
+      }
+      else {
+        val optionWithDashStripped = {
+          if (str startsWith "--") {
+            str substring 2
+          }
+          else {
+            str substring 1
+          }
+        }
+        val parts = optionWithDashStripped split "="
+        parts.length match {
+          case 1 => Some(parts(0), null)
+          case 2 => Some(parts(0), parts(1))
+          case _ => None
+        }
+      }
     }
   }
 
 
-  def printUsageAndExit() = {
-    println("Usage: java -jar lasic.jar <verb> <lasic-program>")
+  def printUsageAndExit(message: String) = {
+    println(message)
+    println("Usage: java -jar lasic.jar [options] <verb> <lasic-program>")
     System.exit(1)
   }
 
   def parseArgs(args: Array[String]): Unit = {
     for (arg <- args) arg match {
-      case "-h" | "--help" => printUsageAndExit
+      case "-h" | "--help" => printUsageAndExit("Lasic Help:")
       case "-v" | "--verbose" => verbose = true
-      case OptionWithValue("-c" | "--cloud", provider) => cloudProvider = CloudProvider.withName(provider)
-      case file =>    lasicFile = file
-      //todo: need to parse out filename and verb then handle unknown args
-//      case x =>
-//        println("Unknown option: '" + x + "'")
-//        printUsageAndExit
+      case ArgOption("c" | "cloud", provider) => cloudProvider = CloudProvider.withName(provider)
+      case ArgOption(_, _) => printUsageAndExit("invalid option:" + arg)
+      case cmd => {
+        if (verb == null) {
+          verb = cmd
+        }
+        else if (lasicFile == null) {
+          lasicFile = cmd
+        }
+        else printUsageAndExit("Too many commands:" )
+      }    
+    }
+    if (verb == null || lasicFile == null) {
+      printUsageAndExit("must provide both a verb and lasic-program:")
     }
   }
 

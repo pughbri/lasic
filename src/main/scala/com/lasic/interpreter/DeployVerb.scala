@@ -34,13 +34,13 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def waitForAMIsToBoot {
     waitForVMActorState(Booted, "Waiting for machines to boot: ")
-    logger.info("Booted IDs are: " + nodes.map(t => t.instanceID + ":" + showValue(t.nodeState)))
+    logger.info("Booted IDs are: " + nodes.map(t => showValue(t.instanceID) + ":" + showValue(t.nodeState)))
   }
 
   private def waitForVMActorState(state: State, statusString: String) {
     var waiting = nodes.filter(t => !t.isInState(state))
     while (waiting.size > 0) {
-      val descriptions: List[String] = waiting.map(t => t.instanceID + ":" + t.nodeState)
+      val descriptions: List[String] = waiting.map(t => showValue(t.instanceID) + ":" + showValue(t.nodeState))
       logger.info(statusString + descriptions)
       Thread.sleep(10000)
       waiting = nodes.filter(t => !t.isInState(state))
@@ -50,6 +50,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def showValue(x: Any) = x match {
     case Some(s) => s
     case None => "?"
+    case y => y
   }
 
   private def waitForVolumes {}
@@ -70,7 +71,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def printBoundLasicProgram {
     println("paths {")
     nodes.foreach( {
-      node => println("    " + node.path + ": " + node.instanceID + "  // public=" + node.publicDNS + "\tprivate=" +node.privateDNS)
+      node => println("    " + node.path + ": " + node.instanceID + "  // public=" + showValue(node.publicDNS) + "\tprivate=" + showValue(node.privateDNS))
     })
     println("}")
   }
