@@ -25,20 +25,11 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   /**The VM we are manipulating **/
   var vm: VM = null
 
-  //  /**The private DNS of the VM we are manipulating */
-  //  var privateDNS: String = null
-  //
-  //  /**The public DNS of the VM we are manipulating */
-  //  var publicDNS: String = null
-
-  /**The actor which does all the blocking operations */
-  // var sleeper = actorOf(new Sleeper(this)).start
-
   /**
    * Send back a reply of the VM id, if there is one, otherwise null
    */
   def replyWithVMId {
-    var result: String = null
+    var result: String = "?"
     if (vm != null && vm.instanceId != null)
       result = vm.instanceId
     self.senderFuture.foreach(_.completeWithResult(result))
@@ -47,13 +38,9 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
 
   def vmOperation(op: VM => Any) {
     if (vm == null) {
-      println("Can't do an operation on null VM!!")
-      self.senderFuture.foreach(_.completeWithResult(null))
+      self.senderFuture.foreach(_.completeWithResult(None))
     } else {
       val senderFuture = self.senderFuture
-      //    val replyTo = self.sender.get
-      //    println("Reply to -->" +replyTo)
-      //    println(vm)
       spawn {
         val result = op(vm)
         senderFuture.foreach(_.completeWithResult(result))
@@ -71,12 +58,10 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
    * both actors regardless of their current state
    */
   def stopEverything {
-    //sleeper.stop; 
     self.stop
   }
 
   def startAsyncLaunch(lc: LaunchConfiguration) {
-    //sleeper ! MsgSleeperCreateVM(lc, cloud)
     val me = self
     spawn {
       vm = cloud.createVM(lc, true)
@@ -85,7 +70,6 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   }
 
   def startAsyncSCP(configData: ConfigureData) {
-    //sleeper ! MsgSleeperSCP(vm, configData)
     val me = self
     spawn {
       configData.scp.foreach {
@@ -98,7 +82,6 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   }
 
   def startAsyncScripts(configData: ConfigureData) {
-    //    sleeper ! MsgSleeperScripts(vm, configData)
     val me = self
     spawn {
       configData.scripts.foreach {
@@ -113,7 +96,6 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   }
 
   def startAsyncBootWait {
-    //    sleeper ! MsgSleeperBootWait(vm)
     val vmActor = self
     spawn {
       Thread.sleep(2000);
@@ -134,10 +116,6 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
 
   import VMActorState._
 
-  //  private def forwardVMOperationMsg(msg: MsgVMOperation) {
-  //    sleeper.forward(msg)
-  //  }
-
   /**
    * This is the heart of the state machine -- the transitions from one state to another is accomplished here
    * (and only here!).
@@ -145,168 +123,91 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   private def respondToMessage(msg: Any) {
     nodeState =
             (nodeState, msg) match {
-              case (_, MsgVMOperation(op)) => {vmOperation(op); nodeState}
-              //              case (_, MsgQueryID) => {replyWithVMId; nodeState}
-              case (_, MsgQueryState) => {self.reply(nodeState); nodeState}
-              //              case (_, MsgQueryPrivateDNS) => {self.reply(`privateDNS); nodeState}
-              case (_, MsgStop) => {stopEverything; Froggy}
-              case (Blank, MsgLaunch(lc)) => {startAsyncLaunch(lc); WaitingForVM}
-              case (Booted, MsgConfigure(config)) => {startAsyncSCP(config); RunningSCP}
-              case (RunningSCP, MsgSCPCompleted(config)) => {startAsyncScripts(config); RunningScripts}
-              case (RunningScripts, MsgScriptsCompleted(x)) => {Configured}
-              case (WaitingForBoot, MsgSetBootState(false)) => {startAsyncBootWait; WaitingForBoot}
-              case (WaitingForBoot, MsgSetBootState(true)) => {Booted}
-              case (WaitingForVM, MsgSetVM) => {startAsyncBootWait; WaitingForBoot}
-              case _ => {nodeState}
+              //    currentState    MessageRecieved               Operations to do            Next State
+              case (_,              MsgVMOperation(op))       => {vmOperation(op);            nodeState}
+              case (_,              MsgQueryState)            => {self.reply(nodeState);      nodeState}
+              case (_,              MsgStop)                  => {stopEverything;             Froggy}
+              case (Blank,          MsgLaunch(lc))            => {startAsyncLaunch(lc);       WaitingForVM}
+              case (Booted,         MsgConfigure(config))     => {startAsyncSCP(config);      RunningSCP}
+              case (RunningSCP,     MsgSCPCompleted(config))  => {startAsyncScripts(config);  RunningScripts}
+              case (RunningScripts, MsgScriptsCompleted(x))   => {                            Configured}
+              case (WaitingForBoot, MsgSetBootState(false))   => {startAsyncBootWait;         WaitingForBoot}
+              case (WaitingForBoot, MsgSetBootState(true))    => {                            Booted}
+              case (WaitingForVM,   MsgSetVM)                 => {startAsyncBootWait;         WaitingForBoot}
+              case _                                          => {                            nodeState}
             }
   }
 }
 
 /**
- *  A VMActor is a
+ * Companion object that contains messages to send, etc.
  */
 object VMActor {
+
+  /** The states of the VMActor state machine */
   object VMActorState extends Enumeration {
-    type VMActorState = Value
+    type State = Value
     val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
   }
 
+  /** Configuation information sent to setup a VM */
   class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, List[String]]])
 
   /**
-   * These are public commands, which cause state transitions, that can be sent to the NodeActor as part
+   * These are public messages, which cause state transitions, that can be sent to the VMACtor as part
    * of its public API
    */
   case class MsgConfigure(configData: ConfigureData)
   case class MsgLaunch(lc: LaunchConfiguration)
   case class MsgQueryState()
-  // case class MsgQueryID()
-  // case class MsgQueryPrivateDNS()
-  //  case class MsgQueryVM()
   case class MsgStop()
   case class MsgVMOperation(operation: VM => Any)
 
-  // Private messages sent to the actor
+  // Private messages sent to ourselves
   private case class MsgSetBootState(isInitialized: Boolean)
   private case class MsgSetVM()
   private case class MsgSCPCompleted(val cd: ConfigureData)
   private case class MsgScriptsCompleted(val cd: ConfigureData)
 }
 
-//  // Messages involving the Sleeper
-//
-//  // Messages sent *TO* the sleeper
-//  private case class MsgSleeperSCP(vm: VM, configureData: ConfigureData)
-//  private case class MsgSleeperScripts(vm: VM, configureData: ConfigureData)
-//  private case class MsgSleeperBootWait(vm: VM)
-//  private case class MsgSleeperCreateVM(lc: LaunchConfiguration, cloud: Cloud)
-//  private case class MsgSleeperStop()
-//  //  private case class MsgSleeperVMOperation(actor:ActorRef, vm:VM, operation: VM => Any)
-//
-//  // Messages sent *FROM* the sleeper
 
-
-//  /**
-//   *  A private actor which performs all the blocking operations on a node.   A NodeActor delegates all blocking
-//   * operations to an instance of this actor -- enabling the NodeActor to 1) appear to complete all operations
-//   * asynchronously and 2) allow the NodeActor to be queried for status while long running (and blocking)
-//   * operations are occurring.
-//   */
-//  private class Sleeper(vmActor:VMActor) extends Actor {
-//    var vm: VM = null
-//
-//    def receive = {
-//      case MsgVMOperation(operation) => {
-//        if (vm == null)
-//          self.reply("foobar")
-//        else {
-//          val result = operation(vm)
-//          self.reply(result)
-//        }
-//      }
-//
-//      case MsgSleeperBootWait(vm) => {
-//        Thread.sleep(2000);
-//        val initialized: Boolean = vm.isInitialized
-//        if (initialized) {
-//          vmActor ! MsgSetBootState(true, vm.getPrivateDns)
-//        }
-//        else {
-//          vmActor ! MsgSetBootState(false, null)
-//        }
-//      }
-//
-//      case MsgSleeperCreateVM(lc, cloud) => {
-//        vm = cloud.createVM(lc, true)
-//        vmActor ! MsgSetVM(vm)
-//      }
-//
-//      case MsgSleeperSCP(vm, configData) => {
-//        configData.scp.foreach {
-//          foo =>
-//            vm.copyTo(build(new URI(foo._1)), foo._2)
-//        }
-//        vmActor ! MsgSCPCompleted(configData)
-//      }
-//
-//      case MsgSleeperScripts(vm, configData) => {
-//        configData.scripts.foreach {
-//          script =>
-//            val scriptName = script._1
-//            val argMap = script._2
-//            //vm.execute(scriptName)
-//            vm.executeScript(scriptName, argMap)
-//        }
-//        vmActor ! MsgScriptsCompleted(configData)
-//      }
-//
-//      case MsgSleeperStop => self.stop
-//
-//    }
-//
-//    def build(uri: URI): File = {
-//      if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
-//    }
-//  }
-//
-//}
-
+/**
+ * A utility mixin to to make interacting with a VMActor a bit easier.  It presents blocking methods that
+ * hide the fact that they send messages underneath.
+ */
 trait VMActorUtil {
   var actor: ActorRef = null
 
+  private def asString(x: Any):String = x match {
+    case Some(s) => s.toString
+    case None => "?"
+  }
+
   def instanceID: String = {
     val a = actor !! MsgVMOperation({vm: VM => vm.instanceId})
-    val x = a.toString
-    x;
+    asString(a)
   }
 
   def publicDNS: String = {
-    val x = (actor !! MsgVMOperation({vm: VM => vm.getPublicDns})).toString
-    x;
+    val x = actor !! MsgVMOperation({vm: VM => vm.getPublicDns})
+    asString(x)
   }
 
   def privateDNS: String = {
-    val x = (actor !! MsgVMOperation({vm: VM => vm.getPrivateDns})).toString
-    x;
+    val x = actor !! MsgVMOperation({vm: VM => vm.getPrivateDns})
+    asString(x)
   }
 
   def nodeState: Any = {
-    (actor !! MsgQueryState)
-    //    println(state)
-    //    state
-    //    val zz2 = zz1.get
-    //    zz2 match {
-    //      case foo:VMActorState.VMActorState => {
-    //        println(foo)
-    //        foo.asInstanceOf[VMActorState.VMActorState]
-    //      }
-    //      case x => {
-    //        VMActorState.Blank
-    //      }
-    //    }
+    val x = (actor !! MsgQueryState)
+    println(x)
+    x match {
+      case Some(y) => y.asInstanceOf[VMActorState.State]
+      case _ => VMActorState.Blank
+    }
   }
 
-  def isInState(x: VMActorState.VMActorState) = {
+  def isInState(x: VMActorState.State) = {
     val y = actor !! MsgQueryState
     val result: Boolean =
     y match {

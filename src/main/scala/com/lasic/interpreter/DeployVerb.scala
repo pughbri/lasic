@@ -11,84 +11,15 @@ import com.lasic.model._
 import com.lasic.util.Logging
 import se.scalablesolutions.akka.dispatch.{DefaultCompletableFuture, CompletableFuture}
 
-//private class NodeTracker(val node: NodeInstance) {
-//  var _instanceID: String = null
-//
-//  def instanceID: String = {
-//    if (_instanceID == null) {
-//      val x: Option[Nothing] = node.actor !! MsgQueryID
-//      val y: String = x.get
-//      if (y != null)
-//        _instanceID = y.toString
-//    }
-//    if (_instanceID != null) _instanceID else "(Not Assigned)"
-//  }
-//
-//  def nodeState: Any = {
-//    node.actor !! MsgQueryState
-//    //    match {
-//    //      case Some(x:VMActorState) => x
-//    //      case _ => null
-//    //    }
-//  }
-//
-//  def isInState(x: VMActorState) = {
-//    val y = node.actor !! MsgQueryState
-//    val result: Boolean =
-//    y match {
-//      case Some(something) => something == x
-//      case x => false
-//    }
-//
-//    result
-//
-//  }
-//
-//  def resolveScriptArguments(args: Map[String, ScriptArgumentValue]): Map[String, List[String]] = {
-//    Map.empty ++ args.map {
-//      argTuple: Tuple2[String, ScriptArgumentValue] =>
-//        val values: List[String] = argTuple._2 match {
-//          case x: LiteralScriptArgumentValue => List(x.literal)
-//          case x: PathScriptArgumentValue => {
-//            val a = x.literal
-//            val b = node.findNodes(a)
-//            val c = b.map { _.privateDNS }
-//            c
-//          }
-//        }
-//        (argTuple._1, values)
-//    }
-//  }
-//
-//  def resolveScripts: Map[String, Map[String, List[String]]] = {
-//    Map.empty ++ node.parent.scriptMap.map {
-//      scriptTuple => (scriptTuple._1, resolveScriptArguments(scriptTuple._2))
-//    }
-//  }
-//}
 
 
 class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
   private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
 
-  //  private def waitForAllNodesToReachState(state:VMActorState) {
-  //
-  //  }
-  //  private def notBootedList(nodes:List[NodeTracker])= {
-  //    nodes.filter { t => t.isBooted }
-  //  }
-  //
-  //  private def vmIDs(nodes:List[NodeTracker])= {
-  //    nodes.map { t => t.instanceID }
-  //  }
-
   private def validateProgram {}
 
   private def startAllActors {
-    nodes.foreach { node =>
-      node.actor = Actor.actorOf(new VMActor(cloud))
-      node.actor.start
-    }
+    nodes.foreach { _.actor = Actor.actorOf(new VMActor(cloud)).start  }
   }
 
   private def stopAllActors {
@@ -106,10 +37,10 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     logger.info("Booted IDs are: " + nodes.map(t => t.instanceID + ":" + showValue(t.nodeState)))
   }
 
-  private def waitForVMActorState(state: VMActorState, statusString: String) {
+  private def waitForVMActorState(state: State, statusString: String) {
     var waiting = nodes.filter(t => !t.isInState(state))
     while (waiting.size > 0) {
-      val descriptions: List[String] = waiting.map(t => t.instanceID + ":" + showValue(t.nodeState))
+      val descriptions: List[String] = waiting.map(t => t.instanceID + ":" + t.nodeState)
       logger.info(statusString + descriptions)
       Thread.sleep(10000)
       waiting = nodes.filter(t => !t.isInState(state))
@@ -144,26 +75,6 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     println("}")
   }
 
-//  private def assignPrivateDNS2Nodes {
-//    node.foreach {
-//      tracker =>
-//        var func = { vm:VM => (vm.instanceId, vm.getPublicDns, vm.getPrivateDns) }
-//        var result = (tracker.actor !! MsgVMOperation(func)).get
-//        tracker.node.instanceID =
-//        tracker.node.privateDNS =
-//
-//        func = { vm:VM => vm.getPublicDns }
-//        result = tracker.actor !! MsgVMOperation(func)
-//        tracker.node.publicDNS = result.get
-//
-//        func = { vm:VM => vm.instanceId }
-//        result = tracker.actor !! MsgVMOperation(func)
-//        tracker.node.instanceID = result.get
-//
-//        tracker.node.privateDNS = (tracker.actor !! MsgQueryPrivateDNS).get.toString
-//        logger.debug("assigning private dns [" + tracker.node.privateDNS + "] to " + tracker.node.path)
-//    }
-//  }
 
   def doit() {
 
