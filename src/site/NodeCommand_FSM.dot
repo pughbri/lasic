@@ -1,0 +1,11 @@
+digraph NodeActor_fsm {
+	rankdir=LR;
+	size="8,5"
+##	node [shape = doublecircle]; LR_0 LR_3 LR_4 LR_8;
+	node [shape = circle];
+
+## Launch transitions
+	Blank -> WaitingForVM 					[ label="Launch" ]
+	WaitingForVM -> WaitingForBoot			[ label="VM" ]
+	WaitingForBoot -> WaitingForBoot		[ label="Wake (but not booted)" ]
+	WaitingForBoot -> Booted				[ label="Wake (and booted)" ]
