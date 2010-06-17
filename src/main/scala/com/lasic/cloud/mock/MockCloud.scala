@@ -64,7 +64,10 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
   def getState(vm: VM) = {
-    vm.getMachineState()
+    vm match {
+      case mvm : MockVM => mvm.machineState
+      case _ => MachineState.Unknown
+    }
   }
 
   def getPublicDns(vm: VM): String = {
@@ -77,23 +80,22 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
 
 
   def createVolume(size: Int, snapID: String, availabilityZone: String) = {
-    new VolumeInfo("id", "10g", "snapid", "east", "up", Calendar.getInstance,
-      List[AttachmentInfo](new AttachmentInfo("vol-id", "inst-id", "device", "up", Calendar.getInstance)))
+    new MockVDisk(this, size, snapID, availabilityZone)
   }
 
 
-  def deleteVolume(volumeId: String) = {
-    logger.info("deleted volume " + volumeId)
-  }
-
-  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-    new AttachmentInfo("volumeid", "instanceid", "/some/device", "good", Calendar.getInstance)
-  }
-
-  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
-    new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
-
-  }
+//  def deleteVolume(volumeId: String) = {
+//    logger.info("deleted volume " + volumeId)
+//  }
+//
+//  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+//    new AttachmentInfo("volumeid", "instanceid", "/some/device", "good", Calendar.getInstance)
+//  }
+//
+//  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
+//    new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
+//
+//  }
 
   def associateAddress(vm: VM, ip: String) {
     logger.info("associate ip [" + ip + "] with instance [" + vm.instanceId + "]")

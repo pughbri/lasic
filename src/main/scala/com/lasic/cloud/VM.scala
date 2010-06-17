@@ -53,13 +53,13 @@ trait VM extends Logging {
 
   def executeScript(scriptAbsPath: String, variables: Map[String, List[String]])
 
-  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
-    cloud.attach(volumeInfo, this, devicePath)
-  }
-
-  def detach(volumeInfo: VolumeInfo, devicePath: String, force: Boolean): AttachmentInfo = {
-    cloud.detach(volumeInfo, this, devicePath, force)
-  }
+//  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
+//    cloud.attach(volumeInfo, this, devicePath)
+//  }
+//
+//  def detach(volumeInfo: VolumeInfo, devicePath: String, force: Boolean): AttachmentInfo = {
+//    cloud.detach(volumeInfo, this, devicePath, force)
+//  }
 
   def associateAddressWith(ip: String) {
     cloud.associateAddress(this, ip)

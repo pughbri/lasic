@@ -1,7 +1,8 @@
 package com.lasic
 
-import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
+import cloud._
 import com.lasic.cloud.MachineState._
+
 
 
 /**
@@ -35,18 +36,20 @@ trait Cloud {
 
   def disassociateAddress(ip: String)
 
-  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
+//  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
 
 //  def createLaunchConfiguration(config: LaunchConfiguration)
 
   /**
    * @param size - size in gigabytes
    */
-  def createVolume(size: Int, snapID: String, availabilityZone: String): VolumeInfo
+  def createVolume(size: Int, snapID: String, availabilityZone: String): VDisk
 
-  def deleteVolume(volumeId: String)
-
-  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
+//  def deleteVolume(volumeId: String)
+//
+//  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
+//
+//  def volumeState(volumeId:String):VolumeState
 
   protected def createVMs(numVMs: Int, startVM: Boolean)(createVM: => VM): List[VM] = {
     var vms = List[VM]()

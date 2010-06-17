@@ -62,7 +62,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloudInst
     }
   }
 
-  override def getMachineState() = machineState
+  //override def getMachineState() = machineState
 
   private def withDelay(callback: => Unit): Unit = {
     Thread.sleep(delay * 1000)
