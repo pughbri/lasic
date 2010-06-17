@@ -33,17 +33,4 @@ system  "sys" {
     system "subsystem 1" {}
 }
 
-
-
-runScript "foo" {
-    scp {...}
-    scripts{ ...}
-}
-
-system "sys" {
-    node "a node" {
-        props { ... }
-        deploy = runScript "foo"
-    }
-}
     
