@@ -55,23 +55,23 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
 
     def testCreateAndMountVolume(cloud: Cloud, vm: VM) = {
 
-      val volumeInfo = cloud.createVolume(1, "", "us-east-1d")
-      val devicePath: String = "/dev/sdh"
-      try {
-
-        val attachmentInfo = vm.attach(volumeInfo, devicePath)
-        println(attachmentInfo)
-      }
-      finally {
-        try {
-          vm.detach(volumeInfo, devicePath, true)
-        }
-        finally {
-          attemptWithTimeout(20) {
-            cloud.deleteVolume(volumeInfo.volumeId)
-          }
-        }
-      }
+//      val volumeInfo = cloud.createVolume(1, "", "us-east-1d")
+//      val devicePath: String = "/dev/sdh"
+//      try {
+//
+//        val attachmentInfo = vm.attach(volumeInfo, devicePath)
+//        println(attachmentInfo)
+//      }
+//      finally {
+//        try {
+//          vm.detach(volumeInfo, devicePath, true)
+//        }
+//        finally {
+//          attemptWithTimeout(20) {
+//            cloud.deleteVolume(volumeInfo.volumeId)
+//          }
+//        }
+//      }
     }
 
     def testAllocateAndAssociateIP(cloud: Cloud, vm: VM) {

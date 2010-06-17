@@ -1,7 +1,6 @@
 package com.lasic.cloud
 
 import amazon.AmazonVM
-import com.lasic.{LasicProperties, VM, Cloud}
 import java.lang.String
 import java.util.Iterator
 import java.util.{List => JList}
@@ -12,6 +11,7 @@ import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
 import com.lasic.cloud.AttachmentInfo
+import com.lasic.{VDisk, LasicProperties, VM, Cloud}
 
 /**
  * @author Brian Pugh
@@ -133,42 +133,43 @@ class AmazonCloud extends Cloud with Logging {
   }
 
 
-  def createVolume(size: Int, snapID: String, availabilityZone: String): VolumeInfo = {
-    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(size.toString, snapID, availabilityZone)
-
-    val typicaAttachmentInfoList = vi.getAttachmentInfo
-    var attachmentInfoList = List[AttachmentInfo]()
-    val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
-    while (iterator.hasNext()) {
-      val attachmentInfo: XAttachmentInfo = iterator.next
-      val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
-        attachmentInfo.getInstanceId,
-        attachmentInfo.getDevice,
-        attachmentInfo.getStatus,
-        attachmentInfo.getAttachTime)
-
-      attachmentInfoList = info :: attachmentInfoList
-    }
-
-
-    new VolumeInfo(vi.getVolumeId, vi.getSize, vi.getSnapshotId, vi.getZone, vi.getStatus, vi.getCreateTime, attachmentInfoList)
+  def createVolume(size: Int, snapID: String, availabilityZone: String): VDisk = {
+    null
+//    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(size.toString, snapID, availabilityZone)
+//
+//    val typicaAttachmentInfoList = vi.getAttachmentInfo
+//    var attachmentInfoList = List[AttachmentInfo]()
+//    val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
+//    while (iterator.hasNext()) {
+//      val attachmentInfo: XAttachmentInfo = iterator.next
+//      val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
+//        attachmentInfo.getInstanceId,
+//        attachmentInfo.getDevice,
+//        attachmentInfo.getStatus,
+//        attachmentInfo.getAttachTime)
+//
+//      attachmentInfoList = info :: attachmentInfoList
+//    }
+//
+//
+//    new VolumeInfo(vi.getVolumeId, vi.getSize, vi.getSnapshotId, vi.getZone, vi.getStatus, vi.getCreateTime, attachmentInfoList)
 
   }
 
 
-  def deleteVolume(volumeId: String) = {
-    ec2.deleteVolume(volumeId)
-  }
-
-  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
-    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-  }
-
-  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
-    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
-    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-  }
+//  def deleteVolume(volumeId: String) = {
+//    ec2.deleteVolume(volumeId)
+//  }
+//
+//  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+//    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+//    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+//  }
+//
+//  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
+//    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
+//    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+//  }
 
 
   def associateAddress(vm: VM, ip: String) = {
