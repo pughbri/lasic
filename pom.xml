@@ -47,7 +47,7 @@
                 </dependency>
         -->
 
-        <dependency>
+        <dependency>                                                  
             <artifactId>akka-core_2.8.0.RC3</artifactId>
             <groupId>se.scalablesolutions.akka</groupId>
             <version>0.9.1</version>

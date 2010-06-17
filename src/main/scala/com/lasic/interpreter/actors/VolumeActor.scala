@@ -1,160 +1,224 @@
 package com.lasic.interpreter.actors
 
-import com.lasic.model.{NodeInstance, LasicProgram}
-import com.lasic.{Cloud, VM}
 import se.scalablesolutions.akka.actor.Actor._
-import com.lasic.cloud.LaunchConfiguration
-import se.scalablesolutions.akka.actor.Actor
+import com.lasic.{Cloud, VM}
 import com.lasic.Cloud
 import VolumeActor._
-import java.io.File
+import com.lasic.util.Logging
+import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 
 /**
- * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents
- * a specific VM (and corresponding machine in the cloud) and will perform asynchronous operations on that
- * VM based on messages sent to the Actor.   For this to operate correctly, it is important to clearly document and
- * maintain the FSM.  The FSM is included in this source code distribution as XXX
+ * An Actor which is also a finite state machine for volumes in the cloud.
  */
-class VolumeActor(cloud: Cloud) extends Actor {
-
+class VolumeActor(cloud: Cloud) extends Actor with Logging {
   /**Current state of the FSM */
-  var nodeState = VMActorState.Blank
+  var volumeState = VolumeActorState.Uncreated
 
   /**The VM we are manipulating **/
-  var vm: VM = null
-
-  /**The actor which does all the blocking operations */
-  var sleeper = actorOf[Sleeper].start
+  var id:String = null
 
   /**
    * Send back a reply of the VM id, if there is one, otherwise null
    */
-  def replyWithVMId {
-    if (vm != null) {
-      val id = vm.instanceId
-      if (id != null)
-        self.reply(id)
-      else
-        self.reply(null)
-    } else self.reply(null)
+  def replyWithId {
+    var result: String = "?"
+    if (id != null )
+      result = id
+    self.senderFuture.foreach(_.completeWithResult(id))
   }
 
+//
+//
+//  def vmOperation(op: VM => Any) {
+//    if (vm == null) {
+//      self.senderFuture.foreach(_.completeWithResult(None))
+//    } else {
+//      val senderFuture = self.senderFuture
+//      spawn {
+//        val result = op(vm)
+//        senderFuture.foreach(_.completeWithResult(result))
+//      }
+//    }
+//  }
+//
+//  def build(uri: URI): File = {
+//    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
+//  }
 
   /**
    * Stop this actor and the sleeper actor from running.  This will unconditionally stop
    * both actors regardless of their current state
    */
-  def stopEverything { sleeper.stop; self.stop }
-  def startAsyncLaunch(lc: LaunchConfiguration) {  sleeper ! MsgSleeperCreateVM(lc,cloud) }
-  def startAsyncSCP(configData:ConfigureData) { sleeper ! MsgSleeperSCP(vm,configData) }
-  def startAsyncScripts(configData:ConfigureData) { sleeper ! MsgSleeperScripts(vm,configData) }
-  def startAsyncBootWait       { sleeper ! MsgSleeperBootWait(vm) }
+  def stopEverything {
+    self.stop
+  }
+
+//  def startAsyncLaunch(lc: LaunchConfiguration) {
+//    val me = self
+//    spawn {
+//        val avm = cloud.createVM(lc, true)
+//        me ! MsgSetVM(avm)
+//    }
+//  }
+//
+//  def startAsyncSCP(configData: ConfigureData) {
+//    val me = self
+//    spawn {
+//      configData.scp.foreach {
+//        foo =>
+//          vm.copyTo(build(new URI(foo._1)), foo._2)
+//      }
+//      me ! MsgSCPCompleted(configData)
+//    }
+//
+//  }
+//
+//  def startAsyncScripts(configData: ConfigureData) {
+//    val me = self
+//    spawn {
+//      configData.scripts.foreach {
+//        script =>
+//          val scriptName = script._1
+//          val argMap = script._2
+//          //vm.execute(scriptName)
+//          vm.executeScript(scriptName, argMap)
+//      }
+//      me ! MsgScriptsCompleted(configData)
+//    }
+//  }
+//
+//  def startAsyncBootWait {
+//    val vmActor = self
+//    spawn {
+//      Thread.sleep(2000);
+//      val initialized: Boolean = vm.isInitialized
+//      if (initialized) {
+//        vmActor ! MsgSetBootState(true)
+//      }
+//      else {
+//        vmActor ! MsgSetBootState(false)
+//      }
+//    }
+//  }
 
   /**
    * The message receiver / dispatcher for this actor
    */
-  def receive = { case x => respondToMessage(x) }
+  def receive = {case x => respondToMessage(x)}
 
-  import VMActorState._
+  import VolumeActorState._
+
+  def create(size:Int, snap:String, zone:String) {
+    val me = self
+    spawn {
+      val id = cloud.createVolume(size,snap,zone)
+      //me !  MsgCreated(id)
+    }
+  }
+
   
   /**
    * This is the heart of the state machine -- the transitions from one state to another is accomplished here
    * (and only here!).
    */
-  private def respondToMessage(msg:Any) {
-    nodeState =
-      (nodeState,msg) match {
-        case (_,              MsgQueryID)               =>  { replyWithVMId;                  nodeState       }
-        case (_,              MsgQueryState)            =>  { self.reply(nodeState);          nodeState       }
-        case (_,              MsgStop)                  =>  { stopEverything;                 Froggy      }
-        case (Blank,          MsgLaunch(lc))            =>  { startAsyncLaunch(lc);           WaitingForVM    }
-        case (Booted,         MsgConfigure(config))     =>  { startAsyncSCP(config);          RunningSCP      }
-        case (RunningSCP,     MsgSCPCompleted(config))  =>  { startAsyncScripts(config);      RunningScripts  }
-        case (RunningScripts, MsgScriptsCompleted(x))   =>  {                                 Configured      }
-        case (WaitingForBoot, MsgSetBootState(false))   =>  { startAsyncBootWait;             WaitingForBoot  }
-        case (WaitingForBoot, MsgSetBootState(true))    =>  {                                 Booted          }
-        case (WaitingForVM,   MsgSetVM(avm))             =>  { vm=avm; startAsyncBootWait;  WaitingForBoot  }
-        case _                                          =>  {                                 nodeState       }
-      }
+  private def respondToMessage(msg: Any) {
+    volumeState =
+            (volumeState, msg) match {
+              case (_,                MsgQueryID)                 => { replyWithId;               volumeState}
+              case (Uncreated,        MsgCreate(size,snap,zone))  => { create(size,snap,zone);    Creating}
+              case (Creating,         MsgCreated(anid))           => { id=anid;                   Available}
+              //case (Available,        MsgAttach(devId, path))     => { attach(devId,path);        Attaching}
+              
+
+              //    currentState    MessageRecieved               Operations to do            Next State
+//              case (_,              MsgVMOperation(op))       => {vmOperation(op);            nodeState}
+//              case (_,              MsgQueryState)            => {self.reply(nodeState);      nodeState}
+//              case (_,              MsgStop)                  => {stopEverything;             Froggy}
+//              case (Blank,          MsgLaunch(lc))            => {startAsyncLaunch(lc);       WaitingForVM}
+//              case (Booted,         MsgConfigure(config))     => {startAsyncSCP(config);      RunningSCP}
+//              case (RunningSCP,     MsgSCPCompleted(config))  => {startAsyncScripts(config);  RunningScripts}
+//              case (RunningScripts, MsgScriptsCompleted(x))   => {                            Configured}
+//              case (WaitingForBoot, MsgSetBootState(false))   => {startAsyncBootWait;         WaitingForBoot}
+//              case (WaitingForBoot, MsgSetBootState(true))    => {                            Booted}
+//              case (WaitingForVM,   MsgSetVM(avm))            => {vm=avm; startAsyncBootWait; WaitingForBoot}
+              case _                                          => {                            volumeState}
+            }
   }
 }
 
 /**
- *  A VMActor is a
+ * Companion object that contains messages to send, etc.
  */
 object VolumeActor {
-  object VMActorState extends Enumeration {
-    type VMActorState = Value
-    val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
+
+  /** The states of the VMActor state machine */
+  object VolumeActorState extends Enumeration {
+    type State = Value
+    val Uncreated, Creating, Available, Attaching, Attached, Detaching, Deleting, Deleted = Value
   }
 
-  class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, String]])
-
   /**
-   * These are public commands, which cause state transitions, that can be sent to the NodeActor as part
+   * These are public messages, which cause state transitions, that can be sent to the VMACtor as part
    * of its public API
    */
-  case class MsgConfigure(configData: ConfigureData)
-  case class MsgLaunch(lc: LaunchConfiguration)
-  case class MsgQueryState()
+  case class MsgAttach(attachToID:String, devicePath:String)
+  case class MsgCreate(sizeInGB:Int, snapID:String, zone:String)
   case class MsgQueryID()
   case class MsgStop()
 
-  // Messages involving the Sleeper
-
-  // Messages sent *TO* the sleeper
-  private case class MsgSleeperSCP(vm:VM, configureData: ConfigureData)
-  private case class MsgSleeperScripts(vm:VM, configureData: ConfigureData)
-  private case class MsgSleeperBootWait(vm: VM)
-  private case class MsgSleeperCreateVM(lc: LaunchConfiguration, cloud: Cloud)
-  private case class MsgSleeperStop
-
-  // Messages sent *FROM* the sleeper
-  private case class MsgSCPCompleted(val cd: ConfigureData)
-  private case class MsgScriptsCompleted(val cd: ConfigureData)
-  private case class MsgSetVM(vm: VM)
-  private case class MsgSetBootState(isInitialized: Boolean)
-
-
-  /**
-   *  A private actor which performs all the blocking operations on a node.   A NodeActor delegates all blocking
-   * operations to an instance of this actor -- enabling the NodeActor to 1) appear to complete all operations
-   * asynchronously and 2) allow the NodeActor to be queried for status while long running (and blocking)
-   * operations are occurring.
-   */
-  private class Sleeper extends Actor {
-    def receive = {
-      case MsgSleeperBootWait(vm) => {
-        Thread.sleep(500);
-        self.reply(MsgSetBootState(vm.isInitialized))
-      }
-
-      case MsgSleeperCreateVM(lc, cloud) => {
-        val vm = cloud.createVM(lc, true)
-        self.reply(MsgSetVM(vm))
-      }
-
-      case MsgSleeperSCP(vm,configData) => {
-        configData.scp.foreach {
-          foo =>
-            vm.copyTo(new File(foo._1), foo._2)
-        }
-        self.reply(MsgSCPCompleted(configData))
-      }
-
-      case MsgSleeperScripts(vm,configData) => {
-        configData.scripts.foreach {
-          script =>
-            val scriptName = script._1
-            val argMap = script._2
-            vm.execute(scriptName)
-        }
-        self.reply(MsgScriptsCompleted(configData))
-      }
-
-      case MsgSleeperStop => self.stop
-
-    }
-  }
+  // Private messages sent to ourselves
+  private case class MsgCreated(id:String)
+  private case class MsgAttached
 
 }
+
+
+/**
+ * A utility mixin to to make interacting with a VMActor a bit easier.  It presents blocking methods that
+ * hide the fact that they send messages underneath.
+ */
+//trait VMActorUtil {
+//  var actor: ActorRef = null
+//
+//  private def asString(x: Any):String = x match {
+//    case Some(null) => "?"
+//    case Some(s) => s.toString
+//    case None => "?"
+//  }
+//
+//  def instanceID: String = {
+//    val a = actor !! MsgVMOperation({vm: VM => vm.instanceId})
+//    asString(a)
+//  }
+//
+//  def publicDNS: String = {
+//    val x = actor !! MsgVMOperation({vm: VM => vm.getPublicDns})
+//    asString(x)
+//  }
+//
+//  def privateDNS: String = {
+//    val x = actor !! MsgVMOperation({vm: VM => vm.getPrivateDns})
+//    asString(x)
+//  }
+//
+//  def nodeState: Any = {
+//    val x = (actor !! MsgQueryState)
+//    x match {
+//      case Some(y) => y.asInstanceOf[VMActorState.State]
+//      case _ => VMActorState.Blank
+//    }
+//  }
+//
+//  def isInState(x: VMActorState.State) = {
+//    val y = actor !! MsgQueryState
+//    val result: Boolean =
+//    y match {
+//      case Some(something) => something == x
+//      case x => false
+//    }
+//
+//    result
+//
+//  }
+//
+//}

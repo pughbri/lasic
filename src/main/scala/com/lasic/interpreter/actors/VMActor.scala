@@ -44,7 +44,6 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
       spawn {
         val result = op(vm)
         senderFuture.foreach(_.completeWithResult(result))
-        //      replyTo ! result
       }
     }
   }
@@ -64,8 +63,8 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
   def startAsyncLaunch(lc: LaunchConfiguration) {
     val me = self
     spawn {
-      vm = cloud.createVM(lc, true)
-      me ! MsgSetVM
+        val avm = cloud.createVM(lc, true)
+        me ! MsgSetVM(avm)
     }
   }
 
@@ -133,7 +132,7 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
               case (RunningScripts, MsgScriptsCompleted(x))   => {                            Configured}
               case (WaitingForBoot, MsgSetBootState(false))   => {startAsyncBootWait;         WaitingForBoot}
               case (WaitingForBoot, MsgSetBootState(true))    => {                            Booted}
-              case (WaitingForVM,   MsgSetVM)                 => {startAsyncBootWait;         WaitingForBoot}
+              case (WaitingForVM,   MsgSetVM(avm))            => {vm=avm; startAsyncBootWait; WaitingForBoot}
               case _                                          => {                            nodeState}
             }
   }
@@ -165,7 +164,7 @@ object VMActor {
 
   // Private messages sent to ourselves
   private case class MsgSetBootState(isInitialized: Boolean)
-  private case class MsgSetVM()
+  private case class MsgSetVM(avm:VM)
   private case class MsgSCPCompleted(val cd: ConfigureData)
   private case class MsgScriptsCompleted(val cd: ConfigureData)
 }
