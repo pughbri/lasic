@@ -15,7 +15,7 @@ import com.lasic.util.Logging
  * To change this template use File | Settings | File Templates.
  */
 
-class LasicParser extends JavaTokenParsers with Logging{
+class LasicParser extends JavaTokenParsers with Logging {
   /*==========================================================================================================
     NON BNF utility methods
    ==========================================================================================================*/
@@ -47,19 +47,32 @@ class LasicParser extends JavaTokenParsers with Logging{
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
-          case astScp: ASTScp => sys.scpMap = scala.collection.Map.empty ++ astScp.scpMap
-          case astScript: ASTScript =>
-              sys.scriptMap = scala.collection.Map.empty ++ astScript.scpMap.map {
-                tuple =>  (tuple._1, scala.collection.Map.empty ++ tuple._2 )
-
-              }
+          case astAction: ASTAction => sys.actions = astAction :: sys.actions           
           case astVolume: ASTVolume =>
-              val immutableMap = scala.collection.Map.empty ++ astVolume.params
-              sys.volumes= immutableMap :: sys.volumes 
+            val immutableMap = scala.collection.Map.empty ++ astVolume.params
+            sys.volumes = immutableMap :: sys.volumes
           case _ =>
         }
     }
     sys
+  }
+
+  def buildAction(actionName: String, body: List[Any]) = {
+    val action = new ASTAction
+    action.name = actionName
+    body.foreach {
+      listEntry =>
+        listEntry match {
+          case astScp: ASTScp => action.scpMap = action.scpMap ++ astScp.scpMap
+          case astScript: ASTScript =>
+            action.scriptMap = action.scriptMap ++ astScript.scpMap.map {
+              tuple => (tuple._1, scala.collection.Map.empty ++ tuple._2)
+
+            }
+          case _ =>
+        }
+    }
+    action
   }
 
   def initNodeProperties(sys: ASTNode, props: Map[Any, Any]) {
@@ -109,7 +122,7 @@ class LasicParser extends JavaTokenParsers with Logging{
 
   }
 
-  def node_body = rep(node_props | scripts | scp | volume)
+  def node_body = rep(node_props | action | volume)
 
   def node_props = "props" ~> "{" ~> rep(node_prop) <~ "}" ^^ {
     list_o_props => Map() ++ list_o_props
@@ -135,6 +148,11 @@ class LasicParser extends JavaTokenParsers with Logging{
 
   def node_list_prop_name = "groups"
 
+  def action = "action" ~ aString ~ lbrace ~ rep(scripts | scp) ~ rbrace ^^ {
+    case _ ~ actionName ~ _ ~ list_o_cmds ~ _ =>
+      buildAction(actionName, list_o_cmds)
+  }
+
   def scripts = "scripts" ~ lbrace ~ scripts_body ~ rbrace ^^ {
     case _ ~ _ ~ list_o_scripts ~ _ =>
       val s = new ASTScript
@@ -146,25 +164,24 @@ class LasicParser extends JavaTokenParsers with Logging{
 
   def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace ^^ {
     case name ~ _ ~ _ ~ arg_list ~ _ =>
-      val argMap = Map[String,ScriptArgumentValue]() ++ arg_list
+      val argMap = Map[String, ScriptArgumentValue]() ++ arg_list
       (name -> argMap)
   }
 
-  def script_param:Parser[Tuple2[String,ScriptArgumentValue]] = script_param_literal | script_param_path
+  def script_param: Parser[Tuple2[String, ScriptArgumentValue]] = script_param_literal | script_param_path
 
   def script_param_literal = ident ~ ":" ~ aString ^^ {
     case from ~ _ ~ to =>
       (from -> new LiteralScriptArgumentValue(to))
   }
 
-  def path:Parser[String] = """/(((system|node)\['[a-zA-Z0-9 -_]+'\](\[[0-9]+\])?)|/)*""".r
-//  def path:Parser[String] = """/((system\['[a-zA-Z0-9 -_]+'\])|/)*""".r
+  def path: Parser[String] = """/(((system|node)\['[a-zA-Z0-9 -_]+'\](\[[0-9]+\])?)|/)*""".r
+  //  def path:Parser[String] = """/((system\['[a-zA-Z0-9 -_]+'\])|/)*""".r
 
   def script_param_path = ident ~ ":" ~ path ^^ {
     case from ~ _ ~ to =>
       (from -> new PathScriptArgumentValue(to))
   }
-
 
 
   def scp = "scp" ~ lbrace ~ scp_body ~ rbrace ^^ {
@@ -181,12 +198,12 @@ class LasicParser extends JavaTokenParsers with Logging{
   def volume = "volume" ~ aString ~ lbrace ~ volume_body ~ rbrace ^^ {
     case _ ~ name ~ _ ~ vol_body ~ _ =>
       val astVolume = new ASTVolume
-      astVolume.params = vol_body += ("name" -> name)      
+      astVolume.params = vol_body += ("name" -> name)
       astVolume
   }
 
   def volume_body = rep(volume_param) ^^ {
-    case params => Map() ++ params  
+    case params => Map() ++ params
   }
 
   def volume_param = {"size" | "device" | "mount"} ~ ":" ~ aString ^^ {case label ~ _ ~ value => (label -> value)}

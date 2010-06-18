@@ -1,9 +1,10 @@
 package com.lasic.parser
 
-import ast.{ASTNode, ASTSystem}
+import ast.{ASTAction, ASTNode, ASTSystem}
 import collection.mutable.ListBuffer
 import com.lasic.model._
 import io.Source
+import com.lasic.values.BaseAction
 
 /**
  * Created by IntelliJ IDEA.
@@ -33,7 +34,7 @@ object LasicCompiler {
       volumeProperties("size"),
       device,
       mount)
-    
+
     nodeInstance.volumes = volumeInstance :: nodeInstance.volumes
   }
 
@@ -136,17 +137,28 @@ object LasicCompiler {
     nodeGroup.machineimage = ast.machineimage
     nodeGroup.kernelid = ast.kernelid
     nodeGroup.ramdiskid = ast.ramdiskid
-    nodeGroup.groups = ast.groups.map { x=>x }
+    nodeGroup.groups = ast.groups.map {x => x}
     nodeGroup.key = ast.key
     nodeGroup.user = ast.user
     nodeGroup.instancetype = ast.instancetype
-    nodeGroup.scpMap = ast.scpMap
-    nodeGroup.scriptMap = ast.scriptMap
-
+    nodeGroup.actions = compile(ast.actions)
 
     createInstances(nodeGroup, ast)
     nodeGroup
 
+
+  }
+
+  private def compile(actions: List[BaseAction]): List[Action] = {
+    actions map {
+      case astAction: ASTAction => {
+        val action = new Action()
+        action.name = astAction.name
+        action.scpMap = astAction.scpMap
+        action.scriptMap = astAction.scriptMap
+        action
+      }
+    }
 
   }
 }

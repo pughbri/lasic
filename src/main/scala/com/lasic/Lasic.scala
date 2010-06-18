@@ -8,6 +8,7 @@ import interpreter.DeployVerb
 import java.io.File
 import parser.LasicCompiler
 import io.Source
+import java.lang.System
 //object Foo {
 //  def unapplySeq(args:Array[String]): Option[Seq[String]] = {
 //    Some(args)
@@ -86,6 +87,7 @@ object Lasic {
   def runLasic(args: Array[String]): Unit = {
     parseArgs(args)
 
+
     val s = Source.fromFile(new File(lasicFile))
     val program = LasicCompiler.compile(s)
 
@@ -97,10 +99,13 @@ object Lasic {
 
     val deploy = new DeployVerb(cloud, program)
     deploy.doit
+
   }
 
   def main(args: Array[String]) {
+    val startTime = System.currentTimeMillis
     runLasic(args)
+    println("Ran " + lasicFile + " in " + (System.currentTimeMillis - startTime / 1000) + " seconds.")
     System.exit(0)
 
 

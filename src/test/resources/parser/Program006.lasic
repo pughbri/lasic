@@ -11,11 +11,13 @@ system  "sys1" {
             size: "200g"
         }
 
-      	scripts {
-			"some_script": {}
-			"another": {
-				foo:"bar"
-			}
+        action "test" {
+            scripts {
+                "some_script": {}
+                "another": {
+                    foo:"bar"
+                }
+            }
 		}
     }
 

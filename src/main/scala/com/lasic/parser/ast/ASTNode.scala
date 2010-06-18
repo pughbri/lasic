@@ -1,5 +1,7 @@
 package com.lasic.parser.ast
 
+import com.lasic.values.NodeProperties
+
 /**
  * Created by IntelliJ IDEA.
  * User: lmonson

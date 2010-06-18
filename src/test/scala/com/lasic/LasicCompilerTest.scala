@@ -1,9 +1,8 @@
 package com.lasic
 
 import junit.framework._
-import model.{PathScriptArgumentValue, LiteralScriptArgumentValue, NodeInstance, SystemInstance}
-import parser.ast.ASTSystem
-import parser.{LasicParser, LasicCompiler}
+import model._
+import parser.{LasicCompiler}
 
 import org.apache.commons.io.IOUtils
 
@@ -11,6 +10,9 @@ import org.apache.commons.io.IOUtils
  * Tests a variety of sample LASIC programs to ensure that they compile into the proper object model
  */
 class LasicCompilerTest extends TestCase("LasicCompilerTest") {
+  override def setUp = {
+    LasicProperties.propFilename = classOf[Application].getResource("/lasic.properties").getPath()
+  }
 
   /**
    * Load a program, based on a test number, from the classpath
@@ -34,18 +36,27 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val program = getLasicProgram(1);
   }
 
+  def testActionType() {
+    val program = getLasicProgram(7);
+    val node = program.find(("//node[*][*]"))(0).asInstanceOf[NodeInstance]
+    val action = node.parent.actions(0)
+    assert(action.isInstanceOf[Action], "expected com.lasic.model.Action but got " + action.getClass)
+
+  }
+
   def testPathAsScriptArgument() {
     val program = getLasicProgram(7);
     val node = program.find(("//node[*][*]"))(0).asInstanceOf[NodeInstance]
-    val scripts = node.parent.scriptMap
+    val scripts = node.parent.actions(0).scriptMap
     val args = scripts("another")
-    assertEquals( 2, args.size)
-    assertEquals( true, args("foo").isInstanceOf[LiteralScriptArgumentValue])
-    assertEquals( true, args("foo2").isInstanceOf[PathScriptArgumentValue])
-    val s:String = args("foo2").literal
-    assertEquals( "/system['sys1']/node['node1'][0]", s );
+    assertEquals(2, args.size)
+    assertEquals(true, args("foo").isInstanceOf[LiteralScriptArgumentValue])
+    assertEquals(true, args("foo2").isInstanceOf[PathScriptArgumentValue])
+    val s: String = args("foo2").literal
+    assertEquals("/system['sys1']/node['node1'][0]", s);
 
   }
+
   /**
    * Ensure that an empty program, but with repeated "arity" produces objects
    */
@@ -74,9 +85,9 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
    */
   def testScp() = {
     val program = getLasicProgram(4);
-    assertEquals(2, program.instances(0).nodegroups(0).scpMap.size)
-    assertEquals("dest1", program.instances(0).nodegroups(0).scpMap("src1"))
-    assertEquals("dest2", program.instances(0).nodegroups(0).scpMap("src2"))
+    assertEquals(2, program.instances(0).nodegroups(0).actions(0).scpMap.size)
+    assertEquals("dest1", program.instances(0).nodegroups(0).actions(0).scpMap("src1"))
+    assertEquals("dest2", program.instances(0).nodegroups(0).actions(0).scpMap("src2"))
   }
 
   /**
@@ -84,12 +95,12 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
    */
   def testScripts() = {
     val program = getLasicProgram(5);
-    assertEquals(2, program.instances(0).nodegroups(0).scriptMap.size)
+    assertEquals(2, program.instances(0).nodegroups(0).actions(0).scriptMap.size)
 
-    var map = program.instances(0).nodegroups(0).scriptMap("some_script")
+    var map = program.instances(0).nodegroups(0).actions(0).scriptMap("some_script")
     assertEquals(0, map.size)
 
-    map = program.instances(0).nodegroups(0).scriptMap("another")
+    map = program.instances(0).nodegroups(0).actions(0).scriptMap("another")
     assertEquals(1, map.size)
     assertEquals("bar", map("foo").literal)
   }
@@ -97,7 +108,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   def testVolumes() = {
     val program = getLasicProgram(6);
     assertEquals(2, program.instances(0).nodegroups(0).instances(0).volumes.size)
-    
+
     assertEquals("node1-volume", program.instances(0).nodegroups(0).instances(0).volumes(0).name)
     assertEquals("100g", program.instances(0).nodegroups(0).instances(0).volumes(0).volSize)
     assertEquals("/dev/sdh", program.instances(0).nodegroups(0).instances(0).volumes(0).device)
@@ -139,7 +150,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
       assertEquals("small", program.instances(i).nodegroups(0).instancetype)
 
       // test scripts
-      val scriptMap = nodeGroup.scriptMap
+      val scriptMap = nodeGroup.actions(0).scriptMap
       assertEquals(2, scriptMap.size)
       var map = scriptMap("some_script")
       assertEquals(0, map.size)
@@ -147,7 +158,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
       assertEquals(1, map.size)
       assertEquals("bar", map("foo").literal)
 
-      val scpMap = nodeGroup.scpMap
+      val scpMap = nodeGroup.actions(0).scpMap
       assertEquals("dest1", scpMap("src1"))
       assertEquals("dest2", scpMap("src2"))
 
