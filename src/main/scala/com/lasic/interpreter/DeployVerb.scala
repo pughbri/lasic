@@ -3,15 +3,11 @@ package com.lasic.interpreter
 import actors._
 import VMActor._
 import VMActor.VMActorState._
-import com.lasic.{Cloud, VM}
-import se.scalablesolutions.akka.actor.Actor._
+import com.lasic.{Cloud}
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 import com.lasic.model._
 import com.lasic.util.Logging
-import se.scalablesolutions.akka.dispatch.{DefaultCompletableFuture, CompletableFuture}
-
-
 
 class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
   private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
@@ -19,11 +15,11 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def validateProgram {}
 
   private def startAllActors {
-    nodes.foreach { _.actor = Actor.actorOf(new VMActor(cloud)).start  }
+    nodes.foreach {_.actor = Actor.actorOf(new VMActor(cloud)).start}
   }
 
   private def stopAllActors {
-    nodes.foreach { _.actor ! MsgStop}
+    nodes.foreach {_.actor ! MsgStop}
   }
 
   private def launchAllAMIs {
@@ -62,7 +58,17 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def startAsyncNodeConfigure {
     nodes.foreach {
       node =>
-        val configData = new ConfigureData(node.parent.scpMap, node.resolveScripts)
+        val deployActions = node.parent.actions.filter(_.name == "install")
+        var allSCPs = Map[String, String]()
+        var allScripts = Map[String, Map[String, ScriptArgumentValue]]()
+        deployActions.foreach {
+          action => {
+            allSCPs = allSCPs ++ action.scpMap
+            allScripts = allScripts ++ action.scriptMap
+          }
+        }
+
+        val configData = new ConfigureData(allSCPs, node.resolveScripts(allScripts))
         node.actor ! MsgConfigure(configData)
     }
   }
@@ -70,7 +76,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   //createScaleGroups();
   private def printBoundLasicProgram {
     println("paths {")
-    nodes.foreach( {
+    nodes.foreach({
       node => println("    " + node.path + ": " + node.instanceID + "  // public=" + showValue(node.publicDNS) + "\tprivate=" + showValue(node.privateDNS))
     })
     println("}")

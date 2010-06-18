@@ -2,9 +2,11 @@
 system  "sys1" {
     node "node1" {
 
-        scp {
-			"src1":"dest1"
-			"src2":"dest2"
+        action "test" {
+            scp {
+                "src1":"dest1"
+                "src2":"dest2"
+            }
         }
     }
 

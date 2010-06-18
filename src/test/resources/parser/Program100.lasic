@@ -15,16 +15,18 @@ system  "sys" {
             instancetype:     "small"
         }
 
-		scripts {
-			"some_script": {}
-			"another": {
-				foo:"bar${number}"				
-			}
-		}
+        action "install" {
+            scripts {
+                "some_script": {}
+                "another": {
+                    foo:"bar${number}"
+                }
+            }
 
-        scp {
-			"src1":"dest1"
-			"src2":"dest2"
+            scp {
+                "src1":"dest1"
+                "src2":"dest2"
+            }
         }
 
     }

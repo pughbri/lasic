@@ -1,6 +1,6 @@
-package com.lasic.parser.ast
+package com.lasic.values
 
-import com.lasic.model.ScriptArgumentValue
+import com.lasic.model.{Action, ScriptArgumentValue}
 
 trait NodeProperties {
   var name                    = ""
@@ -12,9 +12,8 @@ trait NodeProperties {
   var key: String             = null
   var user: String            = null
   var instancetype: String    = null
-  var scpMap                  = Map[String,String]()
-  var scriptMap               = Map[String,Map[String,ScriptArgumentValue]]()
   var volumes                 = List[Map[String,String]]()
+  var actions                 = List[BaseAction]()
 
 }
 

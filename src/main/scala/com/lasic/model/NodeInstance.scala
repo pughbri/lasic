@@ -26,7 +26,9 @@ class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMAc
   }
   def children = volumes
 
-
+  /**
+   * args(0) = variable name args(1) = value
+   */
   private def resolveScriptArguments(args: Map[String, ScriptArgumentValue]): Map[String, List[String]] = {
     Map.empty ++ args.map {
       argTuple: Tuple2[String, ScriptArgumentValue] =>
@@ -43,8 +45,8 @@ class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMAc
     }
   }
 
-  def resolveScripts: Map[String, Map[String, List[String]]] = {
-    Map.empty ++ parent.scriptMap.map {
+  def resolveScripts(args: Map[String, Map[String, ScriptArgumentValue]]): Map[String, Map[String, List[String]]] = {
+    Map.empty ++ args.map {
       scriptTuple => (scriptTuple._1, resolveScriptArguments(scriptTuple._2))
     }
   }

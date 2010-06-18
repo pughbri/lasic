@@ -1,6 +1,6 @@
 package com.lasic.model
 
-import com.lasic.parser.ast.NodeProperties
+import com.lasic.values.NodeProperties
 
 /**
  * Created by IntelliJ IDEA.
