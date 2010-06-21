@@ -4,6 +4,7 @@ import com.lasic.{VM, Cloud}
 import VMActor._
 import com.lasic.interpreter.actors.RunActionActor._
 import se.scalablesolutions.akka.actor.Actor._
+import com.lasic.cloud.LaunchConfiguration
 
 /**
  *
@@ -14,7 +15,7 @@ class RunActionActor(protected val cloud: Cloud) extends VMActor {
   import RunActionActor.RunActionActorState._
 
   /**Current state of the FSM */
-  var nodeState:Any = Blank
+  var nodeState: Any = Blank
 
   /**The VM we are manipulating **/
   protected var vm: VM = null
@@ -24,6 +25,11 @@ class RunActionActor(protected val cloud: Cloud) extends VMActor {
     val me = self
     spawn {
       val avm = cloud.findVM(actionData.instanceId)
+      if (avm.launchConfiguration != null) {
+        avm.launchConfiguration.name = actionData.lc.name
+        avm.launchConfiguration.userName = actionData.lc.userName
+        avm.launchConfiguration.key = actionData.lc.key
+      }
       me ! MsgSetVM(avm, actionData)
     }
   }
@@ -31,8 +37,6 @@ class RunActionActor(protected val cloud: Cloud) extends VMActor {
   def startAsyncSCP(actionData: ActionData) {
     startAsyncSCP(new ConfigureData(actionData.scp, actionData.scripts))
   }
-
-
 
 
   /**
@@ -47,15 +51,15 @@ class RunActionActor(protected val cloud: Cloud) extends VMActor {
   private def respondToMessage(msg: Any) {
     nodeState =
             (nodeState, msg) match {
-             //    currentState    MessageRecieved               Operations to do                        Next State
-              case (_,              MsgVMOperation(op))        => {vmOperation(op);                      nodeState}
-              case (_,              MsgQueryState)             => {self.reply(nodeState);                nodeState}
-              case (_,              MsgStop)                   => {stopEverything;                       Blank}
-              case (Blank, MsgRunAction(actionData))           => {startAsyncSetVM(actionData);          WaitingForVM}
-              case (Blank, MsgRunAction(actionData))           => {startAsyncSCP(actionData);            RunningSCP}
-              case (RunningSCP, MsgSCPCompleted(config))       => {startAsyncScripts(config);            RunningScripts}
-              case (RunningScripts, MsgScriptsCompleted(x))    => {                                      Configured}
-              case (WaitingForVM,   MsgSetVM(avm, actionData)) => {vm=avm; startAsyncSCP(actionData);    RunningSCP}
+            //    currentState    MessageRecieved               Operations to do                        Next State
+              case (_, MsgVMOperation(op)) => {vmOperation(op); nodeState}
+              case (_, MsgQueryState) => {self.reply(nodeState); nodeState}
+              case (_, MsgStop) => {stopEverything; Blank}
+              case (Blank, MsgRunAction(actionData)) => {startAsyncSetVM(actionData); WaitingForVM}
+              case (Blank, MsgRunAction(actionData)) => {startAsyncSCP(actionData); RunningSCP}
+              case (RunningSCP, MsgSCPCompleted(config)) => {startAsyncScripts(config); RunningScripts}
+              case (RunningScripts, MsgScriptsCompleted(x)) => {Configured}
+              case (WaitingForVM, MsgSetVM(avm, actionData)) => {vm = avm; startAsyncSCP(actionData); RunningSCP}
               case _ => {nodeState}
             }
   }
@@ -65,20 +69,20 @@ class RunActionActor(protected val cloud: Cloud) extends VMActor {
 object RunActionActor {
 
   /**Configuation information sent to setup a VM */
-  class ActionData(val instanceId: String, val scp: Map[String, String], val scripts: Map[String, Map[String, List[String]]])
+  class ActionData(val lc: LaunchConfiguration, val instanceId: String, val scp: Map[String, String], val scripts: Map[String, Map[String, List[String]]])
 
-/**
+  /**
    * These are public messages, which cause state transitions, that can be sent to the VMACtor as part
    * of its public API
    */
   case class MsgRunAction(actionData: ActionData)
-//  case class MsgQueryState()
+  //  case class MsgQueryState()
   case class MsgStop()
 
   /**
    * prviate messages
    */
-  private case class MsgSetVM(avm:VM, actionData: ActionData)
+  private case class MsgSetVM(avm: VM, actionData: ActionData)
 
 
   /**The states of the VMActor state machine */
