@@ -115,7 +115,7 @@ object Lasic {
   def main(args: Array[String]) {
     val startTime = System.currentTimeMillis
     runLasic(args)
-    println("Ran " + lasicFile + " in " + (System.currentTimeMillis - startTime / 1000) + " seconds.")
+    println("Ran " + lasicFile + " in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
     System.exit(0)
 
 

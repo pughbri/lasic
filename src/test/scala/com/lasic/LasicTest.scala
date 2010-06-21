@@ -34,7 +34,7 @@ class LasicTest extends TestCase("lasic") {
   }
 
   def testRunScriptWithMock() = {
-    Lasic.runLasic(Array("-c=mock", "runAction", getLasicFilePath(201)))
+    Lasic.runLasic(Array("-c=mock", "-a=snapshot","runAction", getLasicFilePath(202)))
   }
 
   def testParseArgs() = {

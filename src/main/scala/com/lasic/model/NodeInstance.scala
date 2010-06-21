@@ -19,6 +19,7 @@ class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMAc
 //  var actor:ActorRef = null
 
   var volumes:List[VolumeInstance] = List()
+  var boundInstanceId: String = null
   def parent = parentGroup
   def path = {
     val result = parentGroup.path + "[%d]".format(idx)

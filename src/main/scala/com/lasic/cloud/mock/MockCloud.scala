@@ -4,8 +4,8 @@ package com.lasic.cloud.mock
 //import mock.MockVM
 import com.lasic.{VM, Cloud}
 import java.lang.String
-import java.util.{Random, Calendar}
-import com.lasic.cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
+import java.util.{Random}
+import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.util.Logging
 
 /**
@@ -24,16 +24,17 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   def findVM(instanceId: String) = {
     val vm = new MockVM(startupDelay, null, this)
     vm.instanceId = instanceId
+    vm ! vm.StateChange(MachineState.Running, 0)
     vm
   }
 
   def start(vms: List[VM]) {
     vms.foreach(vm => {
       vm match {
-        case mvm: MockVM => {          
+        case mvm: MockVM => {
           mvm ! mvm.StateChange(MachineState.Pending, 0)
           mvm ! mvm.StateChange(MachineState.Running, startupDelay)
-          mvm ! ("init",true,startupDelay)
+          mvm ! ("init", true, startupDelay)
         }
         case _ => logger.info("starting vm " + vm)
       }
@@ -72,7 +73,7 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
 
   def getState(vm: VM) = {
     vm match {
-      case mvm : MockVM => mvm.machineState
+      case mvm: MockVM => mvm.machineState
       case _ => MachineState.Unknown
     }
   }
@@ -91,18 +92,18 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
 
-//  def deleteVolume(volumeId: String) = {
-//    logger.info("deleted volume " + volumeId)
-//  }
-//
-//  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-//    new AttachmentInfo("volumeid", "instanceid", "/some/device", "good", Calendar.getInstance)
-//  }
-//
-//  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
-//    new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
-//
-//  }
+  //  def deleteVolume(volumeId: String) = {
+  //    logger.info("deleted volume " + volumeId)
+  //  }
+  //
+  //  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+  //    new AttachmentInfo("volumeid", "instanceid", "/some/device", "good", Calendar.getInstance)
+  //  }
+  //
+  //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) = {
+  //    new AttachmentInfo(volumeInfo.volumeId, vm.instanceId, devicePath, "detached", Calendar.getInstance)
+  //
+  //  }
 
   def associateAddress(vm: VM, ip: String) {
     logger.info("associate ip [" + ip + "] with instance [" + vm.instanceId + "]")

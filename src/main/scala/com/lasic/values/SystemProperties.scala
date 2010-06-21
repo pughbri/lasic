@@ -1,4 +1,4 @@
-package com.lasic.model
+package com.lasic.values
 
 /**
  * Created by IntelliJ IDEA.
