@@ -16,6 +16,8 @@ trait Cloud {
   }
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM]
 
+  def findVM(instanceId: String): VM
+
   def start(vms: List[VM])
 
   def reboot(vms: List[VM])

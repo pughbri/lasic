@@ -1,9 +1,9 @@
 package com.lasic.model
 
 import com.lasic.interpreter.actors._
-import com.lasic.interpreter.actors.VMActor
-import com.lasic.interpreter.actors.VMActor._
-import com.lasic.interpreter.actors.VMActor.VMActorState._
+import com.lasic.interpreter.actors.DeployActor
+import com.lasic.interpreter.actors.DeployActor._
+import com.lasic.interpreter.actors.DeployActor.DeployActorState._
 import com.lasic.VM
 import se.scalablesolutions.akka.actor.ActorRef
 

@@ -20,6 +20,13 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     createVMs(numVMs, startVM) {new MockVM(startupDelay, this)}
   }
 
+
+  def findVM(instanceId: String) = {
+    val vm = new MockVM(startupDelay, null, this)
+    vm.instanceId = instanceId
+    vm
+  }
+
   def start(vms: List[VM]) {
     vms.foreach(vm => {
       vm match {

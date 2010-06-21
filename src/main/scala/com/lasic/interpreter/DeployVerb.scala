@@ -1,12 +1,14 @@
 package com.lasic.interpreter
 
 import actors._
-import VMActor._
-import VMActor.VMActorState._
+import actors.VMActor.ConfigureData
+import DeployActor._
+import DeployActor.DeployActorState._
 import com.lasic.{Cloud}
 import com.lasic.cloud.LaunchConfiguration
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 import com.lasic.model._
+import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
 
 class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
@@ -15,7 +17,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def validateProgram {}
 
   private def startAllActors {
-    nodes.foreach {_.actor = Actor.actorOf(new VMActor(cloud)).start}
+    nodes.foreach {_.actor = Actor.actorOf(new DeployActor(cloud)).start}
   }
 
   private def stopAllActors {
@@ -43,11 +45,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     }
   }
 
-  private def showValue(x: Any) = x match {
-    case Some(s) => s
-    case None => "?"
-    case y => y
-  }
+
 
   private def waitForVolumes {}
 

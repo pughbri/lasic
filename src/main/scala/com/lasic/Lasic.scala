@@ -4,8 +4,9 @@ package com.lasic
 //import interpreter.{Deploy, DeployActor}
 import cloud.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.DeployVerb
+import interpreter.{RunActionVerb, DeployVerb}
 import java.io.File
+import model.LasicProgram
 import parser.LasicCompiler
 import io.Source
 import java.lang.System
@@ -24,7 +25,8 @@ object Lasic {
 
   var cloudProvider = CloudProvider.Amazon
   var lasicFile: String = null
-  var verb: String = null
+  var verbArg: String = null
+  var actionName: String = null
 
   object CloudProvider extends Enumeration {
     type CloudProviders = Value
@@ -68,10 +70,11 @@ object Lasic {
       case "-h" | "--help" => printUsageAndExit("Lasic Help:")
       case "-v" | "--verbose" => verbose = true
       case ArgOption("c" | "cloud", provider) => cloudProvider = CloudProvider.withName(provider)
+      case ArgOption("a" | "action", actionNameArg) => actionName = actionNameArg
       case ArgOption(_, _) => printUsageAndExit("invalid option:" + arg)
       case cmd => {
-        if (verb == null) {
-          verb = cmd
+        if (verbArg == null) {
+          verbArg = cmd
         }
         else if (lasicFile == null) {
           lasicFile = cmd
@@ -79,27 +82,34 @@ object Lasic {
         else printUsageAndExit("Too many commands:" )
       }    
     }
-    if (verb == null || lasicFile == null) {
+    if (verbArg == null || lasicFile == null) {
       printUsageAndExit("must provide both a verb and lasic-program:")
     }
   }
 
-  def runLasic(args: Array[String]): Unit = {
-    parseArgs(args)
-
-
+  def compile: LasicProgram = {
     val s = Source.fromFile(new File(lasicFile))
-    val program = LasicCompiler.compile(s)
+    LasicCompiler.compile(s)
+  }
 
+  def execute(program: LasicProgram): Any = {
     val cloud = cloudProvider match {
       case CloudProvider.Amazon => new AmazonCloud()
       case CloudProvider.Mock => new MockCloud(1)
       case _ => new MockCloud(1)
     }
 
-    val deploy = new DeployVerb(cloud, program)
-    deploy.doit
+    val verb = verbArg match {
+      case "deploy" => new DeployVerb(cloud, program)
+      case "runAction" => new RunActionVerb(actionName, cloud, program)
+    }
+    verb.doit
+  }
 
+  def runLasic(args: Array[String]): Unit = {
+    parseArgs(args)
+    val program= compile
+    execute(program)
   }
 
   def main(args: Array[String]) {

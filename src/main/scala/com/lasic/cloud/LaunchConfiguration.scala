@@ -1,6 +1,5 @@
 package com.lasic.cloud
 
-import com.xerox.amazonws.ec2.InstanceType
 import com.lasic.model.NodeInstance
 import com.lasic.LasicProperties
 
