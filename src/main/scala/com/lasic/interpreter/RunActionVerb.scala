@@ -40,31 +40,10 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
           }
         }
 
-        val configData = new ActionData("instanceid", allSCPs, node.resolveScripts(allScripts))
+        val configData = new ActionData(node.boundInstanceId, allSCPs, node.resolveScripts(allScripts))
         node.actor ! MsgRunAction(configData)
     }
   }
-
-//  private def waitForActionActorState(state: State, statusString: String) {
-//    var waiting = nodes.filter(t => !isInState(t, state))
-//    while (waiting.size > 0) {
-//      val descriptions: List[String] = waiting.map(t => showValue(t.instanceID) + ":" + showValue(t.nodeState))
-//      logger.info(statusString + descriptions)
-//      Thread.sleep(10000)
-//      waiting = nodes.filter(t => !isInState(t, state))
-//    }
-//  }
-
-  //  private def isInState(nodeInstance: NodeInstance, state: State): Boolean = {
-  //    val y = nodeInstance.actor !! MsgQueryState
-  //    val result: Boolean =
-  //    y match {
-  //      case Some(something) => something == state
-  //      case x => false
-  //    }
-  //
-  //    result
-  //  }
 
   private def waitForActionActorState(state: State, statusString: String) {
     var waiting = nodes.filter(t => !t.isInState(state))

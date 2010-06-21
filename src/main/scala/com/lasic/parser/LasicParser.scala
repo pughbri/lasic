@@ -6,6 +6,8 @@ import scala.collection.mutable._
 import com.lasic.LasicProperties
 import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScriptArgumentValue}
 import com.lasic.util.Logging
+import scala.Option
+
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,7 +21,7 @@ class LasicParser extends JavaTokenParsers with Logging {
   /*==========================================================================================================
     NON BNF utility methods
    ==========================================================================================================*/
-  def buildSystem(name: String, body: List[Any]) = {
+  def buildSystem(name: String, body: List[Any], paths: Any) = {
     val sys = new ASTSystem()
     sys.name = name
     body.foreach {
@@ -30,6 +32,10 @@ class LasicParser extends JavaTokenParsers with Logging {
           case system: ASTSystem => sys.subsystems += system
           case x => logger.warn("Unknown object: " + x)
         }
+    }
+    paths match {
+      case pathMap: Map[String, String] => sys.boundPaths = sys.boundPaths ++ pathMap
+      case _ =>
     }
     sys
   }
@@ -93,10 +99,14 @@ class LasicParser extends JavaTokenParsers with Logging {
     SYSTEM bnf
     ==========================================================================================================*/
   def system = "system" ~ aString ~ lbrace ~ system_body ~ rbrace ^^ {
-    case _ ~ name ~ _ ~ body_list ~ _ => buildSystem(name, body_list)
+    case _ ~ name ~ _ ~ body_tuple ~ _ => buildSystem(name, body_tuple._1, body_tuple._2)
   }
 
-  def system_body: Parser[List[Any]] = rep(system_props | node | system)
+  def system_body: Parser[(List[Any], Any)] = rep(system_props | node | system) ~ opt(path_bindings) ^^ {
+    case list_o_declarations ~ Some(x) => (list_o_declarations, x)  
+    case list_o_declarations ~ None => (list_o_declarations, None)
+  }
+
 
   def system_props = "props" ~> "{" ~> rep(system_prop) <~ "}" ^^ {
     list_o_props => Map() ++ list_o_props
@@ -111,6 +121,21 @@ class LasicParser extends JavaTokenParsers with Logging {
 
   def system_numeric_prop_name = "count"
 
+  /*==========================================================================================================
+    Paths bnf
+    ==========================================================================================================*/
+
+  def path_bindings = "paths" ~ lbrace ~ path_body ~ rbrace ^^ {
+    case _ ~ _ ~ bindings ~ _ => bindings
+  }
+
+  def path_body = rep(path_binding) ^^ {
+    list_o_bindings => Map() ++ list_o_bindings
+  }
+
+  def path_binding = path ~ ":" ~ aString ^^ {
+    case path_name ~ _ ~ identifier => (path_name -> identifier)
+  }
 
   /*==========================================================================================================
     NODE bnf

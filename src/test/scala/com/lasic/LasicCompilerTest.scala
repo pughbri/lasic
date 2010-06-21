@@ -121,6 +121,13 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
   }
 
+  def testBoundPaths() = {
+    val program = getLasicProgram(9);
+    assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)    
+    assertEquals("i-54adb13b", program.instances(0).nodegroups(0).instances(1).boundInstanceId)
+    assertEquals("i-54adb13c", program.instances(0).nodegroups(1).instances(0).boundInstanceId)
+  }
+
   /**
    *  Parse a basic, but non trivial, program and test a variety of features about it
    */

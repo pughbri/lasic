@@ -101,6 +101,7 @@ object LasicCompiler {
     val lp = new LasicProgram
     val rootSystem = compile(ast, lp)
     lp.rootGroup = rootSystem
+    bindPaths(rootSystem, ast.boundPaths)
     lp
   }
 
@@ -109,6 +110,7 @@ object LasicCompiler {
     val sysGroup = new SystemGroup(parent)
     sysGroup.name = ast.name
     sysGroup.count = ast.count
+
 
 
     // Create all the instances
@@ -125,8 +127,26 @@ object LasicCompiler {
     //      instance =>
     //        for()
     //    }
-    sysGroup
 
+    sysGroup
+  }
+
+  private def bindPaths(sysGroup: SystemGroup, boundPaths: Map[String, String]) {
+    boundPaths.foreach {
+      (boundPath) => {
+        val pathables = sysGroup.find(boundPath._1)
+        if (pathables.size != 1) {
+          throw new Exception("path " + boundPath + " does not map to exactly one pathable.  Path List: " + pathables.mkString(", "))
+        }
+        else {
+          pathables(0) match {
+            case nodeInstance: NodeInstance => nodeInstance.boundInstanceId= boundPath._2
+            case _ => throw new Exception("Path " + boundPath + " does not resolve to a nodeinstance.  Resolves to " + pathables(0).getClass)
+          }
+        }
+
+      }
+    }
   }
 
   private def compile(ast: ASTNode): NodeGroup = {

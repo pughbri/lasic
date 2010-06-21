@@ -75,7 +75,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def printBoundLasicProgram {
     println("paths {")
     nodes.foreach({
-      node => println("    " + node.path + ": " + node.instanceID + "  // public=" + showValue(node.publicDNS) + "\tprivate=" + showValue(node.privateDNS))
+      node => println("    " + node.path + ": \"" + node.instanceID + "\"  // public=" + showValue(node.publicDNS) + "\tprivate=" + showValue(node.privateDNS))
     })
     println("}")
   }

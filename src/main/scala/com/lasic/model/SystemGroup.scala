@@ -3,6 +3,7 @@ package com.lasic.model
 import collection.mutable.ListBuffer
 import com.lasic.parser.ast.ASTSystem
 import collection.immutable.HashMap
+import com.lasic.values.SystemProperties
 
 
 /**
