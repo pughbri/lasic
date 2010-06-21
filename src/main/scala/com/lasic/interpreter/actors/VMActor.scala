@@ -1,40 +1,21 @@
 package com.lasic.interpreter.actors
 
-import com.lasic.{Cloud, VM}
 import se.scalablesolutions.akka.actor.Actor._
-import com.lasic.cloud.LaunchConfiguration
-import com.lasic.Cloud
-import VMActor._
-import java.io.File
-import com.lasic.util.Logging
-import com.lasic.model.{ScriptArgumentValue, NodeInstance, LasicProgram}
 import java.net.URI
+import com.lasic.{VM, Cloud}
+import java.io.File
+import VMActor._
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 
 /**
- * An Actor which is also a finite state machine for nodes in the cloud.   An instance of this class represents
- * a specific VM (and corresponding machine in the cloud) and will perform asynchronous operations on that
- * VM based on messages sent to the Actor.   For this to operate correctly, it is important to clearly document and
- * maintain the FSM.  The FSM is included in this source code distribution as XXX
+ *
+ * @author Brian Pugh
  */
-class VMActor(cloud: Cloud) extends Actor with Logging {
 
-  /**Current state of the FSM */
-  var nodeState = VMActorState.Blank
-
-  /**The VM we are manipulating **/
-  var vm: VM = null
-
-  /**
-   * Send back a reply of the VM id, if there is one, otherwise null
-   */
-  def replyWithVMId {
-    var result: String = "?"
-    if (vm != null && vm.instanceId != null)
-      result = vm.instanceId
-    self.senderFuture.foreach(_.completeWithResult(result))
-  }
-
+trait VMActor extends Actor {
+  protected val cloud: Cloud
+  protected var vm: VM
+  protected var nodeState: Any
 
   def vmOperation(op: VM => Any) {
     if (vm == null) {
@@ -48,25 +29,23 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
     }
   }
 
-  def build(uri: URI): File = {
-    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
+  /**
+   * Send back a reply of the VM id, if there is one, otherwise null
+   */
+  def replyWithVMId {
+    var result: String = "?"
+    if (vm != null && vm.instanceId != null)
+      result = vm.instanceId
+    self.senderFuture.foreach(_.completeWithResult(result))
   }
 
   /**
-   * Stop this actor and the sleeper actor from running.  This will unconditionally stop
-   * both actors regardless of their current state
+   * Stop this actor .  This will unconditionally stop
+   * regardless of current state
    */
   def stopEverything {
-    self.stop
-  }
-
-  def startAsyncLaunch(lc: LaunchConfiguration) {
-    val me = self
-    spawn {
-        val avm = cloud.createVM(lc, true)
-        me ! MsgSetVM(avm)
-    }
-  }
+     self.stop
+   }
 
   def startAsyncSCP(configData: ConfigureData) {
     val me = self
@@ -94,79 +73,31 @@ class VMActor(cloud: Cloud) extends Actor with Logging {
     }
   }
 
-  def startAsyncBootWait {
-    val vmActor = self
-    spawn {
-      Thread.sleep(2000);
-      val initialized: Boolean = vm.isInitialized
-      if (initialized) {
-        vmActor ! MsgSetBootState(true)
-      }
-      else {
-        vmActor ! MsgSetBootState(false)
-      }
-    }
+
+  def build(uri: URI): File = {
+    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
   }
 
-  /**
-   * The message receiver / dispatcher for this actor
-   */
-  def receive = {case x => respondToMessage(x)}
 
-  import VMActorState._
-
-  /**
-   * This is the heart of the state machine -- the transitions from one state to another is accomplished here
-   * (and only here!).
-   */
-  private def respondToMessage(msg: Any) {
-    nodeState =
-            (nodeState, msg) match {
-              //    currentState    MessageRecieved               Operations to do            Next State
-              case (_,              MsgVMOperation(op))       => {vmOperation(op);            nodeState}
-              case (_,              MsgQueryState)            => {self.reply(nodeState);      nodeState}
-              case (_,              MsgStop)                  => {stopEverything;             Froggy}
-              case (Blank,          MsgLaunch(lc))            => {startAsyncLaunch(lc);       WaitingForVM}
-              case (Booted,         MsgConfigure(config))     => {startAsyncSCP(config);      RunningSCP}
-              case (RunningSCP,     MsgSCPCompleted(config))  => {startAsyncScripts(config);  RunningScripts}
-              case (RunningScripts, MsgScriptsCompleted(x))   => {                            Configured}
-              case (WaitingForBoot, MsgSetBootState(false))   => {startAsyncBootWait;         WaitingForBoot}
-              case (WaitingForBoot, MsgSetBootState(true))    => {                            Booted}
-              case (WaitingForVM,   MsgSetVM(avm))            => {vm=avm; startAsyncBootWait; WaitingForBoot}
-              case _                                          => {                            nodeState}
-            }
-  }
 }
 
-/**
- * Companion object that contains messages to send, etc.
- */
 object VMActor {
-
-  /** The states of the VMActor state machine */
-  object VMActorState extends Enumeration {
-    type State = Value
-    val Blank, WaitingForVM, WaitingForBoot, Booted, RunningSCP, RunningScripts, Configured, Froggy = Value
-  }
-
-  /** Configuation information sent to setup a VM */
+  /**Configuation information sent to setup a VM */
   class ConfigureData(val scp: Map[String, String], val scripts: Map[String, Map[String, List[String]]])
+
 
   /**
    * These are public messages, which cause state transitions, that can be sent to the VMACtor as part
    * of its public API
    */
-  case class MsgConfigure(configData: ConfigureData)
-  case class MsgLaunch(lc: LaunchConfiguration)
-  case class MsgQueryState()
-  case class MsgStop()
   case class MsgVMOperation(operation: VM => Any)
+  case class MsgQueryState()
 
   // Private messages sent to ourselves
-  private case class MsgSetBootState(isInitialized: Boolean)
-  private case class MsgSetVM(avm:VM)
-  private case class MsgSCPCompleted(val cd: ConfigureData)
-  private case class MsgScriptsCompleted(val cd: ConfigureData)
+  private[actors] case class MsgSCPCompleted(val cd: ConfigureData)
+  private[actors] case class MsgScriptsCompleted(val cd: ConfigureData)
+
+
 }
 
 
@@ -201,12 +132,14 @@ trait VMActorUtil {
   def nodeState: Any = {
     val x = (actor !! MsgQueryState)
     x match {
-      case Some(y) => y.asInstanceOf[VMActorState.State]
-      case _ => VMActorState.Blank
+      //case Some(y) => y.asInstanceOf[DeployActorState.State]
+      case Some(y) => y
+//      case _ => DeployActorState.Blank
+      case x => x
     }
   }
 
-  def isInState(x: VMActorState.State) = {
+  def isInState(x: Any) = {
     val y = actor !! MsgQueryState
     val result: Boolean =
     y match {

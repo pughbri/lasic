@@ -53,6 +53,32 @@ class AmazonCloud extends Cloud with Logging {
   }
 
 
+  def findVM(instanceId: String) = {
+
+    val descriptions = ec2.describeInstances(JavaConversions.asList(List(instanceId)))
+    if (descriptions.size < 1) {
+      null
+    }
+    else {
+      //descriptions(0).getInstances().foreach(instance => {
+      val instance = descriptions(0).getInstances()(0)
+      val vm  = new AmazonVM(this, convertToLC(instance))
+        vm.instanceId = instance.getInstanceId
+      vm
+      //})
+    }
+  }
+
+  def convertToLC(instance: ReservationDescription#Instance): LaunchConfiguration = {
+    val lc = new LaunchConfiguration(null)
+    lc.machineImage = instance.getImageId
+    lc.ramdiskId = instance.getRamdiskId
+    lc.kernelId = instance.getKernelId
+    lc.instanceType = instance.getInstanceType.toString
+    lc.availabilityZone = instance.getAvailabilityZone
+    lc
+  }
+
   def start(vms: List[VM]) {
     //todo: don't just iterate.  Batching things together and making a single call with params is MUCH more efficient
     vms.foreach(vm => {startVM(vm)})

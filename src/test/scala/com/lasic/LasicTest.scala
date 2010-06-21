@@ -11,7 +11,7 @@ import junit.framework._
 class LasicTest extends TestCase("lasic") {
   override def setUp = {
     Lasic.lasicFile = null
-    Lasic.verb = null
+    Lasic.verbArg = null
     Lasic.cloudProvider = Lasic.CloudProvider.Amazon
   }
 
@@ -33,20 +33,24 @@ class LasicTest extends TestCase("lasic") {
     }
   }
 
+  def testRunScriptWithMock() = {
+    Lasic.runLasic(Array("-c=mock", "runAction", getLasicFilePath(201)))
+  }
+
   def testParseArgs() = {
 
     Lasic.parseArgs(Array("snapshot", "myscript.lasic"))
     assert(Lasic.cloudProvider == Lasic.CloudProvider.Amazon, "Expected " + Lasic.CloudProvider.Amazon + " got " + Lasic.cloudProvider)
     assert("myscript.lasic" == Lasic.lasicFile, "Expected myscript.lasic got " + Lasic.lasicFile)
-    assert("snapshot" == Lasic.verb, "Expected snapshot got " + Lasic.verb)
+    assert("snapshot" == Lasic.verbArg, "Expected snapshot got " + Lasic.verbArg)
 
     Lasic.lasicFile = null
-    Lasic.verb = null
+    Lasic.verbArg = null
 
     Lasic.parseArgs(Array("--cloud=mock", "deploy", "someDeploy.lasic"))
     assert(Lasic.cloudProvider == Lasic.CloudProvider.Mock, "Expected " + Lasic.CloudProvider.Mock + " got " + Lasic.cloudProvider)
     assert("someDeploy.lasic" == Lasic.lasicFile, "Expected someDeploy.lasic got " + Lasic.lasicFile)
-    assert("deploy" == Lasic.verb, "Expected deploy got " + Lasic.verb)
+    assert("deploy" == Lasic.verbArg, "Expected deploy got " + Lasic.verbArg)
 
   }
 
