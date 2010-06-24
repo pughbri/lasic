@@ -44,7 +44,7 @@ class AmazonCloud extends Cloud with Logging {
     val key: String = LasicProperties.getProperty("AWS_ACCESS_KEY")
     val secret: String = LasicProperties.getProperty("AWS_SECRET_KEY")
     if (key == null || secret == null)
-      throw new Exception("must provide both ACCESS_KEY and SECRET_KEY in properties file")
+      throw new Exception("must provide both AWS_ACCESS_KEY and AWS_SECRET_KEY in properties file")
     (key, secret)
   }
 
