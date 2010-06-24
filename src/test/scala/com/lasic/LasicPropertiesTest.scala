@@ -1,6 +1,7 @@
 package com.lasic
 
 import junit.framework.TestCase
+import java.io.File
 import java.lang.String
 
 /**
@@ -13,7 +14,7 @@ import java.lang.String
 
 class LasicPropertiesTest extends TestCase("MockCloudTest") {
   override def setUp = {
-    LasicProperties.propFilename = classOf[Application].getResource("/lasic.properties").getPath()
+	 LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
   }
 
   def testGetProperty() = {

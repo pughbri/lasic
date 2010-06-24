@@ -3,6 +3,7 @@ package com.lasic
 ;
 
 import junit.framework._
+import java.io.File
 
 
 /**
@@ -16,7 +17,9 @@ class LasicTest extends TestCase("lasic") {
   }
 
   def getLasicFilePath(num: Int) = {
-    classOf[Application].getResource("/parser/Program" + num + ".lasic").getPath()
+    
+    new File(classOf[Application].getResource("/parser/Program" + num + ".lasic").toURI()).getCanonicalPath()
+
   }
 
   def testDeployWithMock() = {
