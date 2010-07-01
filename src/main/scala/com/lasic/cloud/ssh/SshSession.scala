@@ -12,7 +12,7 @@ import com.lasic.util.Logging
 
 class SshSession(val dnsName: String, val userName: String, val pemFile: File) extends JSch with Logging {
   require(dnsName != null && !dnsName.isEmpty, "dnsName must be provided")
-  require(userName!= null && !userName.isEmpty, "userName must be provided")
+  require(userName != null && !userName.isEmpty, "userName must be provided")
   require(pemFile != null, "pemFile must be provided")
 
   private var isConnected: Boolean = false
@@ -48,6 +48,10 @@ class SshSession(val dnsName: String, val userName: String, val pemFile: File) e
           case "Auth fail" => throw new AuthFailureException("Authentication failed.  Please check your credentials:  Username ["
                   + userName + "] Host [" + dnsName + "] key [" + pemFile.getAbsolutePath + "]", e)
           case _ =>
+        }
+
+        if (e.getMessage.startsWith("invalid privatekey:")) {
+          throw new AuthFailureException("Authentication failed because key invalid. Key [" + pemFile.getAbsolutePath + "]", e)
         }
 
         e.getCause match {
