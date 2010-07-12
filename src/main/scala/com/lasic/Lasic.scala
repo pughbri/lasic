@@ -4,7 +4,7 @@ package com.lasic
 //import interpreter.{Deploy, DeployActor}
 import cloud.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.{RunActionVerb, DeployVerb}
+import interpreter.{Verb, RunActionVerb, DeployVerb}
 import java.io.File
 import model.LasicProgram
 import parser.LasicCompiler
@@ -61,7 +61,9 @@ object Lasic {
 
   def printUsageAndExit(message: String) = {
     println(message)
-    println("Usage: java -jar lasic.jar [options] <verb> <lasic-program>")
+    println(
+"""Usage: java -jar lasic.jar [options] <verb> <lasic-program>
+    supported verbs: deploy, runAction""")
     System.exit(1)
   }
 
@@ -99,9 +101,10 @@ object Lasic {
       case _ => new MockCloud(1)
     }
 
-    val verb = verbArg match {
+    val verb: Verb = verbArg match {
       case "deploy" => new DeployVerb(cloud, program)
       case "runAction" => new RunActionVerb(actionName, cloud, program)
+      case _ =>  printUsageAndExit("unknown verb: " + verbArg); null
     }
     verb.doit
   }
