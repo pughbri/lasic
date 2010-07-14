@@ -1,20 +1,14 @@
 package com.lasic
 
-//import interpreter.actors.{NodeActor}
-//import interpreter.{Deploy, DeployActor}
 import cloud.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.{Verb, RunActionVerb, DeployVerb}
+import interpreter.{RunActionVerb, DeployVerb}
 import java.io.File
 import model.LasicProgram
 import parser.LasicCompiler
 import io.Source
 import java.lang.System
-//object Foo {
-//  def unapplySeq(args:Array[String]): Option[Seq[String]] = {
-//    Some(args)
-//  }
-//}
+
 
 /**
  *
@@ -62,8 +56,8 @@ object Lasic {
   def printUsageAndExit(message: String) = {
     println(message)
     println(
-"""Usage: java -jar lasic.jar [options] <verb> <lasic-program>
-    supported verbs: deploy, runAction""")
+      """Usage: java -jar lasic.jar [options] <verb> <lasic-program>
+   supported verbs: deploy, runAction""")
     System.exit(1)
   }
 
@@ -81,8 +75,8 @@ object Lasic {
         else if (lasicFile == null) {
           lasicFile = cmd
         }
-        else printUsageAndExit("Too many commands:" )
-      }    
+        else printUsageAndExit("Too many commands:")
+      }
     }
     if (verbArg == null || lasicFile == null) {
       printUsageAndExit("must provide both a verb and lasic-program:")
@@ -101,17 +95,17 @@ object Lasic {
       case _ => new MockCloud(1)
     }
 
-    val verb: Verb = verbArg match {
+    val verb = verbArg match {
       case "deploy" => new DeployVerb(cloud, program)
       case "runAction" => new RunActionVerb(actionName, cloud, program)
-      case _ =>  printUsageAndExit("unknown verb: " + verbArg); null
+      case _ => printUsageAndExit("unknown verb: " + verbArg); null
     }
     verb.doit
   }
 
   def runLasic(args: Array[String]): Unit = {
     parseArgs(args)
-    val program= compile
+    val program = compile
     execute(program)
   }
 
@@ -121,17 +115,6 @@ object Lasic {
     println("Ran " + lasicFile + " in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
     System.exit(0)
 
-
-    //    val deploy = new DeployActor(cloud)
-    //    deploy.deploy(program)
-
-
-
-    //    bar(foo)
-    //    println(foo);
-
-    //    val program = LasicCompiler.compile(argv(0))
-    //    val interpreter = new DeployActor
 
     3
   }
