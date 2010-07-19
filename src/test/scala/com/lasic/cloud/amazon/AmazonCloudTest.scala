@@ -4,8 +4,7 @@ import junit.framework.TestCase
 import java.io.File
 import com.lasic.{Cloud, VM}
 import java.net.InetAddress
-import java.lang.String
-import com.lasic.cloud.{MachineState, LaunchConfiguration, AmazonCloud}
+import com.lasic.cloud.{VolumeConfiguration, MachineState, LaunchConfiguration}
 
 /**
  * User: pughbc
@@ -14,8 +13,22 @@ import com.lasic.cloud.{MachineState, LaunchConfiguration, AmazonCloud}
  */
 
 class AmazonCloudTest extends TestCase("AmazonCloudTest") {
+  private val doActualCloudOperations = false  // set to true if you *really* want to do real stuff on amazon, with real keys, for real money
+
+  def testVolume() {
+    if ( doActualCloudOperations ) {
+      val cloud = new AmazonCloud()
+      val config = new VolumeConfiguration(10,null,null)
+      val handle = cloud.createVolume(config)
+      assert( handle!=null )
+      for( i <- 1 to 100 ) {
+        println( handle.info.state )
+      }
+
+    }
+  }
   def testCloud(): Unit = {
-    if (false) { //disable test as it requires real keys and creates real instances
+    if (doActualCloudOperations) { //disable test as it requires real keys and creates real instances
       val cloud = new AmazonCloud()
       val lc: LaunchConfiguration = new LaunchConfiguration(null)
       lc.machineImage = "ami-714ba518" //base ubuntu image

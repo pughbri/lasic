@@ -1,6 +1,5 @@
-package com.lasic.cloud
+package com.lasic.cloud.amazon
 
-import amazon.AmazonVM
 import java.lang.String
 import java.util.Iterator
 import java.util.{List => JList}
@@ -10,8 +9,8 @@ import scala.collection.JavaConversions.asBuffer
 import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
-import com.lasic.cloud.AttachmentInfo
-import com.lasic.{VDisk, LasicProperties, VM, Cloud}
+import com.lasic.{LasicProperties, VM, Cloud}
+import com.lasic.cloud.{VolumeConfiguration, Volume, MachineState, LaunchConfiguration}
 
 /**
  * @author Brian Pugh
@@ -159,28 +158,12 @@ class AmazonCloud extends Cloud with Logging {
   }
 
 
-  def createVolume(size: Int, snapID: String, availabilityZone: String): VDisk = {
-    null
-//    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(size.toString, snapID, availabilityZone)
-//
-//    val typicaAttachmentInfoList = vi.getAttachmentInfo
-//    var attachmentInfoList = List[AttachmentInfo]()
-//    val iterator: Iterator[com.xerox.amazonws.ec2.AttachmentInfo] = typicaAttachmentInfoList.iterator()
-//    while (iterator.hasNext()) {
-//      val attachmentInfo: XAttachmentInfo = iterator.next
-//      val info: AttachmentInfo = new AttachmentInfo(attachmentInfo.getVolumeId,
-//        attachmentInfo.getInstanceId,
-//        attachmentInfo.getDevice,
-//        attachmentInfo.getStatus,
-//        attachmentInfo.getAttachTime)
-//
-//      attachmentInfoList = info :: attachmentInfoList
-//    }
-//
-//
-//    new VolumeInfo(vi.getVolumeId, vi.getSize, vi.getSnapshotId, vi.getZone, vi.getStatus, vi.getCreateTime, attachmentInfoList)
-
+  def createVolume(config:VolumeConfiguration): Volume = {
+    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(config.size.toString, config.snapID, config.availabilityZone)
+    new AmazonVolume(ec2,vi.getVolumeId)
   }
+
+
 
 
 //  def deleteVolume(volumeId: String) = {

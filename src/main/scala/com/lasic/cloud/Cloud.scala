@@ -2,6 +2,7 @@ package com.lasic
 
 import cloud._
 import com.lasic.cloud.MachineState._
+import com.lasic.cloud.VolumeState._
 
 
 
@@ -45,7 +46,7 @@ trait Cloud {
   /**
    * @param size - size in gigabytes
    */
-  def createVolume(size: Int, snapID: String, availabilityZone: String): VDisk
+  def createVolume(config:VolumeConfiguration): Volume
 
 //  def deleteVolume(volumeId: String)
 //
