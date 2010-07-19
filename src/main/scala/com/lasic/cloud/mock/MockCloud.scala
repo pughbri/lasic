@@ -5,8 +5,8 @@ package com.lasic.cloud.mock
 import com.lasic.{VM, Cloud}
 import java.lang.String
 import java.util.{Random}
-import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.util.Logging
+import com.lasic.cloud._
 
 /**
  * User: Brian Pugh
@@ -15,6 +15,8 @@ import com.lasic.util.Logging
 
 class MockCloud(startupDelay: Int) extends Cloud with Logging {
   def this() = this (2);
+
+  private val random = new Random(System.currentTimeMillis)
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
     createVMs(numVMs, startVM) {new MockVM(startupDelay, this)}
@@ -87,10 +89,13 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
 
-  def createVolume(size: Int, snapID: String, availabilityZone: String) = {
-    new MockVDisk(this, size, snapID, availabilityZone)
+
+  def createVolume(config:VolumeConfiguration): Volume = {
+    val id = "mock_volume-"+random.nextInt.toString
+    new MockVolume(id, config )
   }
 
+  
 
   //  def deleteVolume(volumeId: String) = {
   //    logger.info("deleted volume " + volumeId)

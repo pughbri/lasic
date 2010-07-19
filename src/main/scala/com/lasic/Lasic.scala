@@ -1,6 +1,6 @@
 package com.lasic
 
-import cloud.AmazonCloud
+import cloud.amazon.AmazonCloud
 import cloud.mock.MockCloud
 import interpreter.{RunActionVerb, DeployVerb}
 import java.io.File

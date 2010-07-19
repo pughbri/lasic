@@ -6,6 +6,7 @@ import com.lasic.Cloud
 import VolumeActor._
 import com.lasic.util.Logging
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
+import com.lasic.cloud.{Volume, VolumeConfiguration}
 
 /**
  * An Actor which is also a finite state machine for volumes in the cloud.
@@ -15,16 +16,16 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
   var volumeState = VolumeActorState.Uncreated
 
   /**The VM we are manipulating **/
-  var id:String = null
+  var volume:Volume = null
 
   /**
    * Send back a reply of the VM id, if there is one, otherwise null
    */
   def replyWithId {
     var result: String = "?"
-    if (id != null )
-      result = id
-    self.senderFuture.foreach(_.completeWithResult(id))
+    if (volume != null )
+      result = volume.id
+    self.senderFuture.foreach(_.completeWithResult(result))
   }
 
 //
@@ -108,10 +109,11 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
 
   import VolumeActorState._
 
-  def create(size:Int, snap:String, zone:String) {
+  def create(config:VolumeConfiguration) {
     val me = self
     spawn {
-      val id = cloud.createVolume(size,snap,zone)
+      val volume = cloud.createVolume(config)
+      me ! MsgCreated(volume)
       //me !  MsgCreated(id)
     }
   }
@@ -125,8 +127,9 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
     volumeState =
             (volumeState, msg) match {
               case (_,                MsgQueryID)                 => { replyWithId;               volumeState}
-              case (Uncreated,        MsgCreate(size,snap,zone))  => { create(size,snap,zone);    Creating}
-              case (Creating,         MsgCreated(anid))           => { id=anid;                   Available}
+              case (Uncreated,        MsgCreate(config))          => { create(config);            Creating}
+              case (Creating,         MsgCreated(vol))            => { volume=vol;                Available}
+
               //case (Available,        MsgAttach(devId, path))     => { attach(devId,path);        Attaching}
               
 
@@ -162,12 +165,12 @@ object VolumeActor {
    * of its public API
    */
   case class MsgAttach(attachToID:String, devicePath:String)
-  case class MsgCreate(sizeInGB:Int, snapID:String, zone:String)
+  case class MsgCreate(config:VolumeConfiguration)
   case class MsgQueryID()
   case class MsgStop()
 
   // Private messages sent to ourselves
-  private case class MsgCreated(id:String)
+  private case class MsgCreated(volume:Volume)
   private case class MsgAttached
 
 }
