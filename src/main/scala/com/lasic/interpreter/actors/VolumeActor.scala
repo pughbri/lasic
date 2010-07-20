@@ -31,6 +31,11 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
   def replyWithState {
     self.senderFuture.foreach(_.completeWithResult(volumeState))
   }
+
+  def replyWithError {
+    self.senderFuture.foreach(_.completeWithException(self, new Exception("Volume has been deleted")))
+  }
+
 //
 //
 //  def vmOperation(op: VM => Any) {
@@ -121,6 +126,26 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
     }
   }
 
+  def delete {
+    val me = self
+    spawn {
+      volume.delete
+      //todo: find a decent way 
+//      var looping = true
+//      while( looping ) {
+//        Thread.sleep(15000)
+//        try {
+//          volume.info
+//        } catch {
+//          case _ => { looping = false; me ! MsgDeleted }
+//        }
+//      }
+    }
+  }
+
+  def deleted {
+    volume = null
+  }
   
   /**
    * This is the heart of the state machine -- the transitions from one state to another is accomplished here
@@ -129,10 +154,13 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
   private def respondToMessage(msg: Any) {
     volumeState =
             (volumeState, msg) match {
-              case (_,                MsgQueryID)                 => { replyWithId;               volumeState}
               case (_,                MsgQueryState)              => { replyWithState;            volumeState}
+              case (Deleting,          _)                         => { replyWithError;            Deleting}
+              case (_,                MsgQueryID)                 => { replyWithId;               volumeState}
               case (Uncreated,        MsgCreate(config))          => { create(config);            Creating}
               case (Creating,         MsgCreated(vol))            => { volume=vol;                Available}
+              case (Available,        MsgDelete)                  => { delete;                    Deleting}
+              //case (Deleting,         MsgDeleted)                 => { deleted;                   Deleted}
 
               //case (Available,        MsgAttach(devId, path))     => { attach(devId,path);        Attaching}
               
@@ -161,7 +189,7 @@ object VolumeActor {
   /** The states of the VMActor state machine */
   object VolumeActorState extends Enumeration {
     type State = Value
-    val Uncreated, Creating, Available, Attaching, Attached, Detaching, Deleting, Deleted = Value
+    val Uncreated, Creating, Available, Attaching, Attached, Detaching, Deleting = Value
   }
 
   /**
@@ -170,6 +198,7 @@ object VolumeActor {
    */
   case class MsgAttach(attachToID:String, devicePath:String)
   case class MsgCreate(config:VolumeConfiguration)
+  case class MsgDelete
   case class MsgQueryID()
   case class MsgQueryState
   case class MsgStop()
@@ -177,6 +206,7 @@ object VolumeActor {
   // Private messages sent to ourselves
   private case class MsgCreated(volume:Volume)
   private case class MsgAttached
+  private case class MsgDeleted
 
 }
 
@@ -217,7 +247,7 @@ object VolumeActor {
 //    }
 //  }
 //
-//  def isInState(x: VMActorState.State) = {
+//  def actorIsInState(x: VMActorState.State) = {
 //    val y = actor !! MsgQueryState
 //    val result: Boolean =
 //    y match {

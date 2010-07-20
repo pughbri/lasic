@@ -28,6 +28,10 @@ class AmazonVolume(ec2: Jec2, val id:String) extends Volume with Logging{
     new VolumeInfo(vi.getVolumeId, vi.getSize.toInt, vi.getSnapshotId, vi.getZone, VolumeState.string2State(vi.getStatus))
   }
 
+  def delete = {
+    ec2.deleteVolume(id)
+  }
+
 
 
 }

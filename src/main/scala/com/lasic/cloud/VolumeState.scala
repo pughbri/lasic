@@ -12,7 +12,7 @@ object VolumeState extends Enumeration {
   val Available = Value("available")
   val InUse = Value("in-use")
   val Deleting = Value("deleting")
-
+  
   def string2State(s: String): VolumeState.Value = {
     println( "State scanned is: " + s)
     for (ms <- iterator) {
