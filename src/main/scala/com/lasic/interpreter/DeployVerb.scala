@@ -25,7 +25,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
 
   private def launchAllAMIs {
-    nodes.foreach {node => node.actor ! new MsgLaunch(new LaunchConfiguration(node))}
+    nodes.foreach {node => node.actor ! new MsgLaunch(LaunchConfiguration.build(node))}
   }
 
   private def createAllVolumes {}

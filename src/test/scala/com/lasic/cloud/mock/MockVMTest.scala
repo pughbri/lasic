@@ -38,7 +38,7 @@ class MockVMTest extends TestCase("MockVMTest") {
 
   def testStartVMFromCloud() = {
     val cloud = new MockCloud(2)
-    val vms: List[VM] = cloud.createVMs(new LaunchConfiguration(null), 1, true)
+    val vms: List[VM] = cloud.createVMs(new LaunchConfiguration, 1, true)
     val vm = vms(0)
     Thread.sleep(200)
     assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())

@@ -7,7 +7,7 @@ import com.lasic.LasicProperties
  * User: Brian Pugh
  * Date: May 10, 2010
  */
-class LaunchConfiguration(node: NodeInstance) {
+class LaunchConfiguration {
   var name: String = null
   var machineImage: String = null
   var ramdiskId: String = null
@@ -19,20 +19,27 @@ class LaunchConfiguration(node: NodeInstance) {
   var s3Download: String = null
   var availabilityZone: String = LasicProperties.getProperty("availability_zone", "us-east-1d")
 
-  if (node != null) {
-    name = node.parent.name
-    machineImage = node.parent.machineimage
-    ramdiskId = node.parent.ramdiskid
-    kernelId = node.parent.kernelid
-    key = node.parent.key
-    groups = node.parent.groups
-    //lc.instanceType = node.parent.instancetype
-    userName = node.parent.user
-    instanceType = node.parent.instancetype
-    //lc.availabilityZone = node.parent.
-    //lc.s3Download = ??
-  }
   //val scpDeclarations: List[ScpDeclaration] = new ArrayList[ScpDeclaration]
   //private ScriptDeclaration script = new ScriptDeclaration();
   //private final val startupScripts: List[ScriptDeclaration] = new ArrayList[ScriptDeclaration]
+}
+
+object LaunchConfiguration {
+  def build(node:NodeInstance) = {
+    val lc = new LaunchConfiguration
+    if (node != null) {
+      lc.name = node.parent.name
+      lc.machineImage = node.parent.machineimage
+      lc.ramdiskId = node.parent.ramdiskid
+      lc.kernelId = node.parent.kernelid
+      lc.key = node.parent.key
+      lc.groups = node.parent.groups
+      //lc.instanceType = node.parent.instancetype
+      lc.userName = node.parent.user
+      lc.instanceType = node.parent.instancetype
+      //lc.availabilityZone = node.parent.
+      //lc.s3Download = ??
+    }
+    lc
+  }
 }

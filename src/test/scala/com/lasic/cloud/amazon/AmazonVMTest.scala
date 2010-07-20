@@ -45,7 +45,7 @@ class AmazonVMTest extends TestCase("AmazonCloudTest") {
   def testCopyTo() = {
 
 
-    val lc: LaunchConfiguration = new LaunchConfiguration(null)
+    val lc: LaunchConfiguration = new LaunchConfiguration
     lc.key = "some"
     var state = MachineState.Unknown
     var mockSshSession = new MockSshSession
