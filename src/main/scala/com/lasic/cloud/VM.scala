@@ -1,7 +1,7 @@
 package com.lasic
 
+import cloud._
 import cloud.ssh.{AuthFailureException, ConnectException, SshSession}
-import cloud.{AttachmentInfo, VolumeInfo, MachineState, LaunchConfiguration}
 import java.io.File
 import java.lang.String
 import com.lasic.cloud.MachineState._
