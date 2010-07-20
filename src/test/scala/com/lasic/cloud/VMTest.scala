@@ -36,7 +36,7 @@ class VMTest extends TestCase("VMTest") {
 
   def testConnect() = {
 
-    val lc: LaunchConfiguration = new LaunchConfiguration(null)
+    val lc: LaunchConfiguration = new LaunchConfiguration
     lc.key = "some"
     var state = MachineState.Unknown
     var mockSshSession = new MockSshSession
@@ -97,7 +97,7 @@ class VMTest extends TestCase("VMTest") {
 
   def testIsInitialized() = {
 
-    val lc: LaunchConfiguration = new LaunchConfiguration(null)
+    val lc: LaunchConfiguration = new LaunchConfiguration
     lc.key = "some"
     var mockSshSession = new MockSshSession(3)
 

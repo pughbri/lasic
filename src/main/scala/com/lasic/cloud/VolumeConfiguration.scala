@@ -1,6 +1,7 @@
 package com.lasic.cloud
 
 import com.lasic.LasicProperties
+import com.lasic.model.VolumeInstance
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,4 +14,10 @@ import com.lasic.LasicProperties
 class VolumeConfiguration(val size: Int, val snapID: String, zone: String) {
   val availabilityZone:String = if( zone==null ) LasicProperties.getProperty("availability_zone", "us-east-1d") else zone
   
+}
+
+object VolumeConfiguration {
+  def build( volumeInstance:VolumeInstance) = {
+    new VolumeConfiguration(volumeInstance.volSize.toInt, null, null )
+  }
 }

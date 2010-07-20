@@ -30,7 +30,7 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
   def testCloud(): Unit = {
     if (doActualCloudOperations) { //disable test as it requires real keys and creates real instances
       val cloud = new AmazonCloud()
-      val lc: LaunchConfiguration = new LaunchConfiguration(null)
+      val lc: LaunchConfiguration = new LaunchConfiguration
       lc.machineImage = "ami-714ba518" //base ubuntu image
       lc.key = "default"
       lc.userName = "ubuntu"

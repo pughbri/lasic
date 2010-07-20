@@ -69,7 +69,7 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   def convertToLC(instance: ReservationDescription#Instance): LaunchConfiguration = {
-    val lc = new LaunchConfiguration(null)
+    val lc = new LaunchConfiguration
     lc.machineImage = instance.getImageId
     lc.ramdiskId = instance.getRamdiskId
     lc.kernelId = instance.getKernelId

@@ -28,6 +28,9 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
     self.senderFuture.foreach(_.completeWithResult(result))
   }
 
+  def replyWithState {
+    self.senderFuture.foreach(_.completeWithResult(volumeState))
+  }
 //
 //
 //  def vmOperation(op: VM => Any) {
@@ -127,6 +130,7 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
     volumeState =
             (volumeState, msg) match {
               case (_,                MsgQueryID)                 => { replyWithId;               volumeState}
+              case (_,                MsgQueryState)              => { replyWithState;            volumeState}
               case (Uncreated,        MsgCreate(config))          => { create(config);            Creating}
               case (Creating,         MsgCreated(vol))            => { volume=vol;                Available}
 
@@ -167,6 +171,7 @@ object VolumeActor {
   case class MsgAttach(attachToID:String, devicePath:String)
   case class MsgCreate(config:VolumeConfiguration)
   case class MsgQueryID()
+  case class MsgQueryState
   case class MsgStop()
 
   // Private messages sent to ourselves
