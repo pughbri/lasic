@@ -28,10 +28,33 @@ class AmazonVolume(ec2: Jec2, val id:String) extends Volume with Logging{
     new VolumeInfo(vi.getVolumeId, vi.getSize.toInt, vi.getSnapshotId, vi.getZone, VolumeState.string2State(vi.getStatus))
   }
 
+  def attachInfo:VolumeAttachmentInfo = {
+    val args = Array[String](id)
+    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args)(0)
+    val infoList = vi.getAttachmentInfo
+    if ( infoList.size==0 )
+      return null;
+
+//    val args = List(id)
+//    val volList:JList = ec2.describeVolumes(args)
+//    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args).get(0)
+//    val list:List = vi.getAttachmentInfo
+//    if ( list.size==0 )
+//      return null
+    val device = infoList.first.getDevice
+    val instanceID = infoList.first.getInstanceId
+    new VolumeAttachmentInfo(instanceID, device)
+
+
+  }
+
   def delete = {
     ec2.deleteVolume(id)
   }
 
-
-
+  def attachTo(vm:VM, deviceName:String) {
+    // Ensure we only attach to MockVM!
+    val theVM = vm.asInstanceOf[AmazonVM]
+    ec2.attachVolume( id, theVM.instanceId, deviceName)
+  }
 }

@@ -11,3 +11,4 @@ import VolumeState._
 
 class VolumeInfo (val id: String, size: Int, snapID: String, availabilityZone: String, val state: VolumeState) extends VolumeConfiguration(size,snapID,availabilityZone) {
 }
+

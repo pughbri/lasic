@@ -3,12 +3,12 @@ package com.lasic.cloud.mock
 import java.io.File
 import com.lasic.{Cloud, VM}
 import java.lang.String
-import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import scala.actors.Actor._
 import actors.Actor
 import com.lasic.cloud.MachineState._
 import util.Random
 import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
+import com.lasic.cloud.{VolumeAttachmentInfo, Volume, MachineState, LaunchConfiguration}
 
 /**
  * User: Brian Pugh
