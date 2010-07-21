@@ -4,6 +4,7 @@ import com.lasic.util.Logging
 import java.util.Calendar
 import com.lasic.cloud._
 import se.scalablesolutions.akka.actor.Actor._
+import com.lasic.VM
 
 /**
  * Created by IntelliJ IDEA.
@@ -14,8 +15,9 @@ import se.scalablesolutions.akka.actor.Actor._
  */
 
 class MockVolume(val id:String, config:VolumeConfiguration ) extends Volume with Logging{
-  private var state = VolumeState.Available
-  private val createTime = Calendar.getInstance
+  var state = VolumeState.Available
+  val createTime = Calendar.getInstance
+  var attachInfo:VolumeAttachmentInfo = null
 
   def info:VolumeInfo = {
     if ( state==VolumeState.Unknown )
@@ -29,5 +31,12 @@ class MockVolume(val id:String, config:VolumeConfiguration ) extends Volume with
       Thread.sleep(2000)
       state = VolumeState.Unknown
     }
+  }
+
+  def attachTo(vm:VM, deviceName:String) {
+    // Ensure we only attach to MockVM!
+    val theVM = vm.asInstanceOf[MockVM]
+    state = VolumeState.InUse
+    attachInfo = new VolumeAttachmentInfo(theVM.instanceId, deviceName)
   }
 }

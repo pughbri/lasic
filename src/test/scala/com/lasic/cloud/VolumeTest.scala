@@ -9,12 +9,13 @@ import mock.MockCloud
 import VolumeActor._
 import VolumeActor.VolumeActorState._
 import se.scalablesolutions.akka.actor.{Actor, ActorRef}
+import MachineState.MachineState
 
 /**
  * A trait used to implement volume tests
  */
 class VolumeTest extends TestCase("MockVolumeTest") {
-//  val cloud: Cloud = new AmazonCloud()
+  //val cloud: Cloud = new AmazonCloud()
   val cloud: Cloud = new MockCloud()
   var actor:ActorRef = null
 
@@ -48,8 +49,8 @@ class VolumeTest extends TestCase("MockVolumeTest") {
         case _ => Thread.sleep(1000)
       }
     }
-
   }
+
   def testCreateViaVolumeActor {
     actor = Actor.actorOf(new VolumeActor(cloud)).start
     val config = new VolumeConfiguration(1, null, null)
@@ -61,20 +62,32 @@ class VolumeTest extends TestCase("MockVolumeTest") {
     //waitForState(120, Deleted)   // need a way to do this... deletion may take unbounded amounts of time, even days
     
   }
-//
-//  def testAttachToVM() {
-//    val cloud: Cloud = new MockCloud(2)
-//    val volConfig = new VolumeConfiguration(100, null, null)
-//    val vol = cloud.createVolume(volConfig)
-//    val lc: LaunchConfiguration = new LaunchConfiguration
-//    lc.machineImage = "ami-714ba518" //base ubuntu image
-//    lc.key = "default"
-//    lc.userName = "ubuntu"
-//    lc.groups = List("default")
-//    val vm = cloud.createVM(lc, true)
-//
-//
-//  }
+
+  def testAttachToVM() {
+    val volConfig = new VolumeConfiguration(1, null, null)
+    val vol = cloud.createVolume(volConfig)
+
+    val lc: LaunchConfiguration = new LaunchConfiguration
+    lc.machineImage = "ami-714ba518" //base ubuntu image
+    lc.key = "fhd"
+    lc.userName = "ubuntu"
+    lc.groups = List("default")
+    val vm = cloud.createVM(lc, true)
+
+    while( vm.getMachineState!=MachineState.Running) {
+      Thread.sleep(5000)
+    }
+    vol.attachTo(vm,"/dev/sdh")
+
+    assert( vol.info.state == VolumeState.InUse )
+    vm.shutdown
+    while( vm.getMachineState!=MachineState.Terminated) {
+      Thread.sleep(5000)
+    }
+    vol.delete
+
+
+  }
 
 
 }
