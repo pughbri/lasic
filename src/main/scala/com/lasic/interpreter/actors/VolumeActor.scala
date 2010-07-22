@@ -19,7 +19,7 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
   var volume:Volume = null
 
   /**
-   * Send back a reply of the VM id, if there is one, otherwise null
+   * Send back a reply of the VM vmId, if there is one, otherwise null
    */
   def replyWithId {
     var result: String = "?"
@@ -122,7 +122,7 @@ class VolumeActor(cloud: Cloud) extends Actor with Logging {
     spawn {
       val volume = cloud.createVolume(config)
       me ! MsgCreated(volume)
-      //me !  MsgCreated(id)
+      //me !  MsgCreated(vmId)
     }
   }
 

@@ -1,18 +1,20 @@
 package com.lasic.interpreter
 
 import actors._
-import actors.VMActor.ConfigureData
+import actors.VMActor.{MsgVMOperation, ConfigureData}
 import DeployActor._
 import DeployActor.DeployActorState._
 import com.lasic.{Cloud}
-import com.lasic.cloud.LaunchConfiguration
+import com.lasic.cloud.VolumeState._
 import se.scalablesolutions.akka.actor.{ActorRef, Actor}
 import com.lasic.model._
 import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
+import se.scalablesolutions.akka.actor.Actor._
+import com.lasic.cloud.{VolumeState, Volume, VolumeConfiguration, LaunchConfiguration}
 
 class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
-  private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
+  private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
 
   private def validateProgram {}
 
@@ -29,6 +31,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
 
   private def createAllVolumes {}
+
 
   private def waitForAMIsToBoot {
     waitForVMActorState(Booted, "Waiting for machines to boot: ")

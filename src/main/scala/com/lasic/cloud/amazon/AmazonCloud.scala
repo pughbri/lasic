@@ -134,12 +134,12 @@ class AmazonCloud extends Cloud with Logging {
   private def getInstance(vm: VM): ReservationDescription#Instance = {
     val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
     if (list.size != 1) {
-      throw new IllegalStateException("expected a single reservation description for instance id " + vm.instanceId + " but got " + list.size)
+      throw new IllegalStateException("expected a single reservation description for instance vmId " + vm.instanceId + " but got " + list.size)
     }
 
     val instances: JList[ReservationDescription#Instance] = list.get(0).getInstances
     if (list.size != 1) {
-      throw new IllegalStateException("expected a single instance for instance id " + vm.instanceId + " but got " + instances.size)
+      throw new IllegalStateException("expected a single instance for instance vmId " + vm.instanceId + " but got " + instances.size)
     }
 
     instances.get(0)

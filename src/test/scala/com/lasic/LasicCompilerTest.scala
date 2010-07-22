@@ -121,6 +121,18 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
   }
 
+  def testVolumePath {
+    val program = getLasicProgram(6);
+    assertEquals( "/system['sys1'][0]/node['node1'][0]/volume['node1-volume']",program.instances(0).nodegroups(0).instances(0).volumes(0).path )
+    assertEquals( "/system['sys1'][0]/node['node1'][0]/volume['node1-volume2']",program.instances(0).nodegroups(0).instances(0).volumes(1).path )
+
+    val vol1 = program.findFirst("/system['sys1'][0]/node['node1'][0]/volume['node1-volume']")
+    assertEquals( vol1, program.instances(0).nodegroups(0).instances(0).volumes(0))
+
+    val vol2 = program.findFirst("/system['sys1'][0]/node['node1'][0]/volume['node1-volume2']")
+    assertEquals( vol2, program.instances(0).nodegroups(0).instances(0).volumes(1))
+  }
+
   def testBoundPaths() = {
     val program = getLasicProgram(9);
     assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)    
