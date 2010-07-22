@@ -30,7 +30,7 @@ trait VMActor extends Actor {
   }
 
   /**
-   * Send back a reply of the VM id, if there is one, otherwise null
+   * Send back a reply of the VM vmId, if there is one, otherwise null
    */
   def replyWithVMId {
     var result: String = "?"
@@ -92,6 +92,7 @@ object VMActor {
    */
   case class MsgVMOperation(operation: VM => Any)
   case class MsgQueryState()
+
 
   // Private messages sent to ourselves
   private[actors] case class MsgSCPCompleted(val cd: ConfigureData)

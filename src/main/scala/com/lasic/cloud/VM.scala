@@ -180,5 +180,5 @@ trait VM extends Logging {
   }
 
 
-  override def toString = if (instanceId != null) instanceId else "unknown vm id"
+  override def toString = if (instanceId != null) instanceId else "unknown vm vmId"
 }

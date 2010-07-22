@@ -6,6 +6,7 @@ import com.lasic.interpreter.actors.DeployActor._
 import com.lasic.interpreter.actors.DeployActor.DeployActorState._
 import com.lasic.VM
 import se.scalablesolutions.akka.actor.ActorRef
+import com.lasic.cloud.MachineState
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,6 +17,16 @@ import se.scalablesolutions.akka.actor.ActorRef
  */
 
 class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMActorUtil {
+
+
+  var vm:VM = null
+  def vmId = {
+    if ( vm!=null ) vm.instanceId else "?"
+  }
+  def vmState = {
+    if ( vm!=null ) vm.getMachineState else MachineState.Unknown
+  }
+  
 //  var actor:ActorRef = null
 
   var volumes:List[VolumeInstance] = List()

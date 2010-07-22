@@ -35,7 +35,7 @@ class AmazonVolume(ec2: Jec2, val id:String) extends Volume with Logging{
     if ( infoList.size==0 )
       return null;
 
-//    val args = List(id)
+//    val args = List(vmId)
 //    val volList:JList = ec2.describeVolumes(args)
 //    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args).get(0)
 //    val list:List = vi.getAttachmentInfo

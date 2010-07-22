@@ -18,6 +18,10 @@ trait Pathable {
     else parent.root
   }
 
+  def findFirst(path:String):Pathable = {
+    find(path).first
+  }
+  
   def find(path: String):List[Pathable] = {
     if ( path.startsWith("/") && this!=root )
       root.find(path)
