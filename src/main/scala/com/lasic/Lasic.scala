@@ -2,12 +2,13 @@ package com.lasic
 
 import cloud.amazon.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.{DeployVerb2, RunActionVerb, DeployVerb}
-import java.io.File
+import interpreter.{RunActionVerb, DeployVerb, DeployVerb2}
 import model.LasicProgram
 import parser.LasicCompiler
 import io.Source
 import java.lang.System
+import com.beust.jcommander.{ParameterException, JCommander}
+import java.io.{FileNotFoundException, File}
 
 
 /**
@@ -15,12 +16,6 @@ import java.lang.System
  *
  */
 object Lasic {
-  var verbose = false
-
-  var cloudProvider = CloudProvider.Amazon
-  var lasicFile: String = null
-  var verbArg: String = null
-  var actionName: String = null
 
   object CloudProvider extends Enumeration {
     type CloudProviders = Value
@@ -28,95 +23,74 @@ object Lasic {
     val Mock = Value("mock")
   }
 
-  object ArgOption {
-    def unapply(str: String): Option[(String, String)] = {
-      if (!(str startsWith "-")) {
-        None
-      }
-      else {
-        val optionWithDashStripped = {
-          if (str startsWith "--") {
-            str substring 2
-          }
-          else {
-            str substring 1
-          }
-        }
-        val parts = optionWithDashStripped split "="
-        parts.length match {
-          case 1 => Some(parts(0), null)
-          case 2 => Some(parts(0), parts(1))
-          case _ => None
-        }
-      }
+  def main(args: Array[String]) {
+    val startTime = System.currentTimeMillis
+    runLasic(args)
+    println("Ran in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
+    System.exit(0)
+
+    3
+  }
+
+  def runLasic(args: Array[String]): Unit = {
+    val cmdLineArgs = parseArgs(args)
+    val program = compile(cmdLineArgs)
+    execute(program, cmdLineArgs)
+  }
+
+  def parseArgs(args: Array[String]): CommandLineArgs = {
+    val cmdLineArgs = new CommandLineArgs
+    var jCommander: JCommander = null
+    try {
+      jCommander = JCommanderFactory.createWithArgs(cmdLineArgs)
+      jCommander.parse(args: _*)
+    }
+    catch {
+      case e: ParameterException => printUsageAndExit(jCommander, e.getMessage)
+    }
+
+    if (cmdLineArgs.help) {
+      printUsageAndExit(jCommander, "Printing help...")
+    }
+    if (cmdLineArgs.verbAndScript == null || cmdLineArgs.verbAndScript.size != 2) {
+      printUsageAndExit(jCommander, "Must provide both a verb and script")
+    }
+    cmdLineArgs
+  }
+
+  def compile(cmdLineArgs: CommandLineArgs): LasicProgram = {
+    try {
+      val s = Source.fromFile(new File(cmdLineArgs.verbAndScript.get(1)))
+      LasicCompiler.compile(s)
+    }
+    catch {
+      case e: FileNotFoundException => printUsageAndExit(null, "Unable to find file: [" + cmdLineArgs.verbAndScript.get(1) + "]"); null
     }
   }
 
-
-  def printUsageAndExit(message: String) = {
-    println(message)
-    println(
-      """Usage: java -jar lasic.jar [options] <verb> <lasic-program>
-   supported verbs: deploy, runAction""")
-    System.exit(1)
-  }
-
-  def parseArgs(args: Array[String]): Unit = {
-    for (arg <- args) arg match {
-      case "-h" | "--help" => printUsageAndExit("Lasic Help:")
-      case "-v" | "--verbose" => verbose = true
-      case ArgOption("c" | "cloud", provider) => cloudProvider = CloudProvider.withName(provider)
-      case ArgOption("a" | "action", actionNameArg) => actionName = actionNameArg
-      case ArgOption(_, _) => printUsageAndExit("invalid option:" + arg)
-      case cmd => {
-        if (verbArg == null) {
-          verbArg = cmd
-        }
-        else if (lasicFile == null) {
-          lasicFile = cmd
-        }
-        else printUsageAndExit("Too many commands:")
-      }
-    }
-    if (verbArg == null || lasicFile == null) {
-      printUsageAndExit("must provide both a verb and lasic-program:")
-    }
-  }
-
-  def compile: LasicProgram = {
-    val s = Source.fromFile(new File(lasicFile))
-    LasicCompiler.compile(s)
-  }
-
-  def execute(program: LasicProgram): Any = {
-    val cloud = cloudProvider match {
+  def execute(program: LasicProgram, cmdLineArgs: CommandLineArgs): Any = {
+    val cloudProvider = CloudProvider.withName(cmdLineArgs.cloud) match {
       case CloudProvider.Amazon => new AmazonCloud()
       case CloudProvider.Mock => new MockCloud(1)
       case _ => new MockCloud(1)
     }
 
-    val verb = verbArg match {
-      case "deploy" => new DeployVerb(cloud, program)
-      case "deploy2" => new DeployVerb2(cloud,program)
-      case "runAction" => new RunActionVerb(actionName, cloud, program)
-      case _ => printUsageAndExit("unknown verb: " + verbArg); null
+    val verb = cmdLineArgs.verbAndScript.get(0) match {
+      case "deploy" => new DeployVerb(cloudProvider, program)
+      case "deploy2" => new DeployVerb2(cloudProvider, program)
+      case "runAction" => new RunActionVerb(cmdLineArgs.action, cloudProvider, program)
+      case _ => printUsageAndExit(null, "unknown verb: " + cmdLineArgs.verbAndScript.get(0)); null
     }
+
     verb.doit
   }
 
-  def runLasic(args: Array[String]): Unit = {
-    parseArgs(args)
-    val program = compile
-    execute(program)
+  def printUsageAndExit(jcmder: JCommander, message: String) = {
+    println(message)
+    if (jcmder != null) {
+      jcmder.usage
+    }
+    System.exit(1)
   }
 
-  def main(args: Array[String]) {
-    val startTime = System.currentTimeMillis
-    runLasic(args)
-    println("Ran " + lasicFile + " in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
-    System.exit(0)
-
-
-    3
-  }
 }
