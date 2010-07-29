@@ -66,7 +66,7 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
 
   private def waitForAMIsToBoot {
     waitForVMState({ni => ni.vm==null || !ni.vm.isInitialized}, "Waiting for machines to boot: ")
-    logger.info("Booted IDs are: " + nodes.map(t => showValue(t.instanceID) + ":" + showValue(t.nodeState)))
+    logger.info("Booted IDs are: " + nodes.map(t => showValue(t.vmId) + ":" + showValue(t.vmState)))
   }
 
   private def waitForVMState( state:MachineState, statusString:String) {
@@ -160,7 +160,7 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
   private def printBoundLasicProgram {
     println("paths {")
     nodes.foreach({
-      node => println("    " + node.path + ": \"" + node.instanceID + "\"  // public=" + showValue(node.publicDNS) + "\tprivate=" + showValue(node.privateDNS))
+      node => println("    " + node.path + ": \"" + node.vmId + "\"  // public=" + showValue(node.vmPublicDns) + "\tprivate=" + showValue(node.vmPrivateDns))
     })
     println("}")
   }

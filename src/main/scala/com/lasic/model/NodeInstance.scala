@@ -26,6 +26,14 @@ class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMAc
   def vmState = {
     if ( vm!=null ) vm.getMachineState else MachineState.Unknown
   }
+
+  def vmPublicDns = {
+    if (vm != null) vm.getPublicDns else "?"
+  }
+
+  def vmPrivateDns = {
+    if (vm != null) vm.getPrivateDns else "?"
+  }
   
 //  var actor:ActorRef = null
 
