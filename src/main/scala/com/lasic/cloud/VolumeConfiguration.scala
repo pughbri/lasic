@@ -18,6 +18,6 @@ class VolumeConfiguration(val size: Int, val snapID: String, zone: String) {
 
 object VolumeConfiguration {
   def build( volumeInstance:VolumeInstance) = {
-    new VolumeConfiguration(volumeInstance.volSize.toInt, null, null )
+    new VolumeConfiguration(volumeInstance.volSize, null, null )
   }
 }

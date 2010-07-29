@@ -8,7 +8,7 @@ import com.lasic.cloud.noop.NoopVolume
  * @author Brian Pugh
  */
 
-class VolumeInstance (val parentNodeInstance:NodeInstance,val name: String, val volSize: String, val device: String, val mount: String) extends Pathable {
+class VolumeInstance (val parentNodeInstance:NodeInstance,val name: String, val volSize: Int, val device: String, val mount: String) extends Pathable {
   var volume:Volume = new NoopVolume()
   
   def parent = parentNodeInstance

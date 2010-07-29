@@ -5,6 +5,7 @@ import collection.mutable.ListBuffer
 import com.lasic.model._
 import io.Source
 import com.lasic.values.BaseAction
+import java.lang.String
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,9 +30,21 @@ object LasicCompiler {
       if (volumeProperties.contains("mount")) volumeProperties("mount") else null
     }
 
+    val size = {
+      val sizeStr = volumeProperties("size")
+      if (sizeStr.matches("\\d*"))
+        sizeStr.toInt
+      else {
+        if (sizeStr.matches("\\d*g"))
+          sizeStr.split('g')(0).toInt
+        else
+          throw new IllegalArgumentException("invalid volume size.  Size must be all digits followed by an optional 'g'. The Unit is gigabytes " + sizeStr)
+      }
+    }
+    
     val volumeInstance = new VolumeInstance(nodeInstance,
       volumeProperties("name"),
-      volumeProperties("size"),
+      size,
       device,
       mount)
 
