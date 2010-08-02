@@ -41,7 +41,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
           }
         }
 
-        val configData = new ActionData(new LaunchConfiguration, node.boundInstanceId, allSCPs, node.resolveScripts(allScripts))
+        val configData = new ActionData(LaunchConfiguration.build(node), node.boundInstanceId, allSCPs, node.resolveScripts(allScripts))
         node.actor ! MsgRunAction(configData)
     }
   }
