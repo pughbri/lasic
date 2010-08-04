@@ -15,6 +15,7 @@ import com.lasic.values.SystemProperties
 
 class ASTSystem extends SystemProperties {
   val nodes = new ListBuffer[ASTNode]()
+  val scaleGroups = new ListBuffer[ASTScaleGroup]()
   val subsystems = new ListBuffer[ASTSystem]()
   var boundPaths = Map[String, String]()
 }

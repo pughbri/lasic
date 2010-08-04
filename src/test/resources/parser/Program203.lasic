@@ -1,0 +1,91 @@
+system "www.lasic.com" {
+
+  scale-group "www-lasic-webapp" {
+    props {
+        groups: "default","web-server"
+        key: "default"
+        instancetype: "small"
+        machineimage: "ami-714ba518"
+        user: "ubuntu"
+        min-size: 3
+        max-size: 89
+    }
+
+    scale-trigger "www-lasic-webapp-scale-trigger"{
+        breach-duration: 300
+        upper-breach-increment: 1
+        lower-breach-increment: 1
+        lower-threshold: 10
+        measure: "CPUUtilization"
+        namespace: "AWS/EC2"
+        period: 60
+        statistic: "Average"
+        upper-threshold: 60
+        unit: "Seconds"
+    }
+
+    action "install" {
+        scp {
+           "file:target/test-classes/scripts/install.sh":"~/install-lasic-webapp.sh"
+           "file:target/test-classes/scripts/config.sh":"~/update-config.sh"
+        }
+
+
+        scripts {
+           "~/install-lasic-webapp.sh": {
+              REF: "${REFERENCE}"
+            }
+         }
+     }
+
+     action "updateConfig" {
+             scripts {
+                  "~/update-config.sh": {
+                      REF: "${REFERENCE}"
+                   }
+             }
+     }
+
+     action "snapshot" {
+         scp {
+               "file:target/test-classes/scripts/snapshot.sh":"~/snapshot.sh"
+            }
+                 scripts {
+                      "~/snapshot.sh": {
+                          REF: "${REFERENCE}"
+                       }
+         }
+     }
+  }
+
+  node "www-lasic-load-balancer" {
+    props {
+        groups: "default"
+        key: "default"
+        instancetype: "small"
+        count: 1
+        machineimage: "ami-714ba518"
+        user: "ubuntu"
+    }
+
+
+    action "install" {
+        scp {
+           "file:target/test-classes/scripts/install2.sh":"~/install-lasic-lb.sh"
+        }
+
+        scripts {
+           "~/install-lasic-lb.sh": {
+              WEBAPP: /system['www.lasic.com'][0]/node['www-lasic-webapp'][0]
+              REF: "${REFERENCE}"
+            }
+         }
+     }
+  }
+
+paths {
+    /system['www.lasic.com'][0]/scale-group['www-lasic-webapp']: "www-lasic-webapp-01"  
+    /system['www.lasic.com'][0]/node['www-lasic-load-balancer'][0]: "i-bbbbbbbb"  /** public=ec2-75-101-238-156.compute-1.amazonaws.com      private=domU-12-31-39-0F-7E-38.compute-1.internal **/
+  }
+
+}

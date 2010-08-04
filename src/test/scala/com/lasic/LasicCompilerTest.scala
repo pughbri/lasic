@@ -133,6 +133,27 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals( vol2, program.instances(0).nodegroups(0).instances(0).volumes(1))
   }
 
+  def testScaleGroup {
+    val program = getLasicProgram(10);
+    assertEquals("grp1", program.instances(0).scaleGroups(0).name)
+    assertEquals("small", program.instances(0).scaleGroups(0).instancetype)
+    assertEquals(1, program.instances(0).scaleGroups(0).minSize)
+    assertEquals(3, program.instances(0).scaleGroups(0).maxSize)
+    assertEquals("trigger1", program.instances(0).scaleGroups(0).triggers(0).name)
+    assertEquals(300, program.instances(0).scaleGroups(0).triggers(0).breachDuration)
+    assertEquals(1, program.instances(0).scaleGroups(0).triggers(0).upperBreachIncrement)
+    assertEquals(1, program.instances(0).scaleGroups(0).triggers(0).lowerBreachIncrement)
+    assertEquals(10, program.instances(0).scaleGroups(0).triggers(0).lowerThreshold)
+    assertEquals("CPUUtilization", program.instances(0).scaleGroups(0).triggers(0).measure)
+    assertEquals("AWS/EC2", program.instances(0).scaleGroups(0).triggers(0).namespace)
+    assertEquals(60, program.instances(0).scaleGroups(0).triggers(0).period)
+    assertEquals("Average", program.instances(0).scaleGroups(0).triggers(0).statistic)
+    assertEquals(60, program.instances(0).scaleGroups(0).triggers(0).upperThreshold)
+    assertEquals("Seconds", program.instances(0).scaleGroups(0).triggers(0).unit)
+    assertEquals("test", program.instances(0).scaleGroups(0).actions(0).name)
+
+  }
+
   def testBoundPaths() = {
     val program = getLasicProgram(9);
     assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)    
