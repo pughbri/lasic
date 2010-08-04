@@ -1,11 +1,11 @@
 package com.lasic.parser
 
-import ast.{ASTAction, ASTNode, ASTSystem}
+import ast._
 import collection.mutable.ListBuffer
 import com.lasic.model._
 import io.Source
-import com.lasic.values.BaseAction
 import java.lang.String
+import com.lasic.values.{NodeProperties, BaseAction}
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,7 +41,7 @@ object LasicCompiler {
           throw new IllegalArgumentException("invalid volume size.  Size must be all digits followed by an optional 'g'. The Unit is gigabytes " + sizeStr)
       }
     }
-    
+
     val volumeInstance = new VolumeInstance(nodeInstance,
       volumeProperties("name"),
       size,
@@ -82,6 +82,19 @@ object LasicCompiler {
             val nodeGroup: NodeGroup = compile(node);
             nodeGroup.parentSystemInstance = systemInstance
             nodeGroup
+        }
+    }
+  }
+
+  private def createScaleGroups(ast: ASTSystem, sysGroup: SystemGroup) = {
+    // create nodes
+    sysGroup.instances.foreach {
+      systemInstance =>
+        systemInstance.scaleGroups = ast.scaleGroups.toList.map {
+          case astScaleGroup =>
+            val scaleGroup = compile(astScaleGroup);
+            scaleGroup.parentSystemInstance = systemInstance
+            scaleGroup
         }
     }
   }
@@ -132,6 +145,9 @@ object LasicCompiler {
     // Create all the nodegroups in each SystemInstance
     createNodeGroups(ast, sysGroup)
 
+    // Create all the scale groups in each SystemInstance
+    createScaleGroups(ast, sysGroup)
+
     // Create all the subsystems
     createSubsystems(ast, sysGroup)
 
@@ -153,7 +169,7 @@ object LasicCompiler {
         }
         else {
           pathables(0) match {
-            case nodeInstance: NodeInstance => nodeInstance.boundInstanceId= boundPath._2
+            case nodeInstance: NodeInstance => nodeInstance.boundInstanceId = boundPath._2
             case _ => throw new Exception("Path " + boundPath + " does not resolve to a nodeinstance.  Resolves to " + pathables(0).getClass)
           }
         }
@@ -162,24 +178,25 @@ object LasicCompiler {
     }
   }
 
+  def copyNodeProperties(to: NodeProperties, from: NodeProperties): Unit = {
+    to.name = from.name
+    to.count = from.count
+    to.machineimage = from.machineimage
+    to.kernelid = from.kernelid
+    to.ramdiskid = from.ramdiskid
+    to.groups = from.groups.map {x => x}
+    to.key = from.key
+    to.user = from.user
+    to.instancetype = from.instancetype
+    to.actions = compile(from.actions)
+  }
+
   private def compile(ast: ASTNode): NodeGroup = {
     // Create the group
     val nodeGroup = new NodeGroup
-    nodeGroup.name = ast.name
-    nodeGroup.count = ast.count
-    nodeGroup.machineimage = ast.machineimage
-    nodeGroup.kernelid = ast.kernelid
-    nodeGroup.ramdiskid = ast.ramdiskid
-    nodeGroup.groups = ast.groups.map {x => x}
-    nodeGroup.key = ast.key
-    nodeGroup.user = ast.user
-    nodeGroup.instancetype = ast.instancetype
-    nodeGroup.actions = compile(ast.actions)
-
+    copyNodeProperties(nodeGroup, ast)
     createInstances(nodeGroup, ast)
     nodeGroup
-
-
   }
 
   private def compile(actions: List[BaseAction]): List[Action] = {
@@ -194,4 +211,34 @@ object LasicCompiler {
     }
 
   }
+
+  private def compile(ast: ASTScaleGroup): ScaleGroupInstance = {
+    val scaleGroup = new ScaleGroupInstance
+    copyNodeProperties(scaleGroup, ast)
+    scaleGroup.minSize = ast.minSize
+    scaleGroup.maxSize = ast.maxSize
+    scaleGroup.triggers = compileTriggers(ast.triggers)
+    scaleGroup
+  }
+
+  private def compileTriggers(astTriggers: List[ASTTrigger]) = {
+    astTriggers.map(createTriggerInstance(_))    
+  }
+
+  private def createTriggerInstance(astTrigger: ASTTrigger) = {
+    val triggerInstance = new TriggerInstance
+    triggerInstance.name = astTrigger.name
+    triggerInstance.breachDuration = astTrigger.breachDuration
+    triggerInstance.upperBreachIncrement = astTrigger.upperBreachIncrement
+    triggerInstance.lowerBreachIncrement = astTrigger.lowerBreachIncrement
+    triggerInstance.lowerThreshold = astTrigger.lowerThreshold
+    triggerInstance.measure = astTrigger.measure
+    triggerInstance.namespace = astTrigger.namespace
+    triggerInstance.period = astTrigger.period
+    triggerInstance.statistic = astTrigger.statistic
+    triggerInstance.upperThreshold = astTrigger.upperThreshold
+    triggerInstance.unit = astTrigger.unit
+    triggerInstance
+  }
+
 }

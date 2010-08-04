@@ -6,8 +6,7 @@ import scala.collection.mutable._
 import com.lasic.LasicProperties
 import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScriptArgumentValue}
 import com.lasic.util.Logging
-import scala.Option
-
+import com.lasic.values.NodeProperties
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,6 +28,7 @@ class LasicParser extends JavaTokenParsers with Logging {
         listEntry match {
           case propertyMap: Map[Any, Any] => initSystemProperties(sys, propertyMap)
           case node: ASTNode => sys.nodes += node
+          case scaleGroup: ASTScaleGroup=> sys.scaleGroups += scaleGroup
           case system: ASTSystem => sys.subsystems += system
           case x => logger.warn("Unknown object: " + x)
         }
@@ -46,6 +46,49 @@ class LasicParser extends JavaTokenParsers with Logging {
     }
   }
 
+  def buildScaleGroup(name: String, body: List[Any]) = {
+    val sys = new ASTScaleGroup()
+    sys.name = name
+    body.foreach {
+      listEntry =>
+        listEntry match {
+          case propertyMap: Map[Any, Any] => setScaleGroupProperties(sys, propertyMap)
+          case astAction: ASTAction => sys.actions = astAction :: sys.actions
+          case astVolume: ASTVolume =>
+            val immutableMap = scala.collection.Map.empty ++ astVolume.params
+            sys.volumes = immutableMap :: sys.volumes
+          case astTrigger: ASTTrigger => sys.triggers = astTrigger :: sys.triggers
+          case _ =>
+        }
+    }
+    sys
+  }
+
+  def setScaleGroupProperties(scaleGrp: ASTScaleGroup, props: Map[Any, Any]) {
+    scaleGrp.minSize = props("min-size").asInstanceOf[Int]
+    scaleGrp.maxSize = props("max-size").asInstanceOf[Int]
+    initNodeProperties(scaleGrp, props -- List("min-size", "max-size"))
+  }
+
+  def createTrigger(name: String, triggerProps: Map[String, Any]) = {
+    val astTrigger = new ASTTrigger
+    astTrigger.name = name
+    triggerProps.foreach {
+      case ("breach-duration", i: Int) => astTrigger.breachDuration = i
+      case ("upper-breach-increment", i: Int) => astTrigger.upperBreachIncrement = i
+      case ("lower-breach-increment", i: Int) => astTrigger.lowerBreachIncrement = i
+      case ("lower-threshold", i: Int) => astTrigger.lowerThreshold = i
+      case ("measure", s: String) => astTrigger.measure = s
+      case ("namespace", s: String) => astTrigger.namespace = s
+      case ("period", i: Int) => astTrigger.period = i
+      case ("statistic", s: String) => astTrigger.statistic = s
+      case ("upper-threshold", i: Int) => astTrigger.upperThreshold = i
+      case ("unit", s: String) => astTrigger.unit = s
+      case (x, y) => logger.warn("Unknown node property: " + x + " = " + y)
+    }
+    astTrigger
+  }
+
   def buildNode(name: String, body: List[Any]) = {
     val sys = new ASTNode()
     sys.name = name
@@ -53,7 +96,7 @@ class LasicParser extends JavaTokenParsers with Logging {
       listEntry =>
         listEntry match {
           case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
-          case astAction: ASTAction => sys.actions = astAction :: sys.actions           
+          case astAction: ASTAction => sys.actions = astAction :: sys.actions
           case astVolume: ASTVolume =>
             val immutableMap = scala.collection.Map.empty ++ astVolume.params
             sys.volumes = immutableMap :: sys.volumes
@@ -81,16 +124,16 @@ class LasicParser extends JavaTokenParsers with Logging {
     action
   }
 
-  def initNodeProperties(sys: ASTNode, props: Map[Any, Any]) {
+  def initNodeProperties(nodeProps: NodeProperties, props: Map[Any, Any]) {
     props.foreach {
-      case ("count", v: Int) => sys.count = v
-      case ("machineimage", s: String) => sys.machineimage = s
-      case ("kernelid", s: String) => sys.kernelid = s
-      case ("ramdiskid", s: String) => sys.ramdiskid = s
-      case ("groups", s: List[String]) => sys.groups = s
-      case ("key", s: String) => sys.key = s
-      case ("user", s: String) => sys.user = s
-      case ("instancetype", s: String) => sys.instancetype = s
+      case ("count", v: Int) => nodeProps.count = v
+      case ("machineimage", s: String) => nodeProps.machineimage = s
+      case ("kernelid", s: String) => nodeProps.kernelid = s
+      case ("ramdiskid", s: String) => nodeProps.ramdiskid = s
+      case ("groups", s: List[String]) => nodeProps.groups = s
+      case ("key", s: String) => nodeProps.key = s
+      case ("user", s: String) => nodeProps.user = s
+      case ("instancetype", s: String) => nodeProps.instancetype = s
       case (x, y) => logger.warn("Unknown node property: " + x + " = " + y)
     }
 
@@ -102,8 +145,8 @@ class LasicParser extends JavaTokenParsers with Logging {
     case _ ~ name ~ _ ~ body_tuple ~ _ => buildSystem(name, body_tuple._1, body_tuple._2)
   }
 
-  def system_body: Parser[(List[Any], Any)] = rep(system_props | node | system) ~ opt(path_bindings) ^^ {
-    case list_o_declarations ~ Some(x) => (list_o_declarations, x)  
+  def system_body: Parser[(List[Any], Any)] = rep(system_props | node | scale_group | system) ~ opt(path_bindings) ^^ {
+    case list_o_declarations ~ Some(x) => (list_o_declarations, x)
     case list_o_declarations ~ None => (list_o_declarations, None)
   }
 
@@ -137,14 +180,55 @@ class LasicParser extends JavaTokenParsers with Logging {
     case path_name ~ _ ~ identifier => (path_name -> identifier)
   }
 
+
   /*==========================================================================================================
-    NODE bnf
-    ==========================================================================================================*/
+  SCALE GROUP bnf
+  ==========================================================================================================*/
+  def scale_group = "scale-group" ~ aString ~ lbrace ~ scale_group_body ~ rbrace ^^ {
+    case _ ~ name ~ _ ~ body_list ~ _ => buildScaleGroup(name, body_list)
+  }
+
+  def scale_group_body = rep(scale_group_props | trigger | action | volume)
+
+  def scale_group_props = "props" ~> "{" ~> rep(scale_group_prop) <~ "}" ^^ {
+    list_o_props => Map() ++ list_o_props
+  }
+
+  def scale_group_prop = scale_group_numeric_prop | node_string_prop | node_list_prop
+
+  def scale_group_numeric_prop = scale_group_numeric_prop_name ~ ":" ~ wholeNumber ^^ {
+    case name ~ _ ~ value => (name -> value.toInt)
+  }
+
+  def scale_group_numeric_prop_name = "min-size" | "max-size"
+
+  def trigger = "scale-trigger" ~ aString ~ lbrace ~ trigger_body ~ rbrace ^^ {
+    case _ ~ name ~ _ ~ body ~ _ => createTrigger(name, body)
+  }
+
+  def trigger_body = rep(trigger_numeric_prop | trigger_string_prop) ^^ {
+    list_o_props => Map() ++ list_o_props
+  }
+
+  def trigger_numeric_prop = trigger_numeric_prop_name ~ ":" ~ wholeNumber ^^ {
+    case name ~ _ ~ value => (name -> value.toInt)
+  }
+
+  def trigger_numeric_prop_name = "breach-duration" | "upper-breach-increment" | "lower-breach-increment" | "lower-threshold" | "period" | "upper-threshold"
+
+  def trigger_string_prop = trigger_string_prop_name ~ ":" ~ aString ^^ {
+    case name ~ _ ~ value => (name -> value)
+  }
+
+  def trigger_string_prop_name = "measure" | "namespace" | "statistic" | "unit"
+
+  /*==========================================================================================================
+  NODE bnf
+  ==========================================================================================================*/
 
 
   def node = "node" ~ aString ~ lbrace ~ node_body ~ rbrace ^^ {
     case _ ~ name ~ _ ~ body_list ~ _ => buildNode(name, body_list)
-
   }
 
   def node_body = rep(node_props | action | volume)

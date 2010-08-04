@@ -12,6 +12,7 @@ import collection.mutable.ListBuffer
 
 class SystemInstance(var parent:SystemGroup, index:Int) extends Pathable {
   var nodegroups = List[NodeGroup]()
+  var scaleGroups = List[ScaleGroupInstance]()
   var subsystems = List[SystemGroup]()
   
   def path = { parent.path +"[%d]".format(index)}
