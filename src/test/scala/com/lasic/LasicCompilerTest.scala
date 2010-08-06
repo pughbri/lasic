@@ -5,13 +5,14 @@ import model._
 import parser.{LasicCompiler}
 
 import org.apache.commons.io.IOUtils
+import java.io.File
 
 /**
  * Tests a variety of sample LASIC programs to ensure that they compile into the proper object model
  */
 class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   override def setUp = {
-    LasicProperties.propFilename = classOf[Application].getResource("/lasic.properties").getPath()
+    LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
   }
 
   /**
