@@ -1,7 +1,7 @@
 /* A very simple test of script parameters which are LASIC paths */
 system  "sys1" {
     scale-group "grp1" {
-        props {
+        configuration "grp1-config" {
             instancetype: "small"
             min-size: 1
             max-size: 3
@@ -35,7 +35,8 @@ system  "sys1" {
     }
         /**
     paths {
-      /system['sys1'][0]/scale-group['grp1']]: "grp1-1"
+      /system['sys1'][0]/scale-group['grp1']: "grp1-1"
+      /system['sys1'][0]/scale-group['grp1']/configuration['grp1-config']: "grp1-config-1"
     }
     **/
 

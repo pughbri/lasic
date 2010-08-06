@@ -52,7 +52,7 @@ class LasicParser extends JavaTokenParsers with Logging {
     body.foreach {
       listEntry =>
         listEntry match {
-          case propertyMap: Map[Any, Any] => setScaleGroupProperties(sys, propertyMap)
+          case propertyMap: Map[Any, Any] => sys.configuration = createScaleGroupConfiguration(propertyMap)
           case astAction: ASTAction => sys.actions = astAction :: sys.actions
           case astVolume: ASTVolume =>
             val immutableMap = scala.collection.Map.empty ++ astVolume.params
@@ -64,10 +64,13 @@ class LasicParser extends JavaTokenParsers with Logging {
     sys
   }
 
-  def setScaleGroupProperties(scaleGrp: ASTScaleGroup, props: Map[Any, Any]) {
-    scaleGrp.minSize = props("min-size").asInstanceOf[Int]
-    scaleGrp.maxSize = props("max-size").asInstanceOf[Int]
-    initNodeProperties(scaleGrp, props -- List("min-size", "max-size"))
+  def createScaleGroupConfiguration(props: Map[Any, Any]) =  {
+    val config = new ASTScaleGroupConfig
+    config.minSize = props("min-size").asInstanceOf[Int]
+    config.maxSize = props("max-size").asInstanceOf[Int]
+    config.name = props("name").asInstanceOf[String]
+    initNodeProperties(config, props -- List("min-size", "max-size", "name"))
+    config
   }
 
   def createTrigger(name: String, triggerProps: Map[String, Any]) = {
@@ -188,10 +191,10 @@ class LasicParser extends JavaTokenParsers with Logging {
     case _ ~ name ~ _ ~ body_list ~ _ => buildScaleGroup(name, body_list)
   }
 
-  def scale_group_body = rep(scale_group_props | trigger | action | volume)
+  def scale_group_body = rep(scale_config | trigger | action | volume)
 
-  def scale_group_props = "props" ~> "{" ~> rep(scale_group_prop) <~ "}" ^^ {
-    list_o_props => Map() ++ list_o_props
+  def scale_config = "configuration" ~ aString ~ lbrace ~ rep(scale_group_prop) ~ rbrace ^^ {
+    case _ ~ name ~ _ ~ list_o_props ~ _ => Map() ++ list_o_props + ("name" -> name)
   }
 
   def scale_group_prop = scale_group_numeric_prop | node_string_prop | node_list_prop

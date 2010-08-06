@@ -1,6 +1,6 @@
 package com.lasic.model
 
-import com.lasic.values.NodeProperties
+import com.lasic.values.{BaseAction, NodeProperties}
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,6 +18,9 @@ class NodeGroup extends NodeProperties with Pathable {
   def path = { parent.path +"/node['" + name+"']" }
   def children = instances
 
-  override def toString = this.getClass().getSimpleName() + ": " + name + children.mkString(", ")
+  var volumes = List[Map[String,String]]()
+  var actions = List[BaseAction]()
   
+  override def toString = this.getClass().getSimpleName() + ": " + name + children.mkString(", ")
+
 }

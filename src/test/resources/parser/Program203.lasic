@@ -1,7 +1,7 @@
 system "www.lasic.com" {
 
   scale-group "www-lasic-webapp" {
-    props {
+    configuration "junk" {
         groups: "default","web-server"
         key: "default"
         instancetype: "small"

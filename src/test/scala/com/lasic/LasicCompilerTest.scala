@@ -136,9 +136,10 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   def testScaleGroup {
     val program = getLasicProgram(10);
     assertEquals("grp1", program.instances(0).scaleGroups(0).name)
-    assertEquals("small", program.instances(0).scaleGroups(0).instancetype)
-    assertEquals(1, program.instances(0).scaleGroups(0).minSize)
-    assertEquals(3, program.instances(0).scaleGroups(0).maxSize)
+    assertEquals("grp1-config", program.instances(0).scaleGroups(0).configurations(0).name)
+    assertEquals("small", program.instances(0).scaleGroups(0).configurations(0).instancetype)
+    assertEquals(1, program.instances(0).scaleGroups(0).configurations(0).minSize)
+    assertEquals(3, program.instances(0).scaleGroups(0).configurations(0).maxSize)
     assertEquals("trigger1", program.instances(0).scaleGroups(0).triggers(0).name)
     assertEquals(300, program.instances(0).scaleGroups(0).triggers(0).breachDuration)
     assertEquals(1, program.instances(0).scaleGroups(0).triggers(0).upperBreachIncrement)
@@ -151,7 +152,6 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals(60, program.instances(0).scaleGroups(0).triggers(0).upperThreshold)
     assertEquals("Seconds", program.instances(0).scaleGroups(0).triggers(0).unit)
     assertEquals("test", program.instances(0).scaleGroups(0).actions(0).name)
-
   }
 
   def testBoundPaths() = {

@@ -1,6 +1,6 @@
 package com.lasic.parser.ast
 
-import com.lasic.values.NodeProperties
+import com.lasic.values.{BaseAction, NodeProperties}
 
 /**
  * Created by IntelliJ IDEA.
@@ -12,6 +12,8 @@ import com.lasic.values.NodeProperties
 
 
 class ASTNode extends NodeProperties {
+  var volumes                 = List[Map[String,String]]()
+  var actions                 = List[BaseAction]()
 
 
 }
