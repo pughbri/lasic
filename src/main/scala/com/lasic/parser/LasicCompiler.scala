@@ -188,13 +188,13 @@ object LasicCompiler {
     to.key = from.key
     to.user = from.user
     to.instancetype = from.instancetype
-    to.actions = compile(from.actions)
   }
 
   private def compile(ast: ASTNode): NodeGroup = {
     // Create the group
     val nodeGroup = new NodeGroup
     copyNodeProperties(nodeGroup, ast)
+    nodeGroup.actions = compile(ast.actions)
     createInstances(nodeGroup, ast)
     nodeGroup
   }
@@ -213,11 +213,16 @@ object LasicCompiler {
   }
 
   private def compile(ast: ASTScaleGroup): ScaleGroupInstance = {
+    val scaleGrpConfig = new ScaleGroupConfiguration
+    copyNodeProperties(scaleGrpConfig, ast.configuration)
+    scaleGrpConfig.minSize = ast.configuration.minSize
+    scaleGrpConfig.maxSize = ast.configuration.maxSize
+
     val scaleGroup = new ScaleGroupInstance
-    copyNodeProperties(scaleGroup, ast)
-    scaleGroup.minSize = ast.minSize
-    scaleGroup.maxSize = ast.maxSize
+    scaleGroup.name = ast.name
+    scaleGroup.configurations  = scaleGrpConfig :: scaleGroup.configurations
     scaleGroup.triggers = compileTriggers(ast.triggers)
+    scaleGroup.actions = compile(ast.actions)
     scaleGroup
   }
 

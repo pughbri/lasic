@@ -7,5 +7,5 @@ package com.lasic.values
 
 trait ScaleGroupProperties {
   var minSize = 0
-  var maxSize = 0
+  var maxSize = 0  
 }

@@ -12,8 +12,7 @@ trait NodeProperties {
   var key: String             = null
   var user: String            = null
   var instancetype: String    = null
-  var volumes                 = List[Map[String,String]]()
-  var actions                 = List[BaseAction]()
+
 
 }
 
