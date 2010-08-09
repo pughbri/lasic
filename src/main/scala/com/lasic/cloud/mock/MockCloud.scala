@@ -7,6 +7,7 @@ import java.lang.String
 import java.util.{Random}
 import com.lasic.util.Logging
 import com.lasic.cloud._
+import java.util.{List => JList}
 
 /**
  * User: Brian Pugh
@@ -28,6 +29,10 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     vm.instanceId = instanceId
     vm ! vm.StateChange(MachineState.Running, 0)
     vm
+  }
+
+  def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String = {
+    null
   }
 
   def start(vms: List[VM]) {
@@ -119,6 +124,19 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     logger.info("disassociate ip [" + ip + "]")
 
   }
+
+  def createAutoScalingLaunchConfiguration(config: LaunchConfiguration) = {
+
+  }
+
+  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String]) = {
+
+  }
+
+  def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
+
+  }
+
 
   def allocateAddress() = {
     val random: Random = new Random()

@@ -1,16 +1,22 @@
 package com.lasic.cloud.amazon
 
 import java.lang.String
-import java.util.Iterator
 import java.util.{List => JList}
-import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
-import com.xerox.amazonws.ec2.InstanceType
+import java.util.HashMap
 import scala.collection.JavaConversions.asBuffer
 import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
 import com.lasic.{LasicProperties, VM, Cloud}
-import com.lasic.cloud.{VolumeConfiguration, Volume, MachineState, LaunchConfiguration}
+import com.lasic.cloud._
+import com.xerox.amazonws.ec2.Jec2
+import com.xerox.amazonws.ec2.AutoScaling
+import com.xerox.amazonws.ec2.AutoScalingException
+import com.xerox.amazonws.ec2.InstanceType
+import com.xerox.amazonws.ec2.ReservationDescription
+import com.xerox.amazonws.ec2.{LaunchConfiguration => AmazonLaunchConfiguration}
+import com.xerox.amazonws.ec2.{ScalingTrigger => AmazonScalingTrigger}
+import com.xerox.amazonws.monitoring.{StandardUnit, Statistics}
 
 /**
  * @author Brian Pugh
@@ -68,6 +74,11 @@ class AmazonCloud extends Cloud with Logging {
     }
   }
 
+  def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String = {
+    ec2.createImage(instanceId, name, description, !reboot)
+  }
+
+
   def convertToLC(instance: ReservationDescription#Instance): LaunchConfiguration = {
     val lc = new LaunchConfiguration
     lc.machineImage = instance.getImageId
@@ -104,8 +115,8 @@ class AmazonCloud extends Cloud with Logging {
     }
   }
 
-  private def createLaunchConfiguration(lasicLC: LaunchConfiguration): com.xerox.amazonws.ec2.LaunchConfiguration = {
-    val launchConfig = new com.xerox.amazonws.ec2.LaunchConfiguration(lasicLC.machineImage, 1, 1)
+  private def createLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
+    val launchConfig = new AmazonLaunchConfiguration(lasicLC.machineImage, 1, 1)
     launchConfig.setKernelId(lasicLC.kernelId)
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
@@ -130,6 +141,38 @@ class AmazonCloud extends Cloud with Logging {
       )
   }
 
+  def createAutoScalingLaunchConfiguration(config: LaunchConfiguration) = {
+    var launchConfig = new AmazonLaunchConfiguration(config.machineImage)
+    launchConfig.setInstanceType(InstanceType.getTypeFromString(config.instanceType))
+    launchConfig.setKeyName(config.key)
+    // wait for typica 1.7.2 launchConfig.setGroupName(config.groups.mkString(","))
+    launchConfig.setConfigName(config.name)
+    try {
+      autoscaling.createLaunchConfiguration(launchConfig)
+    }
+    catch {
+      case ex: AutoScalingException => //do something here, may be a name collision
+    }
+  }
+
+  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String]) = {
+    try {
+      autoscaling.createAutoScalingGroup(launchConfigurationName, autoScalingGroupName, min, max, 0, availabilityZone)
+    }
+    catch {
+      case ex: AutoScalingException => //do something here, may be a name collision
+    }
+  }
+
+  def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
+    var dimensions = new HashMap[String, String]
+    dimensions.put("AutoScalingGroupName", trigger.autoScalingGroupName)
+    var scalingTrigger = new AmazonScalingTrigger(trigger.name, trigger.autoScalingGroupName, trigger.measureName,
+        Statistics.AVERAGE, dimensions, trigger.period, StandardUnit.PERCENT, null/*CustomUnit*/,
+        trigger.lowerThreshold, trigger.lowerBreachScaleIncrement, trigger.upperThreshold,
+        trigger.upperBreachScaleIncrement, trigger.breachDuration, null/*status*/, null/*createdTime*/)
+    autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
+  }
 
   private def getInstance(vm: VM): ReservationDescription#Instance = {
     val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
