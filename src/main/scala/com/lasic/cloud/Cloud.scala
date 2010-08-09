@@ -2,7 +2,7 @@ package com.lasic
 
 import cloud._
 import com.lasic.cloud.MachineState._
-import com.lasic.cloud.VolumeState._
+import java.util.{List => JList}
 
 
 
@@ -18,6 +18,8 @@ trait Cloud {
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM]
 
   def findVM(instanceId: String): VM
+
+  def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String
 
   def start(vms: List[VM])
 
@@ -42,6 +44,12 @@ trait Cloud {
 //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
 
 //  def createLaunchConfiguration(config: LaunchConfiguration)
+
+  def createAutoScalingLaunchConfiguration(config: LaunchConfiguration)
+
+  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String])
+
+  def createUpdateScalingTrigger(trigger: ScalingTrigger)
 
   /**
    * @param size - size in gigabytes
