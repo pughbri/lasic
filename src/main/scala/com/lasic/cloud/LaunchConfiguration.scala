@@ -19,9 +19,21 @@ class LaunchConfiguration {
   var s3Download: String = null
   var availabilityZone: String = LasicProperties.getProperty("availability_zone", "us-east-1d")
 
+
   //val scpDeclarations: List[ScpDeclaration] = new ArrayList[ScpDeclaration]
   //private ScriptDeclaration script = new ScriptDeclaration();
   //private final val startupScripts: List[ScriptDeclaration] = new ArrayList[ScriptDeclaration]
+
+  override def toString = "name [" + name + "] " +
+   "machineImage ["  + machineImage + "]" +
+   "ramdiskId ["  + ramdiskId + "]" +
+   "kernelId ["  + kernelId + "]" +
+   "key ["  + key + "]" +
+   "groups ["  + groups.mkString(", ") + "]" +
+   "instanceType ["  + instanceType + "]" +
+   "userName ["  + userName + "]" +
+   "s3Download ["  + s3Download + "]" +
+   "availabilityZone ["  + availabilityZone + "]"
 }
 
 object LaunchConfiguration {

@@ -32,7 +32,7 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
   def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String = {
-    null
+    "ami-" + random.nextInt
   }
 
   def start(vms: List[VM]) {
@@ -85,6 +85,10 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     }
   }
 
+  def getState(imageId: String) = {
+    ImageState.Available
+  }
+
   def getPublicDns(vm: VM): String = {
     if (vm.getMachineState == MachineState.Running) "mock-public-dns" else ""
   }
@@ -126,15 +130,15 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
   def createAutoScalingLaunchConfiguration(config: LaunchConfiguration) = {
-
+   logger.info("create launch configuration[" + config.name + "]")
   }
 
-  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String]) = {
-
+  def createAutoScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZone: List[String]) = {
+    logger.info("create auto scaling group [" + autoScalingGroupName + "] from configuration " + launchConfigurationName)
   }
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
-
+    logger.info("create auto scaling trigger [" + trigger.name + "]")
   }
 
 
@@ -142,7 +146,6 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     val random: Random = new Random()
     "10.255." + +random.nextInt(200) + "." + random.nextInt(200);
   }
-
 
   def releaseAddress(ip: String) = {
     logger.info("release ip [" + ip + "]")

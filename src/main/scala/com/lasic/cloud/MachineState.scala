@@ -14,11 +14,4 @@ object MachineState extends Enumeration {
   val ShuttingDown = Value("shutting-down")
   val Rebooting = Value("rebooting")
   val Terminated = Value("terminated")
-
-  def string2State(s: String): MachineState.Value = {
-    for (ms <- iterator) {
-      if (s.toLowerCase.equals(ms.toString.toLowerCase)) return ms
-    }
-    Unknown
-  }
 }
