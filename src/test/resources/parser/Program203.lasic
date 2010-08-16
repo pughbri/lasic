@@ -83,9 +83,10 @@ system "www.lasic.com" {
      }
   }
 
-paths {
-    /system['www.lasic.com'][0]/scale-group['www-lasic-webapp']: "www-lasic-webapp-01"  
-    /system['www.lasic.com'][0]/node['www-lasic-load-balancer'][0]: "i-bbbbbbbb"  /** public=ec2-75-101-238-156.compute-1.amazonaws.com      private=domU-12-31-39-0F-7E-38.compute-1.internal **/
+/**paths {
+    /system['www.lasic.com'][0]/scale-group['www-lasic-webapp']: "www-lasic-webapp-01"
+    /system['www.lasic.com'][0]/node['www-lasic-load-balancer'][0]: "i-bbbbbbbb"
   }
+  **/
 
 }

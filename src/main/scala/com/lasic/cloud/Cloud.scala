@@ -2,7 +2,7 @@ package com.lasic
 
 import cloud._
 import com.lasic.cloud.MachineState._
-import java.util.{List => JList}
+import com.lasic.cloud.ImageState._
 
 
 
@@ -29,6 +29,8 @@ trait Cloud {
 
   def getState(vm: VM): MachineState
 
+  def getState(imageId: String): ImageState
+
   def getPublicDns(vm: VM): String
 
   def getPrivateDns(vm: VM): String
@@ -47,7 +49,7 @@ trait Cloud {
 
   def createAutoScalingLaunchConfiguration(config: LaunchConfiguration)
 
-  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String])
+  def createAutoScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZone: List[String])
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger)
 

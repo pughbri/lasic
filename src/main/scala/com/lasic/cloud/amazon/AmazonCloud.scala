@@ -2,21 +2,16 @@ package com.lasic.cloud.amazon
 
 import java.lang.String
 import java.util.{List => JList}
-import java.util.HashMap
 import scala.collection.JavaConversions.asBuffer
+import scala.collection.JavaConversions.asMap
 import collection.JavaConversions
 import com.lasic.cloud.MachineState._
+import com.lasic.cloud.ImageState._
 import com.lasic.util.Logging
 import com.lasic.{LasicProperties, VM, Cloud}
 import com.lasic.cloud._
-import com.xerox.amazonws.ec2.Jec2
-import com.xerox.amazonws.ec2.AutoScaling
-import com.xerox.amazonws.ec2.AutoScalingException
-import com.xerox.amazonws.ec2.InstanceType
-import com.xerox.amazonws.ec2.ReservationDescription
-import com.xerox.amazonws.ec2.{LaunchConfiguration => AmazonLaunchConfiguration}
-import com.xerox.amazonws.ec2.{ScalingTrigger => AmazonScalingTrigger}
 import com.xerox.amazonws.monitoring.{StandardUnit, Statistics}
+import com.xerox.amazonws.ec2.{ImageDescription, Jec2, AutoScaling, InstanceType, ReservationDescription, LaunchConfiguration => AmazonLaunchConfiguration, ScalingTrigger => AmazonScalingTrigger}
 
 /**
  * @author Brian Pugh
@@ -67,8 +62,8 @@ class AmazonCloud extends Cloud with Logging {
     else {
       //descriptions(0).getInstances().foreach(instance => {
       val instance = descriptions(0).getInstances()(0)
-      val vm  = new AmazonVM(this, convertToLC(instance))
-        vm.instanceId = instance.getInstanceId
+      val vm = new AmazonVM(this, convertToLC(instance))
+      vm.instanceId = instance.getInstanceId
       vm
       //})
     }
@@ -142,35 +137,36 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   def createAutoScalingLaunchConfiguration(config: LaunchConfiguration) = {
-    var launchConfig = new AmazonLaunchConfiguration(config.machineImage)
-    launchConfig.setInstanceType(InstanceType.getTypeFromString(config.instanceType))
-    launchConfig.setKeyName(config.key)
-    // wait for typica 1.7.2 launchConfig.setGroupName(config.groups.mkString(","))
+    var launchConfig = createLaunchConfiguration(config)
+    //TODO: add a timestamp to the name (probably handle this in the verb)
     launchConfig.setConfigName(config.name)
-    try {
-      autoscaling.createLaunchConfiguration(launchConfig)
-    }
-    catch {
-      case ex: AutoScalingException => //do something here, may be a name collision
-    }
+    //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
+    launchConfig.setSecurityGroup(null)
+    autoscaling.createLaunchConfiguration(launchConfig)
   }
 
-  def createAutoScalingGroup(launchConfigurationName: String, autoScalingGroupName: String, min: Int, max: Int, availabilityZone: JList[String]) = {
-    try {
-      autoscaling.createAutoScalingGroup(launchConfigurationName, autoScalingGroupName, min, max, 0, availabilityZone)
-    }
-    catch {
-      case ex: AutoScalingException => //do something here, may be a name collision
-    }
+  def createAutoScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String]) = {
+    //TODO: add a timestamp to the name (probably handle this in the verb)
+    autoscaling.createAutoScalingGroup(autoScalingGroupName, launchConfigurationName, min, max, 0, JavaConversions.asList(availabilityZones))
   }
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
-    var dimensions = new HashMap[String, String]
-    dimensions.put("AutoScalingGroupName", trigger.autoScalingGroupName)
-    var scalingTrigger = new AmazonScalingTrigger(trigger.name, trigger.autoScalingGroupName, trigger.measureName,
-        Statistics.AVERAGE, dimensions, trigger.period, StandardUnit.PERCENT, null/*CustomUnit*/,
-        trigger.lowerThreshold, trigger.lowerBreachScaleIncrement, trigger.upperThreshold,
-        trigger.upperBreachScaleIncrement, trigger.breachDuration, null/*status*/, null/*createdTime*/)
+    var scalingTrigger = new AmazonScalingTrigger(trigger.name,
+      trigger.autoScalingGroupName,
+      trigger.measureName,
+      Statistics.AVERAGE,
+      Map("AutoScalingGroupName" -> trigger.autoScalingGroupName), //dimensions
+      trigger.period,
+      StandardUnit.PERCENT,
+      null, //CustomUnit
+      trigger.lowerThreshold,
+      trigger.lowerBreachScaleIncrement,
+      trigger.upperThreshold,
+      trigger.upperBreachScaleIncrement,
+      trigger.breachDuration,
+      null, //status
+      null //createdTime
+      )
     autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
   }
 
@@ -192,6 +188,14 @@ class AmazonCloud extends Cloud with Logging {
     MachineState.withName(getInstance(vm).getState)
   }
 
+  def getState(imageId: String): ImageState = {
+    val imageIds = new java.util.ArrayList[String]()
+    imageIds.add(imageId)
+    val imageDescriptions: JList[ImageDescription] = ec2.describeImages(imageIds)
+    require(imageDescriptions.length == 1)
+    ImageState.withName(imageDescriptions.get(0).getImageState)
+  }
+
   def getPublicDns(vm: VM): String = {
     getInstance(vm).getDnsName()
   }
@@ -201,27 +205,27 @@ class AmazonCloud extends Cloud with Logging {
   }
 
 
-  def createVolume(config:VolumeConfiguration): Volume = {
+  def createVolume(config: VolumeConfiguration): Volume = {
     val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(config.size.toString, config.snapID, config.availabilityZone)
-    new AmazonVolume(ec2,vi.getVolumeId)
+    new AmazonVolume(ec2, vi.getVolumeId)
   }
 
 
 
 
-//  def deleteVolume(volumeId: String) = {
-//    ec2.deleteVolume(volumeId)
-//  }
-//
-//  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-//    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
-//    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-//  }
-//
-//  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
-//    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
-//    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-//  }
+  //  def deleteVolume(volumeId: String) = {
+  //    ec2.deleteVolume(volumeId)
+  //  }
+  //
+  //  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
+  //    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
+  //    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+  //  }
+  //
+  //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
+  //    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
+  //    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
+  //  }
 
 
   def associateAddress(vm: VM, ip: String) = {
