@@ -15,8 +15,7 @@ import org.apache.commons.logging.LogFactory
  * Time: 1:13:40 PM
  */
 
-class AmazonCloudTest extends TestCase("AmazonCloudTest") {
-  private val doActualCloudOperations = false // set to true if you *really* want to do real stuff on amazon, with real keys, for real money
+class AmazonCloudTest extends AmazonBaseTest {
 
   def testVolume() {
     if (doActualCloudOperations) {
@@ -159,44 +158,6 @@ class AmazonCloudTest extends TestCase("AmazonCloudTest") {
     }
     Thread.sleep(30000); //give it 3
     // 0 more seconds for the ssh daemon to come up
-  }
-
-
-  def testCreateScaleGroup() {
-    if (doActualCloudOperations) { //disable test as it requires real keys and creates real instances
-      val cloud = new AmazonCloud()
-      val lc: LaunchConfiguration = new LaunchConfiguration
-      lc.machineImage = "ami-714ba518" //base ubuntu image
-      lc.key = "default"
-      lc.userName = "ubuntu"
-      lc.groups = List("default")
-      lc.name = "lctestname" + System.currentTimeMillis
-      val vm: VM = new AmazonVM(cloud, lc, 30)
-      vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
-      val vms = List(vm)
-      cloud.start(vms)
-      try {
-        waitForVMToStart(vm)
-        val imageId = cloud.createImage(vm.instanceId, "imagetest" + System.currentTimeMillis, "test image creation", false)
-        println(imageId)
-        lc.machineImage = imageId
-        cloud.createAutoScalingLaunchConfiguration(lc)
-        val scaleGroupName: String = lc.name + "scalegroup"
-        Thread.sleep(2000)
-        cloud.createAutoScalingGroup(scaleGroupName, lc.name, 1, 2, List(lc.availabilityZone))
-        val trigger = new ScalingTrigger(scaleGroupName, 300, "1", 10, "CPUUtilization", "trigger" + System.currentTimeMillis, 60, "1", 60)
-
-        cloud.createUpdateScalingTrigger(trigger)
-        //        testCopyTo(vm)
-        //        testExecute(vm)
-        //        testCreateAndMountVolume(cloud, vm)
-        //        testAllocateAndAssociateIP(cloud, vm)
-      }
-      finally {
-        cloud.terminate(vms)
-      }
-    }
-
   }
 
 }
