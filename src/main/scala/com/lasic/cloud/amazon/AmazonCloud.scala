@@ -19,6 +19,8 @@ import com.xerox.amazonws.ec2.{ImageDescription, Jec2, AutoScaling, InstanceType
  */
 
 class AmazonCloud extends Cloud with Logging {
+
+
   lazy val ec2: Jec2 = {
     val (key, secret) = ec2Keys
     var cloudApiHost = LasicProperties.getProperty("CLOUD_API_HOST")
@@ -48,6 +50,11 @@ class AmazonCloud extends Cloud with Logging {
     (key, secret)
   }
 
+
+  def getScalingGroup(): ScalingGroup = {
+    new AmazonScalingGroup(ec2, autoscaling)
+  }
+
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
     createVMs(numVMs, startVM) {new AmazonVM(this, launchConfig)}
   }
@@ -68,11 +75,6 @@ class AmazonCloud extends Cloud with Logging {
       //})
     }
   }
-
-  def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String = {
-    ec2.createImage(instanceId, name, description, !reboot)
-  }
-
 
   def convertToLC(instance: ReservationDescription#Instance): LaunchConfiguration = {
     val lc = new LaunchConfiguration
@@ -136,40 +138,6 @@ class AmazonCloud extends Cloud with Logging {
       )
   }
 
-  def createAutoScalingLaunchConfiguration(config: LaunchConfiguration) = {
-    var launchConfig = createLaunchConfiguration(config)
-    //TODO: add a timestamp to the name (probably handle this in the verb)
-    launchConfig.setConfigName(config.name)
-    //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
-    launchConfig.setSecurityGroup(null)
-    autoscaling.createLaunchConfiguration(launchConfig)
-  }
-
-  def createAutoScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String]) = {
-    //TODO: add a timestamp to the name (probably handle this in the verb)
-    autoscaling.createAutoScalingGroup(autoScalingGroupName, launchConfigurationName, min, max, 0, JavaConversions.asList(availabilityZones))
-  }
-
-  def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
-    var scalingTrigger = new AmazonScalingTrigger(trigger.name,
-      trigger.autoScalingGroupName,
-      trigger.measureName,
-      Statistics.AVERAGE,
-      Map("AutoScalingGroupName" -> trigger.autoScalingGroupName), //dimensions
-      trigger.period,
-      StandardUnit.PERCENT,
-      null, //CustomUnit
-      trigger.lowerThreshold,
-      trigger.lowerBreachScaleIncrement,
-      trigger.upperThreshold,
-      trigger.upperBreachScaleIncrement,
-      trigger.breachDuration,
-      null, //status
-      null //createdTime
-      )
-    autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
-  }
-
   private def getInstance(vm: VM): ReservationDescription#Instance = {
     val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
     if (list.size != 1) {
@@ -186,14 +154,6 @@ class AmazonCloud extends Cloud with Logging {
 
   def getState(vm: VM): MachineState = {
     MachineState.withName(getInstance(vm).getState)
-  }
-
-  def getState(imageId: String): ImageState = {
-    val imageIds = new java.util.ArrayList[String]()
-    imageIds.add(imageId)
-    val imageDescriptions: JList[ImageDescription] = ec2.describeImages(imageIds)
-    require(imageDescriptions.length == 1)
-    ImageState.withName(imageDescriptions.get(0).getImageState)
   }
 
   def getPublicDns(vm: VM): String = {

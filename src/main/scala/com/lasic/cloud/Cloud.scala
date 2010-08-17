@@ -2,7 +2,7 @@ package com.lasic
 
 import cloud._
 import com.lasic.cloud.MachineState._
-import com.lasic.cloud.ImageState._
+
 
 
 
@@ -12,14 +12,14 @@ import com.lasic.cloud.ImageState._
  */
 trait Cloud {
 
+  def getScalingGroup(): ScalingGroup
+
   def createVM(launchConfig:LaunchConfiguration, startVM:Boolean) = {
     createVMs(launchConfig,1,startVM)(0)
   }
   def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM]
 
   def findVM(instanceId: String): VM
-
-  def createImage(instanceId: String, name: String, description: String, reboot: Boolean): String
 
   def start(vms: List[VM])
 
@@ -28,8 +28,6 @@ trait Cloud {
   def terminate(vms: List[VM])
 
   def getState(vm: VM): MachineState
-
-  def getState(imageId: String): ImageState
 
   def getPublicDns(vm: VM): String
 
@@ -46,13 +44,7 @@ trait Cloud {
 //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
 
 //  def createLaunchConfiguration(config: LaunchConfiguration)
-
-  def createAutoScalingLaunchConfiguration(config: LaunchConfiguration)
-
-  def createAutoScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZone: List[String])
-
-  def createUpdateScalingTrigger(trigger: ScalingTrigger)
-
+  
   /**
    * @param size - size in gigabytes
    */
