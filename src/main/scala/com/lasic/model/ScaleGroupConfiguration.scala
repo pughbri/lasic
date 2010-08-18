@@ -8,9 +8,9 @@ import com.lasic.values.{NodeProperties, ScaleGroupProperties}
  */
 
 class ScaleGroupConfiguration extends NodeProperties with ScaleGroupProperties with Pathable {
-  var parentSystemInstance: ScaleGroupInstance = null
+  var parentScaleGroupInstance: ScaleGroupInstance = null
 
-  def parent = parentSystemInstance
+  def parent = parentScaleGroupInstance
   def path = {parent.path + "/scale-group-configuration['" + name + "']"}
   def children = List()
 

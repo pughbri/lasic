@@ -219,6 +219,7 @@ object LasicCompiler {
     scaleGrpConfig.maxSize = ast.configuration.maxSize
 
     val scaleGroup = new ScaleGroupInstance
+    scaleGrpConfig.parentScaleGroupInstance = scaleGroup
     scaleGroup.name = ast.name
     scaleGroup.configurations  = scaleGrpConfig :: scaleGroup.configurations
     scaleGroup.triggers = compileTriggers(ast.triggers)

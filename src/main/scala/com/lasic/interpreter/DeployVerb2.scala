@@ -39,6 +39,7 @@ private class NodeState() {
 
 class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
   private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
+  private val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
   private val nodeState:Map[NodeInstance,NodeState] = Map.empty ++ nodes.map{ node => (node,new NodeState) }
   private var volumes: List[VolumeInstance] = nodes.map(_.volumes).flatten
 
@@ -53,6 +54,15 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
         }
     }
   }
+
+//  private def createScaleGroups {
+//    scaleGroups.foreach {
+//      scaleGroup =>
+//        spawn {
+//          scaleGroup.= cloud.createVM(LaunchConfiguration.build(node), true)
+//        }
+//    }
+//  }
 
   private def createAllVolumes {
     volumes.foreach(volInst =>
@@ -174,6 +184,7 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     // Startup everything that needs it
     launchAllAMIs
     createAllVolumes
+    //createScaleGroups
 
     // Wait for all resources to be created before proceeding
     waitForAMIsToBoot
