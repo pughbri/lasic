@@ -92,37 +92,11 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   private def startVM(vm: VM) {
-    val amazonLC = createLaunchConfiguration(vm.launchConfiguration)
+    val amazonLC = MappingUtil.createLaunchConfiguration(vm.launchConfiguration)
     val rd: ReservationDescription = ec2.runInstances(amazonLC)
     rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
   }
-
-  protected def getInstanceType(instanceTypeStr: String) = {
-    val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
-    if (instanceType == null) {
-      instanceTypeStr match {
-        case "small" => InstanceType.DEFAULT
-        case "medium" => InstanceType.MEDIUM_HCPU
-        case "large" => InstanceType.LARGE
-        case "xlarge" => InstanceType.XLARGE
-      }
-    }
-    else {
-      instanceType
-    }
-  }
-
-  private def createLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
-    val launchConfig = new AmazonLaunchConfiguration(lasicLC.machineImage, 1, 1)
-    launchConfig.setKernelId(lasicLC.kernelId)
-    launchConfig.setRamdiskId(lasicLC.ramdiskId)
-    launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
-    launchConfig.setInstanceType(getInstanceType(lasicLC.instanceType))
-    launchConfig.setKeyName(lasicLC.key);
-    launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
-    launchConfig
-  }
-
+  
   def reboot(vms: List[VM]) {
     //    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
     //   logger.info(vm.launchConfiguration)

@@ -54,6 +54,8 @@ trait Pathable {
       case ("//node[*]", thing:NodeGroup) => true
       case ("//system[*][*]", thing:SystemInstance) => true
       case ("//system[*]", thing:SystemGroup) => true
+      case ("//scale-group[*]", thing:ScaleGroupInstance) => true
+      case ("//scale-group-configuration[*]", thing:ScaleGroupConfiguration) => true
       case (path,thing) => {
         val mypath = thing.path
         path.equals(mypath)
