@@ -220,8 +220,8 @@ object LasicCompiler {
 
     val scaleGroup = new ScaleGroupInstance
     scaleGrpConfig.parentScaleGroupInstance = scaleGroup
-    scaleGroup.name = ast.name
-    scaleGroup.configurations  = scaleGrpConfig :: scaleGroup.configurations
+    scaleGroup.localName = ast.name
+    scaleGroup.configuration  = scaleGrpConfig
     scaleGroup.triggers = compileTriggers(ast.triggers)
     scaleGroup.actions = compile(ast.actions)
     scaleGroup

@@ -37,14 +37,14 @@ class LasicPathTest extends TestCase("LasicPathTest") {
 
   def assertIsScaleGroup1(scaleGroup1: Pathable): Unit = {
     scaleGroup1 match {
-      case scaleGroup: ScaleGroupInstance => assert(scaleGroup.name == "grp1")
+      case scaleGroup: ScaleGroupInstance => assert(scaleGroup.localName == "grp1")
       case _ => assert(false, "expected ScaleGroupInstance but got " + scaleGroup1.getClass)
     }
   }
 
   def assertIsScaleGroup2(scaleGroup2: Pathable): Unit = {
     scaleGroup2 match {
-      case scaleGroup: ScaleGroupInstance => assert(scaleGroup.name == "grp2")
+      case scaleGroup: ScaleGroupInstance => assert(scaleGroup.localName == "grp2")
       case _ => assert(false, "expected ScaleGroupInstance but got " + scaleGroup2.getClass)
     }
   }
