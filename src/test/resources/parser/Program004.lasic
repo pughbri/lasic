@@ -5,7 +5,8 @@ system  "sys1" {
         action "test" {
             scp {
                 "src1":"dest1"
-                "src2":"dest2"
+                "file:src2":"dest2"
+   /**             "http://src3.com/src3.txt":"dest3" **/
             }
         }
     }

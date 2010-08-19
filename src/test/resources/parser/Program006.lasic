@@ -21,4 +21,13 @@ system  "sys1" {
 		}
     }
 
+
+
+/**
+paths {
+    /system['www.lasic.com'][0]/node['www-lasic-webapp'][0]: "i-aaaaaaaa"
+    /system['www.lasic.com'][0]/node['www-lasic-load-balancer'][0]: "i-bbbbbbbb"
+    /system['www.lasic.com'][0]/node['www-lasic-webapp']/volume['node1-volume']: "vol-5713060B"
+  }
+  **/
 }

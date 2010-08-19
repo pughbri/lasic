@@ -6,25 +6,26 @@ import com.lasic.cloud.LaunchConfiguration
 import collection.JavaConversions
 
 /**
- * 
+ *
  * @author Brian Pugh
  */
 
 object MappingUtil {
   def getInstanceType(instanceTypeStr: String) = {
-      val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
-      if (instanceType == null) {
-        instanceTypeStr match {
-          case "small" => InstanceType.DEFAULT
-          case "medium" => InstanceType.MEDIUM_HCPU
-          case "large" => InstanceType.LARGE
-          case "xlarge" => InstanceType.XLARGE
-        }
-      }
-      else {
-        instanceType
+    val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
+    if (instanceType == null) {
+      instanceTypeStr match {
+        case "small" => InstanceType.DEFAULT
+        case "medium" => InstanceType.MEDIUM_HCPU
+        case "large" => InstanceType.LARGE
+        case "xlarge" => InstanceType.XLARGE
+        case "xlargehmem" => InstanceType.XLARGE_HMEM
       }
     }
+    else {
+      instanceType
+    }
+  }
 
   def createLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
     val launchConfig = new AmazonLaunchConfiguration(lasicLC.machineImage, 1, 1)
