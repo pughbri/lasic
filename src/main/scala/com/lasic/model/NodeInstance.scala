@@ -16,25 +16,11 @@ import com.lasic.cloud.MachineState
  * To change this template use File | Settings | File Templates.
  */
 
-class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMActorUtil {
+//todo: need to get rid of VMActorUtil once the original DeployVerb is gone
+class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder with VMActorUtil {
 
 
-  var vm:VM = null
-  def vmId = {
-    if ( vm!=null ) vm.instanceId else "?"
-  }
-  def vmState = {
-    if ( vm!=null ) vm.getMachineState else MachineState.Unknown
-  }
 
-  def vmPublicDns = {
-    if (vm != null) vm.getPublicDns else "?"
-  }
-
-  def vmPrivateDns = {
-    if (vm != null) vm.getPrivateDns else "?"
-  }
-  
 //  var actor:ActorRef = null
 
   var volumes:List[VolumeInstance] = List()
@@ -46,29 +32,9 @@ class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable with VMAc
   }
   def children = volumes
 
-  /**
-   * args(0) = variable name args(1) = value
-   */
-  private def resolveScriptArguments(args: Map[String, ScriptArgumentValue]): Map[String, List[String]] = {
-    Map.empty ++ args.map {
-      argTuple: Tuple2[String, ScriptArgumentValue] =>
-        val values: List[String] = argTuple._2 match {
-          case x: LiteralScriptArgumentValue => List(x.literal)
-          case x: PathScriptArgumentValue => {
-            val a = x.literal
-            val b = findNodes(a)
-            val c = b.map { _.privateDNS }
-            c
-          }
-        }
-        (argTuple._1, values)
-    }
-  }
 
   def resolveScripts(args: Map[String, Map[String, ScriptArgumentValue]]): Map[String, Map[String, List[String]]] = {
-    Map.empty ++ args.map {
-      scriptTuple => (scriptTuple._1, resolveScriptArguments(scriptTuple._2))
-    }
+    ScriptResolver.resolveScripts(this, args)
   }
 
 }

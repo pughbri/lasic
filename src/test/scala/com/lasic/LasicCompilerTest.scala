@@ -136,12 +136,12 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
   def testScaleGroup {
     val program = getLasicProgram(10);
-    assertEquals("grp1", program.instances(0).scaleGroups(0).name)
-    assertEquals("grp1-config", program.instances(0).scaleGroups(0).configurations(0).name)
-    assertEquals("small", program.instances(0).scaleGroups(0).configurations(0).instancetype)
-    assertEquals(1, program.instances(0).scaleGroups(0).configurations(0).minSize)
-    assertEquals(3, program.instances(0).scaleGroups(0).configurations(0).maxSize)
-    assert(program.instances(0).scaleGroups(0).configurations(0).parent != null)
+    assertEquals("grp1", program.instances(0).scaleGroups(0).localName)
+    assertEquals("grp1-config", program.instances(0).scaleGroups(0).configuration.name)
+    assertEquals("small", program.instances(0).scaleGroups(0).configuration.instancetype)
+    assertEquals(1, program.instances(0).scaleGroups(0).configuration.minSize)
+    assertEquals(3, program.instances(0).scaleGroups(0).configuration.maxSize)
+    assert(program.instances(0).scaleGroups(0).configuration.parent != null)
     assertEquals("trigger1", program.instances(0).scaleGroups(0).triggers(0).name)
     assertEquals(300, program.instances(0).scaleGroups(0).triggers(0).breachDuration)
     assertEquals(1, program.instances(0).scaleGroups(0).triggers(0).upperBreachIncrement)

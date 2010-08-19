@@ -8,7 +8,7 @@ system "www.lasic.com" {
         machineimage: "ami-714ba518"
         user: "ubuntu"
         min-size: 3
-        max-size: 89
+        max-size: 6
     }
 
     scale-trigger "www-lasic-webapp-scale-trigger"{
