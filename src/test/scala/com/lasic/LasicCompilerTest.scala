@@ -88,7 +88,9 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val program = getLasicProgram(4);
     assertEquals(2, program.instances(0).nodegroups(0).actions(0).scpMap.size)
     assertEquals("dest1", program.instances(0).nodegroups(0).actions(0).scpMap("src1"))
-    assertEquals("dest2", program.instances(0).nodegroups(0).actions(0).scpMap("src2"))
+    assertEquals("dest2", program.instances(0).nodegroups(0).actions(0).scpMap("file:src2"))
+    //todo: parser isn't allowing "//" so you can't have "http://" in a file location.  Fix it.
+    //assertEquals("dest3", program.instances(0).nodegroups(0).actions(0).scpMap("src3"))
   }
 
   /**
