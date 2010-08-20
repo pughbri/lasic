@@ -13,11 +13,9 @@ class ScaleGroupConfiguration extends NodeProperties with ScaleGroupProperties w
   var parentScaleGroupInstance: ScaleGroupInstance = null
 
   def parent = parentScaleGroupInstance
-  def path = {parent.path + "/scale-group-configuration['" + name + "']"}
+  def path = {parent.path + "/configuration['" + name + "']"}
   def children = List()
 
   var cloudName = ""
-  override def toString = this.getClass().getSimpleName() + ": " + name + children.mkString(", ")
-
 
 }

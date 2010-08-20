@@ -21,6 +21,4 @@ class NodeGroup extends NodeProperties with Pathable {
   var volumes = List[Map[String,String]]()
   var actions = List[BaseAction]()
   
-  override def toString = this.getClass().getSimpleName() + ": " + name + children.mkString(", ")
-
 }

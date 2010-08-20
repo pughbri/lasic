@@ -15,6 +15,4 @@ class VolumeInstance (val parentNodeInstance:NodeInstance,val name: String, val 
   def path = { parentNodeInstance.path + "/volume['%s']".format(name) }
   def children = List()
 
-
-
 }

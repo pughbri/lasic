@@ -16,8 +16,6 @@ class ScaleGroupInstance extends Pathable with VMHolder {
   def path = { parent.path +"/scale-group['" + localName+"']" }
   def children = List(configuration)
 
-  override def toString = this.getClass().getSimpleName() + ": " + localName + children.mkString(", ")
-
   var localName = ""
   var cloudName = ""
   var triggers: List[TriggerInstance]    = List()

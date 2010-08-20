@@ -33,11 +33,11 @@ system  "sys1" {
             }
 		}
     }
-        /**
+
     paths {
-      /system['sys1'][0]/scale-group['grp1']: "grp1-1"
-      /system['sys1'][0]/scale-group['grp1']/configuration['grp1-config']: "grp1-config-1"
+      /system['sys1'][0]/scale-group['grp1']: "grp1-cloudname"
+      /system['sys1'][0]/scale-group['grp1']/configuration['grp1-config']: "grp1-config-cloudname"
     }
-    **/
+
 
 }
