@@ -1,0 +1,6 @@
+/* Tests system variable substitution */
+system  "sys${var}" {
+    node "${var2}" {
+    }
+
+}

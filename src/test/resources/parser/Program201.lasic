@@ -1,0 +1,83 @@
+system "www.lasic.com" {
+
+  node "www-lasic-webapp" {
+    props {
+        groups: "default","web-server"
+        key: "default"
+        instancetype: "small"
+        count: 1
+        machineimage: "ami-714ba518"
+        user: "ubuntu"
+    }
+
+
+    volume "webapp-volume" {
+       size: "100g"
+       device: "/dev/sdh"
+       mount: "/home/fs/lotsofdata"
+    }
+
+    action "install" {
+        scp {
+           "file:target/test-classes/scripts/install.sh":"~/install-lasic-webapp.sh"
+           "file:target/test-classes/scripts/config.sh":"~/update-config.sh"
+        }
+
+
+        scripts {
+           "~/install-lasic-webapp.sh": {
+              REF: "${REFERENCE}"
+            }
+         }
+     }
+
+     action "updateConfig" {
+             scripts {
+                  "~/update-config.sh": {
+                      REF: "${REFERENCE}"
+                   }
+             }
+     }
+
+     action "snaphsot" {
+         scp {
+               "file:target/test-classes/scripts/snapshot.sh":"~/snaptshot.sh"
+            }
+                 scripts {
+                      "~/snapshot.sh": {
+                          REF: "${REFERENCE}"
+                       }
+         }
+     }
+  }
+/**creates my system and runs my install scripts
+java -jar lasic.jar deploy myfile.lasic >> out.lasic
+
+runs the update-config.sh script on the node "www-lasic-webapp" created when deploy was invoked
+java -jar -DREFERENCE=prod lasic.jar runAction -actionName="updateConfig" out.lasic **/
+
+  node "www-lasic-load-balancer" {
+    props {
+        groups: "default"
+        key: "default"
+        instancetype: "small"
+        count: 1
+        machineimage: "ami-714ba518"
+        user: "ubuntu"
+    }
+
+
+    action "install" {
+        scp {
+           "file:target/test-classes/scripts/install2.sh":"~/install-lasic-lb.sh"
+        }
+
+        scripts {
+           "~/install-lasic-lb.sh": {
+              WEBAPP: /system['www.lasic.com'][0]/node['www-lasic-webapp'][0]
+              REF: "${REFERENCE}"
+            }
+         }
+     }
+  }
+}

@@ -1,0 +1,15 @@
+package com.lasic.parser.ast
+
+import com.lasic.values.{BaseAction, ScaleGroupProperties, NodeProperties}
+
+/**
+ * 
+ * @author Brian Pugh
+ */
+class ASTScaleGroup {
+  var name = ""
+  var configuration: ASTScaleGroupConfig = null
+  var triggers: List[ASTTrigger]    = List()
+  var volumes                 = List[Map[String,String]]()
+  var actions                 = List[BaseAction]()
+}

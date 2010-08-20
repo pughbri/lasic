@@ -1,0 +1,8 @@
+/* Tests that comments can appear anywhere */
+system /**/ "sys" /* bar */ { /*
+        */
+	props /*
+	    */{
+		count: /* sd*/ 2
+	}
+}
