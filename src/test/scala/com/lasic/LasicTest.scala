@@ -17,19 +17,19 @@ class LasicTest extends TestCase("lasic") {
   }
 
   def testDeployWithMock() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy2", getLasicFilePath(201)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(201)))
   }
 
   def testDeployScaleGroupWithMock() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy2", getLasicFilePath(203)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)))
   }
 
   def testDeployWithElasticIps() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy2", getLasicFilePath(101)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(101)))
   }
 
   def testRunActionWithElasticIps() = {
-    Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction2", getLasicFilePath(101)))
+    Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction", getLasicFilePath(101)))
   }
 
   def testDeployWithAmazon() = {
