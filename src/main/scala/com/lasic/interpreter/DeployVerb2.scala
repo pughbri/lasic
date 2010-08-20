@@ -228,7 +228,10 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     scaleGroups foreach {
       scaleGroup =>
         println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName) + "\""
-        println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName)
+        println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName) + "\""
+    }
+    volumes foreach {
+      volumeInst => println("    " + volumeInst.path + ": \"" + volumeInst.volume.id + "\"")
     }
     println("}")
   }
