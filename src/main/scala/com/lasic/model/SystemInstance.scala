@@ -18,6 +18,4 @@ class SystemInstance(var parent:SystemGroup, index:Int) extends Pathable {
   def path = { parent.path +"[%d]".format(index)}
   def children =  scaleGroups ::: nodegroups ::: subsystems 
 
-  override def toString = this.getClass().getSimpleName() + ": " + path + children.mkString(", ")
-
 }

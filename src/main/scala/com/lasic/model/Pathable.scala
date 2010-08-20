@@ -78,6 +78,8 @@ trait Pathable {
     thisThing ::: thoseThingsList
   }
 
+  override def toString = this.getClass().getSimpleName() + ": " + path
+
 
 
 }

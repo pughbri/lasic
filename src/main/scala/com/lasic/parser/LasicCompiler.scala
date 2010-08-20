@@ -170,6 +170,8 @@ object LasicCompiler {
         else {
           pathables(0) match {
             case nodeInstance: NodeInstance => nodeInstance.boundInstanceId = boundPath._2
+            case scaleGroupInstance: ScaleGroupInstance => scaleGroupInstance.cloudName = boundPath._2
+            case scaleGroupConfig: ScaleGroupConfiguration=> scaleGroupConfig.cloudName = boundPath._2
             case _ => throw new Exception("Path " + boundPath + " does not resolve to a nodeinstance.  Resolves to " + pathables(0).getClass)
           }
         }
