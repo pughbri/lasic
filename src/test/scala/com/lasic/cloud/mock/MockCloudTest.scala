@@ -20,7 +20,6 @@ class MockCloudTest extends TestCase("MockCloudTest") {
     val numInstances: Int = 3
     val vms: List[VM] = cloud.createVMs(new LaunchConfiguration, numInstances, true)
     val time2 = System.currentTimeMillis();
-    assert( (((time2 - time1) * 1000) * numInstances) >= (cloud.getStartupDelay() * numInstances) )
     assert(vms.size == numInstances);
     //todo: test that cloud.startup was called with the Array[VM]
 

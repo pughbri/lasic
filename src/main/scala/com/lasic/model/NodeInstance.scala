@@ -1,9 +1,9 @@
 package com.lasic.model
 
-import com.lasic.interpreter.actors._
-import com.lasic.interpreter.actors.DeployActor
-import com.lasic.interpreter.actors.DeployActor._
-import com.lasic.interpreter.actors.DeployActor.DeployActorState._
+//import com.lasic.interpreter.actors._
+//import com.lasic.interpreter.actors.DeployActor
+//import com.lasic.interpreter.actors.DeployActor._
+//import com.lasic.interpreter.actors.DeployActor.DeployActorState._
 import com.lasic.VM
 import se.scalablesolutions.akka.actor.ActorRef
 import com.lasic.cloud.MachineState
@@ -17,7 +17,7 @@ import com.lasic.cloud.MachineState
  */
 
 //todo: need to get rid of VMActorUtil once the original DeployVerb is gone
-class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder with VMActorUtil {
+class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder {
 
 
 

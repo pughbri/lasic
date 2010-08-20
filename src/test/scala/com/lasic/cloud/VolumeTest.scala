@@ -2,12 +2,12 @@ package com.lasic.cloud
 
 import amazon.AmazonCloud
 import junit.framework.TestCase
-import com.lasic.interpreter.actors.VolumeActor.MsgQueryState
+//import com.lasic.interpreter.actors.VolumeActor.MsgQueryState
 import com.lasic.Cloud
-import com.lasic.interpreter.actors.VolumeActor
+//import com.lasic.interpreter.actors.VolumeActor
 import mock.MockCloud
-import VolumeActor._
-import VolumeActor.VolumeActorState._
+//import VolumeActor._
+//import VolumeActor.VolumeActorState._
 import se.scalablesolutions.akka.actor.{Actor, ActorRef}
 import MachineState.MachineState
 
@@ -19,15 +19,15 @@ class VolumeTest extends TestCase("MockVolumeTest") {
   val cloud: Cloud = new MockCloud()
   var actor:ActorRef = null
 
-  def actorIsInState(x: Any) = {
-    val y = actor !! MsgQueryState
-    val result: Boolean =
-    y match {
-      case Some(something) => something == x
-      case x => false
-    }
-    result
-  }
+//  def actorIsInState(x: Any) = {
+//    val y = actor !! MsgQueryState
+//    val result: Boolean =
+//    y match {
+//      case Some(something) => something == x
+//      case x => false
+//    }
+//    result
+//  }
 
   def testDefaultedZoneCreate() = {
     val config = new VolumeConfiguration(100, null, null)
@@ -40,28 +40,28 @@ class VolumeTest extends TestCase("MockVolumeTest") {
 
   }
 
-  def waitForState(max:Int, state:Any) {
-    var maxTries:Int = max
-    while (!actorIsInState(state)) {
-      maxTries = maxTries - 1
-      maxTries match {
-        case 0 => throw new Exception("failed")
-        case _ => Thread.sleep(1000)
-      }
-    }
-  }
+//  def waitForState(max:Int, state:Any) {
+//    var maxTries:Int = max
+//    while (!actorIsInState(state)) {
+//      maxTries = maxTries - 1
+//      maxTries match {
+//        case 0 => throw new Exception("failed")
+//        case _ => Thread.sleep(1000)
+//      }
+//    }
+//  }
 
-  def testCreateViaVolumeActor {
-    actor = Actor.actorOf(new VolumeActor(cloud)).start
-    val config = new VolumeConfiguration(1, null, null)
-    actor ! MsgCreate(config)
-    waitForState(30, Available)
-
-    actor ! MsgDelete
-    waitForState(10, Deleting)
-    //waitForState(120, Deleted)   // need a way to do this... deletion may take unbounded amounts of time, even days
-    
-  }
+//  def testCreateViaVolumeActor {
+//    actor = Actor.actorOf(new VolumeActor(cloud)).start
+//    val config = new VolumeConfiguration(1, null, null)
+//    actor ! MsgCreate(config)
+//    waitForState(30, Available)
+//
+//    actor ! MsgDelete
+//    waitForState(10, Deleting)
+//    //waitForState(120, Deleted)   // need a way to do this... deletion may take unbounded amounts of time, even days
+//
+//  }
 
   def testAttachToVM() {
     val volConfig = new VolumeConfiguration(1, null, null)
