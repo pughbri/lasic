@@ -76,10 +76,10 @@ object Lasic {
     }
 
     val verb = cmdLineArgs.verbAndScript.get(0) match {
-      case "deploy" => new DeployVerb(cloudProvider, program)
-      case "deploy2" => new DeployVerb2(cloudProvider, program)
-      case "runAction" => new RunActionVerb(cmdLineArgs.action, cloudProvider, program)
-      case "runAction2" => new RunActionVerb2(cmdLineArgs.action, cloudProvider, program)
+      case "deployOld" => new DeployVerb(cloudProvider, program)
+      case "deploy" => new DeployVerb2(cloudProvider, program)
+      case "runActionOld" => new RunActionVerb(cmdLineArgs.action, cloudProvider, program)
+      case "runAction" => new RunActionVerb2(cmdLineArgs.action, cloudProvider, program)
       case _ => printUsageAndExit(null, "unknown verb: " + cmdLineArgs.verbAndScript.get(0)); null
     }
 
