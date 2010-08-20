@@ -10,6 +10,13 @@ system "www.lasic.com" {
         user: "ubuntu"
     }
 
+
+    volume "webapp-volume" {
+       size: "100g"
+       device: "/dev/sdh"
+       mount: "/home/fs/lotsofdata"
+    }
+
     action "install" {
         scp {
            "file:target/test-classes/scripts/install.sh":"~/install-lasic-webapp.sh"

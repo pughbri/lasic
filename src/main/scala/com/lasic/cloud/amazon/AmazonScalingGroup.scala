@@ -8,7 +8,7 @@ import com.xerox.amazonws.monitoring.{Statistics, StandardUnit}
 import com.lasic.cloud.ImageState._
 import com.lasic.cloud.{ImageState, ScalingTrigger, LaunchConfiguration, ScalingGroup}
 import collection.mutable.Buffer
-import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, LaunchConfiguration => AmazonLaunchConfiguration, ScalingTrigger => AmazonScalingTrigger}
+import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, ScalingTrigger => AmazonScalingTrigger}
 
 /**
  *
@@ -43,7 +43,6 @@ class AmazonScalingGroup(val ec2: Jec2, val autoscaling: AutoScaling) extends Sc
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration) {
     var launchConfig = MappingUtil.createLaunchConfiguration(config)
-    //TODO: add a timestamp to the name (probably handle this in the verb)
     launchConfig.setConfigName(config.name)
     //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
     launchConfig.setSecurityGroup(null)
@@ -56,7 +55,6 @@ class AmazonScalingGroup(val ec2: Jec2, val autoscaling: AutoScaling) extends Sc
   }
 
   def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String]) {
-    //TODO: add a timestamp to the name (probably handle this in the verb)
     autoscaling.createAutoScalingGroup(autoScalingGroupName, launchConfigurationName, min, max, 0, JavaConversions.asList(availabilityZones))
   }
 
