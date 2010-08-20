@@ -166,6 +166,18 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   }
 
   /**
+   * Ensure that IPS statements are parsed
+   */
+  def testElasticIps() = {
+    val program = getLasicProgram(101);
+    assertEquals(1, program.instances(0).nodegroups(0).actions(0).ipMap.size)
+    assertEquals(2, program.instances(0).nodegroups(1).actions(0).ipMap.size)
+    assertEquals("123.123.123.123", program.instances(0).nodegroups(0).actions(0).ipMap(0))
+    assertEquals("123.123.123.124", program.instances(0).nodegroups(1).actions(0).ipMap(0))
+    assertEquals("123.123.123.125", program.instances(0).nodegroups(1).actions(0).ipMap(1))
+  }
+
+  /**
    *  Parse a basic, but non trivial, program and test a variety of features about it
    */
   def testSimpleProgram() = {
