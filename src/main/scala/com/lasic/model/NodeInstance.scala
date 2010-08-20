@@ -19,8 +19,6 @@ import com.lasic.cloud.MachineState
 //todo: need to get rid of VMActorUtil once the original DeployVerb is gone
 class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder with VMActorUtil {
 
-
-
 //  var actor:ActorRef = null
 
   var volumes:List[VolumeInstance] = List()

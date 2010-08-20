@@ -139,7 +139,9 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   def testScaleGroup {
     val program = getLasicProgram(10);
     assertEquals("grp1", program.instances(0).scaleGroups(0).localName)
+    assertEquals("grp1-cloudname", program.instances(0).scaleGroups(0).cloudName)
     assertEquals("grp1-config", program.instances(0).scaleGroups(0).configuration.name)
+    assertEquals("grp1-config-cloudname", program.instances(0).scaleGroups(0).configuration.cloudName)
     assertEquals("small", program.instances(0).scaleGroups(0).configuration.instancetype)
     assertEquals(1, program.instances(0).scaleGroups(0).configuration.minSize)
     assertEquals(3, program.instances(0).scaleGroups(0).configuration.maxSize)
