@@ -206,6 +206,7 @@ object LasicCompiler {
         action.name = astAction.name
         action.scpMap = astAction.scpMap
         action.scriptMap = astAction.scriptMap
+        action.ipMap = astAction.ipMap
         action
       }
     }

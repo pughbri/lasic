@@ -67,10 +67,12 @@ trait VM extends Logging {
 
   def associateAddressWith(ip: String) {
     cloud.associateAddress(this, ip)
+    logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
   }
 
   def disassociateAddress(ip: String) {
     cloud.disassociateAddress(ip)
+    logger.info("Unssigned elastic ip : " + ip + " from instance id: " + this.instanceId)
   }
 
 

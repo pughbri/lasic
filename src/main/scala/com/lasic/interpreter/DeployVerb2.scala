@@ -17,6 +17,7 @@ import com.lasic.cloud._
 private class VMState() {
   var scpComplete = false
   var scriptsComplete = false
+  var ipsComplete = false
 }
 
 /**
@@ -72,8 +73,8 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     waitForVMState({vmHolder => vmHolder.vm == null || vmHolder.vm.getMachineState != state}, statusString)
   }
 
-  private def waitForVMScripts {
-    waitForVMState({vmHolder => !(vmState(vmHolder).scriptsComplete)}, "Waiting for scripts to run: ")
+  private def waitForActionItems {
+    waitForVMState({vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action items to run: ")
   }
 
   private def waitForVMState(test: VMHolder => Boolean, statusString: String) {
@@ -121,7 +122,7 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     waitForVolumeState(VolumeState.InUse, "Waiting for volumes to attach: ")
   }
 
-  def copyAndRunScripts(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]]): Unit = {
+  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]): Unit = {
     spawn {
       allSCPs.foreach {
         tuple => vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
@@ -139,38 +140,47 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
       vmState.synchronized(
         vmState(vmHolder).scriptsComplete = true
         )
+      allIPs.foreach {
+        ip => vmHolder.vm.associateAddressWith(ip._2)
+      }
+      vmState.synchronized(
+        vmState(vmHolder).ipsComplete = true
+      )
+
     }
   }
 
-  def getSCPAndScriptMaps(allActions: List[BaseAction]): (Map[String, Map[String, ScriptArgumentValue]], Map[String, String]) = {
+  def getActionItemMaps(allActions: List[BaseAction]): (Map[String, Map[String, ScriptArgumentValue]], Map[String, String], Map[Int,String]) = {
     val deployActions = allActions.filter(_.name == "install")
     var allSCPs = Map[String, String]()
     var allScripts = Map[String, Map[String, ScriptArgumentValue]]()
+    var allIPs = Map[Int,String]()
 
     deployActions.foreach {
       action => {
         allSCPs = allSCPs ++ action.scpMap
         allScripts = allScripts ++ action.scriptMap
+        allIPs = allIPs ++ action.ipMap
       }
     }
-    (allScripts, allSCPs)
+    (allScripts, allSCPs, allIPs)
   }
 
   private def startAsyncNodeConfigure {
     nodes.foreach {
       node =>
         val allActions = node.parent.actions
-        val (allScripts, allSCPs) = getSCPAndScriptMaps(allActions)
+        val (allScripts, allSCPs, allIPs) = getActionItemMaps(allActions)
         var resolvedScripts = node.resolveScripts(allScripts)
-        copyAndRunScripts(node, allSCPs, resolvedScripts)
+        runActionItems(node, allSCPs, resolvedScripts, allIPs)
     }
 
     scaleGroups.foreach {
       scaleGroup =>
         val allActions = scaleGroup.actions
-        val (allScripts, allSCPs) = getSCPAndScriptMaps(allActions)
+        val (allScripts, allSCPs, allIPs) = getActionItemMaps(allActions)
         var resolvedScripts = scaleGroup.resolveScripts(allScripts)
-        copyAndRunScripts(scaleGroup, allSCPs, resolvedScripts)
+        runActionItems(scaleGroup, allSCPs, resolvedScripts, allIPs)
     }
   }
 
@@ -262,7 +272,7 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     startAsyncNodeConfigure
 
     // Wait for all nodes to be configured
-    waitForVMScripts
+    waitForActionItems
 
     createScaleGroups
 

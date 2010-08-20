@@ -24,6 +24,14 @@ class LasicTest extends TestCase("lasic") {
     Lasic.runLasic(Array("-c", "mock", "deploy2", getLasicFilePath(203)))
   }
 
+  def testDeployWithElasticIps() = {
+    Lasic.runLasic(Array("-c", "mock", "deploy2", getLasicFilePath(101)))
+  }
+
+  def testRunActionWithElasticIps() = {
+    Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction2", getLasicFilePath(101)))
+  }
+
   def testDeployWithAmazon() = {
     if (false) {
       //in order to run this test you need to
@@ -50,7 +58,6 @@ class LasicTest extends TestCase("lasic") {
     assert(cmdLineArgs2.cloud== "mock", "Expected mock got " + cmdLineArgs2.cloud)
     assert("someDeploy.lasic" == cmdLineArgs2.verbAndScript.get(1), "Expected someDeploy.lasic got " + cmdLineArgs2.verbAndScript.get(1))
     assert("deploy" == cmdLineArgs2.verbAndScript.get(0), "Expected deploy got " + cmdLineArgs2.verbAndScript.get(0))
-
   }
 
 

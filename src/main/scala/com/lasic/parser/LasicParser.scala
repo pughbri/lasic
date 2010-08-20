@@ -121,6 +121,7 @@ class LasicParser extends JavaTokenParsers with Logging {
               tuple => (tuple._1, scala.collection.Map.empty ++ tuple._2)
 
             }
+          case astIp: ASTIp => action.ipMap = action.ipMap ++ astIp.ipMap
           case _ =>
         }
     }
@@ -260,7 +261,7 @@ class LasicParser extends JavaTokenParsers with Logging {
 
   def node_list_prop_name = "groups"
 
-  def action = "action" ~ aString ~ lbrace ~ rep(scripts | scp) ~ rbrace ^^ {
+  def action = "action" ~ aString ~ lbrace ~ rep(scripts | scp | ips) ~ rbrace ^^ {
     case _ ~ actionName ~ _ ~ list_o_cmds ~ _ =>
       buildAction(actionName, list_o_cmds)
   }
@@ -306,6 +307,19 @@ class LasicParser extends JavaTokenParsers with Logging {
   def scp_body = rep(scp_line)
 
   def scp_line = aString ~ ":" ~ aString ^^ {case from ~ _ ~ to => (from -> to)}
+
+  def ips = "ips" ~ lbrace ~ ip_body ~ rbrace ^^ {
+    case _ ~ _ ~ list_body ~ _ =>
+      val x = new ASTIp
+      x.ipMap = Map() ++ list_body
+      x
+  }
+
+  def ip_body = rep(ip_line)
+
+  def ip_line = "node[" ~ aNumber ~ "]:" ~ aString ^^ {
+    case _ ~ idx ~ _ ~ ip_address => (idx -> ip_address)
+  }
 
   def volume = "volume" ~ aString ~ lbrace ~ volume_body ~ rbrace ^^ {
     case _ ~ name ~ _ ~ vol_body ~ _ =>
