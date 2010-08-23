@@ -16,10 +16,7 @@ import com.lasic.cloud.MachineState
  * To change this template use File | Settings | File Templates.
  */
 
-//todo: need to get rid of VMActorUtil once the original DeployVerb is gone
 class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder {
-
-//  var actor:ActorRef = null
 
   var volumes:List[VolumeInstance] = List()
   var boundInstanceId: String = null

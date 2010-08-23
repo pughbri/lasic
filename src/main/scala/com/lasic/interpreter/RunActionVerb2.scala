@@ -1,8 +1,5 @@
 package com.lasic.interpreter
 
-import java.net.URI
-import se.scalablesolutions.akka.actor.Actor._
-import java.io.File
 import com.lasic.{VM, Cloud}
 import collection.immutable.List
 import com.lasic.model._
@@ -15,63 +12,37 @@ import com.lasic.cloud._
  * @author Brian Pugh
  */
 
-class RunActionVerb2(val actionName: String, val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
-  private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
-  private val vmState: Map[VMHolder, VMState] = {
-    Map.empty ++ (nodes.map {node => (node, new VMState)})
+class RunActionVerb2(val actionName: String, val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
+  protected val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
+  protected val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
+  protected val vmState: Map[VMHolder, VMState] = {
+    Map.empty ++ (nodes.map {node => (node, new VMState)} ::: scaleGroups.map {scaleGroup => (scaleGroup, new VMState)})
   }
 
-  private def startAsyncRunAction {
+  private var scaleGroupsToDelete = List[String]()
+  private var configsToDelete = List[String]()
+
+
+  private def setVMs() {
     nodes.foreach {
       node =>
-          val deployActions = node.parent.actions.filter(_.name == actionName)
-          var allSCPs = Map[String, String]()
-          var allScripts = Map[String, Map[String, ScriptArgumentValue]]()
-          var allIps = Map[Int, String]()
-          deployActions.foreach {
-            action => {
-              allSCPs = allSCPs ++ action.scpMap
-              allScripts = allScripts ++ action.scriptMap
-              allIps = allIps ++ action.ipMap
-            }
-          }
-
-          var resolvedScripts = node.resolveScripts(allScripts)
-
-          spawn {
-            node.vm = setVM(LaunchConfiguration.build(node), node.boundInstanceId)
-            allSCPs.foreach {
-              tuple => node.vm.copyTo(build(new URI(tuple._1)), tuple._2)
-            }
-            vmState.synchronized(
-              vmState(node).scpComplete = true
-              )
-            resolvedScripts.foreach {
-              script =>
-                val scriptName = script._1
-                val argMap = script._2
-                //vm.execute(scriptName)
-                node.vm.executeScript(scriptName, argMap)
-            }
-            vmState.synchronized(
-              vmState(node).scriptsComplete = true
-            )
-            allIps.foreach {
-              ip => node.vm.associateAddressWith(ip._2)
-            }
-            vmState.synchronized(
-              vmState(node).ipsComplete = true
-            )
-          }
+        spawn {
+          node.vm = setVM(LaunchConfiguration.build(node), node.boundInstanceId)
+        }
+    }
+    scaleGroups foreach {
+      scaleGroupInst =>
+        spawn {
+          val scalingGroup = cloud.getScalingGroup
+          val origConfig = scalingGroup.getScalingLaunchConfiguration(scaleGroupInst.configuration.cloudName)
+          val newLaunchConfig: LaunchConfiguration = LaunchConfiguration.build(scaleGroupInst.configuration)
+          newLaunchConfig.machineImage = origConfig.machineImage
+          scaleGroupInst.vm = cloud.createVM(newLaunchConfig, true)
+        }
     }
   }
 
-
-  def build(uri: URI): File = {
-    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
-  }
-
-  private def setVM(lc: LaunchConfiguration, instanceId: String):VM = {
+  private def setVM(lc: LaunchConfiguration, instanceId: String): VM = {
     val vm = cloud.findVM(instanceId)
     if (vm.launchConfiguration != null) {
       vm.launchConfiguration.name = lc.name
@@ -92,12 +63,67 @@ class RunActionVerb2(val actionName: String, val cloud: Cloud, val program: Lasi
   }
 
   private def waitForAction {
-    waitForVMState(nodes, {vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action to finish: ")
+    waitForVMState(nodes ::: scaleGroups, {vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action to finish: ")
+  }
+
+  private def waitVMsToBeSet {
+    waitForVMState(scaleGroups ::: nodes,
+      {vmHolder => vmHolder.vm == null || !vmHolder.vm.isInitialized},
+      "Waiting to find node VM instances and create prototype VMs for scalegroups: ")
+  }
+
+  private def waitForNewScaleGroups {
+    waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for new Scale Groups to come up: ")
+  }
+
+  private def deleteOldScaleGroups {
+    val scalingGroup = cloud.getScalingGroup
+    scaleGroupsToDelete foreach {
+      scaleGroupName =>
+        scalingGroup.deleteScalingGroup(scaleGroupName)
+    }
+
+    configsToDelete foreach {
+      configName =>
+        scalingGroup.deleteLaunchConfiguration(configName)
+    }
+  }
+
+  private def printBoundLasicProgram {
+    if (!scaleGroups.isEmpty) {
+      println("/**scale group paths were modified**/")
+      println("paths {")
+      scaleGroups foreach {
+        scaleGroup =>
+          println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
+          println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
+      }
+    }
+    println("}")
+  }
+
+  private def saveOldScaleGroupAndConfig {
+    scaleGroups foreach {
+      scaleGroupInst =>
+        if (scaleGroupInst.cloudName != null && scaleGroupInst.cloudName != "") {
+          scaleGroupsToDelete = scaleGroupInst.cloudName :: scaleGroupsToDelete
+        }
+        if (scaleGroupInst.configuration.cloudName != null && scaleGroupInst.configuration.cloudName != "") {
+          configsToDelete = scaleGroupInst.configuration.cloudName :: configsToDelete
+        }
+    }
   }
 
   def doit = {
-    startAsyncRunAction
+    setVMs
+    waitVMsToBeSet
+    startAsyncRunAction(actionName)
     waitForAction
+    saveOldScaleGroupAndConfig
+    createScaleGroups(cloud.getScalingGroup)
+    waitForNewScaleGroups
+    deleteOldScaleGroups
+    printBoundLasicProgram
   }
 
 }

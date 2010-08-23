@@ -3,6 +3,7 @@ package com.lasic
 ;
 
 import cloud.amazon.AmazonCloud
+import cloud.mock.MockCloud
 import junit.framework._
 import java.io.File
 
@@ -11,6 +12,9 @@ import java.io.File
  * Unit test for simple Lasic.
  */
 class LasicTest extends TestCase("lasic") {
+  override def setUp = {
+    new MockCloud().getScalingGroup.reset()
+  }
 
   def getLasicFilePath(num: Int) = {
     new File(classOf[Application].getResource("/parser/Program" + num + ".lasic").toURI()).getCanonicalPath()
@@ -30,6 +34,15 @@ class LasicTest extends TestCase("lasic") {
 
   def testRunActionWithElasticIps() = {
     Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction", getLasicFilePath(101)))
+  }
+
+  def testRunActionWithScaleGroup() = {
+    Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)))
+    val mockScalingGroup = new MockCloud().getScalingGroup
+    assert(mockScalingGroup.getScaleGroups.size == 1, "expect scaling groups size to be 1, but was " + mockScalingGroup.getScaleGroups.size)
+    assert(mockScalingGroup.getScaleGroups(0).name.startsWith("my-app"))
+    assert(mockScalingGroup.getScaleGroups(0).triggers.size == 1)
+    assert(mockScalingGroup.getScaleGroups(0).triggers(0).breachDuration == 300)
   }
 
   def testDeployWithAmazon() = {

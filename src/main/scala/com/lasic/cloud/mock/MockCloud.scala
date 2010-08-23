@@ -27,6 +27,7 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   def findVM(instanceId: String) = {
     val vm = new MockVM(startupDelay, null, this)
     vm.instanceId = instanceId
+    vm.isInit = true
     vm ! vm.StateChange(MachineState.Running, 0)
     vm
   }
@@ -131,6 +132,6 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
   }
 
   def getScalingGroup() = {
-    new MockScalingGroup()
+    MockScalingGroup
   }
 }
