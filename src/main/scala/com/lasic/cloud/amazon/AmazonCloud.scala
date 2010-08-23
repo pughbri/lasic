@@ -92,7 +92,7 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   private def startVM(vm: VM) {
-    val amazonLC = MappingUtil.createLaunchConfiguration(vm.launchConfiguration)
+    val amazonLC = MappingUtil.createAmazonLaunchConfiguration(vm.launchConfiguration)
     val rd: ReservationDescription = ec2.runInstances(amazonLC)
     rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
   }
@@ -143,24 +143,6 @@ class AmazonCloud extends Cloud with Logging {
     val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(config.size.toString, config.snapID, config.availabilityZone)
     new AmazonVolume(ec2, vi.getVolumeId)
   }
-
-
-
-
-  //  def deleteVolume(volumeId: String) = {
-  //    ec2.deleteVolume(volumeId)
-  //  }
-  //
-  //  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo = {
-  //    var info: XAttachmentInfo = ec2.attachVolume(volumeInfo.volumeId, vm.instanceId, devicePath)
-  //    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-  //  }
-  //
-  //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean): AttachmentInfo = {
-  //    var info: XAttachmentInfo = ec2.detachVolume(volumeInfo.volumeId, vm.instanceId, devicePath, force)
-  //    new AttachmentInfo(info.getVolumeId, info.getInstanceId, info.getDevice, info.getStatus, info.getAttachTime)
-  //  }
-
 
   def associateAddress(vm: VM, ip: String) = {
     ec2.associateAddress(vm.instanceId, ip)

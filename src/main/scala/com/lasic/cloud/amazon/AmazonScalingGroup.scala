@@ -8,7 +8,7 @@ import com.xerox.amazonws.monitoring.{Statistics, StandardUnit}
 import com.lasic.cloud.ImageState._
 import com.lasic.cloud.{ImageState, ScalingTrigger, LaunchConfiguration, ScalingGroup}
 import collection.mutable.Buffer
-import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, ScalingTrigger => AmazonScalingTrigger}
+import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, LaunchConfiguration => AmazonLaunchConfig, ScalingTrigger => AmazonScalingTrigger}
 
 /**
  *
@@ -42,7 +42,7 @@ class AmazonScalingGroup(val ec2: Jec2, val autoscaling: AutoScaling) extends Sc
 
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration) {
-    var launchConfig = MappingUtil.createLaunchConfiguration(config)
+    var launchConfig = MappingUtil.createAmazonLaunchConfiguration(config)
     launchConfig.setConfigName(config.name)
     //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
     launchConfig.setSecurityGroup(null)
@@ -82,4 +82,10 @@ class AmazonScalingGroup(val ec2: Jec2, val autoscaling: AutoScaling) extends Sc
     autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
   }
 
+
+  def getScalingLaunchConfiguration(configName: String) = {
+    val imageDescriptions: Buffer[AmazonLaunchConfig] = autoscaling.describeLaunchConfigurations(JavaConversions.asList(List(configName)))
+    require (imageDescriptions.size == 1)
+    MappingUtil.createLaunchConfiguration(imageDescriptions(0))
+  }
 }

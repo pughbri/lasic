@@ -1,11 +1,7 @@
 package com.lasic.interpreter
 
-import java.net.URI
-import java.io.File
 import com.lasic.{VM, Cloud}
-import com.lasic.values.BaseAction
 import collection.immutable.List
-import java.util.Date
 import com.lasic.cloud.VolumeState._
 import com.lasic.cloud.MachineState._
 import com.lasic.model._
@@ -14,19 +10,14 @@ import com.lasic.util.Logging
 import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud._
 
-private class VMState() {
-  var scpComplete = false
-  var scriptsComplete = false
-  var ipsComplete = false
-}
 
 /**
  * Launches VM, attaches volumes, runs the "install" action for each one, and brings up scale groups.
  */
-class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging {
-  private val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
-  private val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
-  private val vmState: Map[VMHolder, VMState] = {
+class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
+  protected val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
+  protected val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
+  protected val vmState: Map[VMHolder, VMState] = {
     Map.empty ++ (nodes.map {node => (node, new VMState)} ::: scaleGroups.map {scaleGroup => (scaleGroup, new VMState)})
   }
   private var volumes: List[VolumeInstance] = nodes.map(_.volumes).flatten
@@ -106,10 +97,6 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     waitForVolumeState(VolumeState.Available, "Waiting for volumes to be created: ")
   }
 
-  def build(uri: URI): File = {
-    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
-  }
-
   private def attachAllVolumes {
     volumes.foreach(
       volInst => {
@@ -122,113 +109,6 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     waitForVolumeState(VolumeState.InUse, "Waiting for volumes to attach: ")
   }
 
-  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]): Unit = {
-    spawn {
-      allSCPs.foreach {
-        tuple => vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
-      }
-      vmState.synchronized(
-        vmState(vmHolder).scpComplete = true
-        )
-      resolvedScripts.foreach {
-        script =>
-          val scriptName = script._1
-          val argMap = script._2
-          //vm.execute(scriptName)
-          vmHolder.vm.executeScript(scriptName, argMap)
-      }
-      vmState.synchronized(
-        vmState(vmHolder).scriptsComplete = true
-        )
-      allIPs.foreach {
-        ip => vmHolder.vm.associateAddressWith(ip._2)
-      }
-      vmState.synchronized(
-        vmState(vmHolder).ipsComplete = true
-      )
-
-    }
-  }
-
-  def getActionItemMaps(allActions: List[BaseAction]): (Map[String, Map[String, ScriptArgumentValue]], Map[String, String], Map[Int,String]) = {
-    val deployActions = allActions.filter(_.name == "install")
-    var allSCPs = Map[String, String]()
-    var allScripts = Map[String, Map[String, ScriptArgumentValue]]()
-    var allIPs = Map[Int,String]()
-
-    deployActions.foreach {
-      action => {
-        allSCPs = allSCPs ++ action.scpMap
-        allScripts = allScripts ++ action.scriptMap
-        allIPs = allIPs ++ action.ipMap
-      }
-    }
-    (allScripts, allSCPs, allIPs)
-  }
-
-  private def startAsyncNodeConfigure {
-    nodes.foreach {
-      node =>
-        val allActions = node.parent.actions
-        val (allScripts, allSCPs, allIPs) = getActionItemMaps(allActions)
-        var resolvedScripts = node.resolveScripts(allScripts)
-        runActionItems(node, allSCPs, resolvedScripts, allIPs)
-    }
-
-    scaleGroups.foreach {
-      scaleGroup =>
-        val allActions = scaleGroup.actions
-        val (allScripts, allSCPs, allIPs) = getActionItemMaps(allActions)
-        var resolvedScripts = scaleGroup.resolveScripts(allScripts)
-        runActionItems(scaleGroup, allSCPs, resolvedScripts, allIPs)
-    }
-  }
-
-  private def createScaleGroups() {
-    scaleGroups.foreach {
-      scaleGroupInstance =>
-        spawn {
-          val scaleGroup = cloud.getScalingGroup()
-
-          //create unique names
-          val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
-          scaleGroupInstance.cloudName = scaleGroupInstance.localName + "-" + dateString
-          val scaleGroupConfig = scaleGroupInstance.configuration
-          scaleGroupConfig.cloudName = scaleGroupConfig.name + "-" + dateString
-
-          //create the image
-          val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, "Created by LASIC on " + dateString, false)
-
-          //create the config
-          val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
-          launchConfiguration.machineImage = imageID
-          launchConfiguration.name = scaleGroupConfig.cloudName
-          scaleGroup.createScalingLaunchConfiguration(launchConfiguration)
-
-          //create the group
-          scaleGroup.createScalingGroup(scaleGroupInstance.cloudName, scaleGroupConfig.cloudName, scaleGroupConfig.minSize, scaleGroupConfig.maxSize, List(launchConfiguration.availabilityZone))
-
-          //create the triggers
-          scaleGroupInstance.triggers.foreach {
-            trigger =>
-              val scalingTrigger = new ScalingTrigger(scaleGroupInstance.cloudName,
-                trigger.breachDuration,
-                trigger.lowerBreachIncrement.toString,
-                trigger.lowerThreshold,
-                trigger.measure,
-                trigger.name,
-                trigger.period,
-                trigger.upperBreachIncrement.toString,
-                trigger.upperThreshold)
-              scaleGroup.createUpdateScalingTrigger(scalingTrigger)
-          }
-
-          //terminate the original vm
-          scaleGroupInstance.vm.shutdown
-        }
-    }
-
-  }
 
   private def printBoundLasicProgram {
     println("paths {")
@@ -237,8 +117,8 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     })
     scaleGroups foreach {
       scaleGroup =>
-        println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName) + "\""
-        println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName) + "\""
+        println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
+        println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
     }
     volumes foreach {
       volumeInst => println("    " + volumeInst.path + ": \"" + volumeInst.volume.id + "\"")
@@ -269,12 +149,12 @@ class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with
     waitForVolumesToAttach
 
     // Configure all the nodes
-    startAsyncNodeConfigure
+    startAsyncRunAction("install")
 
     // Wait for all nodes to be configured
     waitForActionItems
 
-    createScaleGroups
+    createScaleGroups(cloud.getScalingGroup)
 
     // Wait for scale groups to be configured
     waitForScaleGroupsConfigured

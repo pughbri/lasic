@@ -17,6 +17,8 @@ trait ScalingGroup {
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration)
 
+  def getScalingLaunchConfiguration(configName: String): LaunchConfiguration
+
   def deleteLaunchConfiguration(name: String)
 
   def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String])
