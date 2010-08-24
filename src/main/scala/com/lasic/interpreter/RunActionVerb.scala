@@ -12,7 +12,7 @@ import com.lasic.cloud._
  * @author Brian Pugh
  */
 
-class RunActionVerb2(val actionName: String, val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
+class RunActionVerb(val actionName: String, val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
   protected val nodes: List[NodeInstance] = program.find("//node[*][*]").map(x => x.asInstanceOf[NodeInstance])
   protected val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
   protected val vmState: Map[VMHolder, VMState] = {

@@ -2,7 +2,7 @@ package com.lasic
 
 import cloud.amazon.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.{RunActionVerb2, DeployVerb2}
+import interpreter.{RunActionVerb, DeployVerb}
 import model.LasicProgram
 import parser.LasicCompiler
 import io.Source
@@ -76,8 +76,8 @@ object Lasic {
     }
 
     val verb = cmdLineArgs.verbAndScript.get(0) match {
-      case "deploy" => new DeployVerb2(cloudProvider, program)
-      case "runAction" => new RunActionVerb2(cmdLineArgs.action, cloudProvider, program)
+      case "deploy" => new DeployVerb(cloudProvider, program)
+      case "runAction" => new RunActionVerb(cmdLineArgs.action, cloudProvider, program)
       case _ => printUsageAndExit(null, "unknown verb: " + cmdLineArgs.verbAndScript.get(0)); null
     }
 
