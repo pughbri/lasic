@@ -14,7 +14,7 @@ import com.lasic.cloud._
 /**
  * Launches VM, attaches volumes, runs the "install" action for each one, and brings up scale groups.
  */
-class DeployVerb2(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
+class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
   protected val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
   protected val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
   protected val vmState: Map[VMHolder, VMState] = {
