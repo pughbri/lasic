@@ -113,7 +113,7 @@ trait ActionRunnerUtil {
             scaleGroupConfig.cloudName = scaleGroupConfig.name + "-" + dateString
 
             //create the image
-            val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.localName, "Created by LASIC on " + dateString, false)
+            val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, "Created by LASIC on " + dateString, false)
 
             //create the config
             val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
