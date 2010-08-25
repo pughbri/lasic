@@ -1,0 +1,69 @@
+system  "sys1" {
+    scale-group "grp1" {
+        configuration "grp1-config" {
+            instancetype: "small"
+            min-size: 1
+            max-size: 3
+        }
+
+        scale-trigger "trigger1" {
+            breach-duration: 300
+            upper-breach-increment: 1
+            lower-breach-increment: 1
+            lower-threshold: 10
+            measure: "CPUUtilization"
+            namespace: "AWS/EC2"
+            period: 60
+            statistic: "Average"
+            upper-threshold: 60
+            unit: "Seconds"
+        }
+
+        action "test" {
+           scp {
+               "file:install.sh":"~/install.sh"
+           }
+
+
+           scripts {
+               "~/install.sh": {
+                  REF: "${REFERENCE}"
+                }
+            }
+		}
+    }
+
+    scale-group "grp2" {
+        configuration "grp2-config" {
+            instancetype: "small"
+            min-size: 5
+            max-size: 8
+        }
+
+        scale-trigger "trigger2" {
+            breach-duration: 120
+            upper-breach-increment: 1
+            lower-breach-increment: 1
+            lower-threshold: 10
+            measure: "CPUUtilization"
+            namespace: "AWS/EC2"
+            period: 60
+            statistic: "Average"
+            upper-threshold: 60
+            unit: "Seconds"
+        }
+
+        action "test2" {
+           scp {
+               "file:install2.sh":"~/install2.sh"
+           }
+
+
+           scripts {
+               "~/install2.sh": {
+                  REF: "${REFERENCE}"
+                }
+            }
+		}
+    }
+}

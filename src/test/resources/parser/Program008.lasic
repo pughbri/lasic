@@ -1,0 +1,23 @@
+/* A very simple test of script parameters which are LASIC paths */
+system  "sys1" {
+    node "node1" {
+        props {
+            count: 2
+        }
+        action "test" {
+            scripts {
+                "another": {
+
+                    /* Variations that all result in a single node */
+                    arg1: /system['sys1'][0]/node['node1'][0]
+                    arg2: /system['sys1']/node['node1'][0]
+
+                    /* Variations that all result in multiple node */
+                    arg3: /system['sys1'][0]/node['node1']
+                    arg4: /system['sys1']/node['node1']
+                }
+            }
+		}
+    }
+
+}

@@ -1,0 +1,43 @@
+/* A very simple test of script parameters which are LASIC paths */
+system  "sys1" {
+    scale-group "grp1" {
+        configuration "grp1-config" {
+            instancetype: "small"
+            min-size: 1
+            max-size: 3
+        }
+
+        scale-trigger "trigger1" {
+            breach-duration: 300
+            upper-breach-increment: 1
+            lower-breach-increment: 1
+            lower-threshold: 10
+            measure: "CPUUtilization"
+            namespace: "AWS/EC2"
+            period: 60
+            statistic: "Average"
+            upper-threshold: 60
+            unit: "Seconds"
+        }
+
+        action "test" {
+           scp {
+               "file:target/test-classes/scripts/install.sh":"~/install.sh"
+           }
+
+
+           scripts {
+               "~/install.sh": {
+                  REF: "${REFERENCE}"
+                }
+            }
+		}
+    }
+
+    paths {
+      /system['sys1'][0]/scale-group['grp1']: "grp1-cloudname"
+      /system['sys1'][0]/scale-group['grp1']/configuration['grp1-config']: "grp1-config-cloudname"
+    }
+
+
+}

@@ -1,0 +1,46 @@
+system  "sys" {
+
+    scale-group "my-app" {
+        configuration "my-app-launchconfig" {
+            machineimage: "machineimage"
+            kernelid: "kernelid"
+            ramdiskid:        "ramdiskid"
+            groups:            "group"
+            key:              "key"
+            user:             "user"
+            instancetype:     "small"
+            min-size:              1
+            max-size:              3
+        }
+
+      scale-trigger "www-lasic-webapp-scale-trigger"{
+        breach-duration: 300
+        upper-breach-increment: 1
+        lower-breach-increment: 1
+        lower-threshold: 10
+        measure: "CPUUtilization"
+        namespace: "AWS/EC2"
+        period: 60
+        statistic: "Average"
+        upper-threshold: 60
+        unit: "Seconds"
+    }
+        action "switchScaleGroup" {
+            scp {
+                "file:update-scale-groupImage.sh":"~update-scale-groupImage.sh"
+            }
+            scripts {
+                "~update-scale-groupImage.sh": {
+                      REF: "${REFERENCE}"
+                }
+            }
+        }
+    }
+
+    paths {
+      /system['sys'][0]/scale-group['my-app']: "my-app-2010-08-23-14-30-12"
+      /system['sys'][0]/scale-group['my-app']/configuration['my-app-launchconfig']: "my-app-launchconfig-2010-08-23-14-30-12"
+   }
+}
+
+

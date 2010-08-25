@@ -1,0 +1,7 @@
+/* Tests an empty system, arity 2  */
+system  "sys" {
+	props {
+		count: 2
+	}
+
+}

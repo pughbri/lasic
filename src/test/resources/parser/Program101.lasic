@@ -1,0 +1,47 @@
+system  "sys" {
+	props {
+		count: 1
+	}
+
+  node "a node" {
+    props {
+        count: 1
+        machineimage: "machineimage"
+        kernelid: "kernelid"
+        ramdiskid:        "ramdiskid"
+        groups:            "group"
+        key:              "key"
+        user:             "user"
+        instancetype:     "small"
+    }
+
+    action "install" {
+      ips {
+        node[0]: "123.123.123.123"
+      }
+    }
+  }
+
+  node "b node" {
+    props {
+        count: 2
+        machineimage: "machineimage"
+        kernelid: "kernelid"
+        ramdiskid:        "ramdiskid"
+        groups:            "group"
+        key:              "key"
+        user:             "user"
+        instancetype:     "small"
+    }
+
+    action "assignips" {
+      ips {
+        node[0]: "123.123.123.124"
+        node[1]: "123.123.123.125"
+      }
+    }
+
+  }
+}
+
+    

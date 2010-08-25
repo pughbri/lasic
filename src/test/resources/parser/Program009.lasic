@@ -1,0 +1,44 @@
+/* A very simple test of script parameters which are LASIC paths */
+system  "sys1" {
+    node "node1" {
+        props {
+            count: 2
+        }
+        action "test" {
+           scp {
+               "file:target/test-classes/scripts/install.sh":"~/install.sh"
+           }
+
+
+           scripts {
+               "~/install.sh": {
+                  REF: "${REFERENCE}"
+                }
+            }
+		}
+    }
+    node "node2" {
+        props {
+            count: 1
+        }
+        action "test" {
+           scp {
+               "file:target/test-classes/scripts/install.sh":"~/install.sh"
+           }
+
+
+           scripts {
+               "~/install.sh": {
+                  REF: "${REFERENCE}"
+                }
+            }
+		}
+    }
+
+    paths {
+      /system['sys1'][0]/node['node1'][0]: "i-54adb13a"  /** public=ec2-75-101-238-156.compute-1.amazonaws.com      private=domU-12-31-39-0F-7E-38.compute-1.internal **/
+      /system['sys1'][0]/node['node1'][1]: "i-54adb13b"  /** public=ec2-75-101-238-156.compute-1.amazonaws.com      private=domU-12-31-39-0F-7E-38.compute-1.internal **/
+      /system['sys1'][0]/node['node2'][0]: "i-54adb13c"  /** public=ec2-75-101-238-156.compute-1.amazonaws.com      private=domU-12-31-39-0F-7E-38.compute-1.internal **/
+    }
+
+}
