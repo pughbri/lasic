@@ -30,6 +30,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
       node =>
         spawn {
           node.vm = cloud.createVM(LaunchConfiguration.build(node), true)
+          logger.debug("created instance for node: " + node)
         }
     }
     scaleGroups.foreach {
