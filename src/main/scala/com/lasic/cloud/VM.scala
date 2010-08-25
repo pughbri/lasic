@@ -66,8 +66,16 @@ trait VM extends Logging {
 //  }
 
   def associateAddressWith(ip: String) {
-    cloud.associateAddress(this, ip)
-    logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
+    try{
+      cloud.associateAddress(this, ip)
+      logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
+    }
+    catch {
+      //todo: I think there are valid use cases for allowing an elastic ip assignment to fail, but not considering it fatal.
+      //todo: However, I think we should keep the state of the failure somehow then report it after completing the entire
+      //todo: run so the user doesn't miss it in the output
+      case e:Exception => logger.error("Unable to assign elastic ip : " + ip + " to instance id: " + this.instanceId)
+    }
   }
 
   def disassociateAddress(ip: String) {
