@@ -2,7 +2,7 @@ package com.lasic.cloud.amazon
 
 import junit.framework.TestCase
 import java.io.File
-import com.lasic.{Cloud, VM}
+import com.lasic.cloud.{Cloud, VM}
 import java.net.InetAddress
 import com.lasic.cloud.{ScalingTrigger, VolumeConfiguration, MachineState, LaunchConfiguration}
 import java.lang.String
@@ -38,10 +38,12 @@ class AmazonCloudTest extends AmazonBaseTest {
       lc.key = "default"
       lc.userName = "ubuntu"
       lc.groups = List("default", "web-server")
-      val vm: VM = new AmazonVM(cloud, lc, 20)
-      vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
-      val vms = List(vm)
-      cloud.start(vms)
+
+      val vm = cloud.createVM(lc, true)
+//      val vm: VM = new AmazonVM(cloud, lc, 20)
+//      vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
+//      val vms = List(vm)
+//      cloud.start(vms)
       try {
         waitForVMToStart(vm)
         testCopyTo(vm)
@@ -50,7 +52,7 @@ class AmazonCloudTest extends AmazonBaseTest {
         testAllocateAndAssociateIP(cloud, vm)
       }
       finally {
-        cloud.terminate(vms)
+        vm.shutdown
       }
     }
 

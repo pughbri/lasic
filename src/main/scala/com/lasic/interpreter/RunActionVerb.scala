@@ -1,6 +1,6 @@
 package com.lasic.interpreter
 
-import com.lasic.{VM, Cloud}
+import com.lasic.cloud.{VM, Cloud}
 import collection.immutable.List
 import com.lasic.model._
 import com.lasic.util.Logging

@@ -1,6 +1,6 @@
 package com.lasic.model
 
-import com.lasic.VM
+import com.lasic.cloud.VM
 import com.lasic.cloud.MachineState
 
 /**

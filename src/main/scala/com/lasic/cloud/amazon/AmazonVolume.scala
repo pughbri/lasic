@@ -18,7 +18,7 @@ import scala.collection.JavaConversions.asBuffer
 import collection.JavaConversions
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
-import com.lasic.{LasicProperties, VM, Cloud}
+import com.lasic.cloud.{VM, Cloud}
 
 class AmazonVolume(ec2: Jec2, val id:String) extends Volume with Logging{
 

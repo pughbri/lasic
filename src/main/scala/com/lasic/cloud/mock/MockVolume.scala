@@ -4,7 +4,7 @@ import com.lasic.util.Logging
 import java.util.Calendar
 import com.lasic.cloud._
 import se.scalablesolutions.akka.actor.Actor._
-import com.lasic.VM
+import com.lasic.cloud.VM
 
 /**
  * Created by IntelliJ IDEA.

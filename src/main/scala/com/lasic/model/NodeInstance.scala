@@ -4,7 +4,7 @@ package com.lasic.model
 //import com.lasic.interpreter.actors.DeployActor
 //import com.lasic.interpreter.actors.DeployActor._
 //import com.lasic.interpreter.actors.DeployActor.DeployActorState._
-import com.lasic.VM
+import com.lasic.cloud.VM
 import se.scalablesolutions.akka.actor.ActorRef
 import com.lasic.cloud.MachineState
 
