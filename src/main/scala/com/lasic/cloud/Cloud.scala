@@ -1,6 +1,6 @@
-package com.lasic
+package com.lasic.cloud
 
-import cloud._
+//import cloud._
 import com.lasic.cloud.MachineState._
 
 
@@ -21,25 +21,25 @@ trait Cloud {
 
   def findVM(instanceId: String): VM
 
-  def start(vms: List[VM])
+//  def start(vms: List[VM])
 
-  def reboot(vms: List[VM])
+//  def reboot(vms: List[VM])
 
-  def terminate(vms: List[VM])
+//  def terminate(vms: List[VM])
 
-  def getState(vm: VM): MachineState
+//  def getState(vm: VM): MachineState
 
-  def getPublicDns(vm: VM): String
+//  def getPublicDns(vm: VM): String
 
-  def getPrivateDns(vm: VM): String
+//  def getPrivateDns(vm: VM): String
 
   def allocateAddress(): String
 
   def releaseAddress(ip: String)
 
-  def associateAddress(vm: VM, ip: String)
+//  def associateAddress(vm: VM, ip: String)
 
-  def disassociateAddress(ip: String)
+//  def disassociateAddress(ip: String)
 
 //  def detach(volumeInfo: VolumeInfo, vm: VM, devicePath: String, force: Boolean) : AttachmentInfo
 
@@ -63,7 +63,7 @@ trait Cloud {
     }
 
     if (startVM) {
-      start(vms)
+      vms.foreach( vm => vm.startup )
     }
 
     vms

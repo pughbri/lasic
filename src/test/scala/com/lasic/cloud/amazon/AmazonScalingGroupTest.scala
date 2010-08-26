@@ -1,6 +1,6 @@
 package com.lasic.cloud.amazon
 
-import com.lasic.VM
+import com.lasic.cloud.VM
 import com.lasic.cloud._
 
 /**
@@ -18,10 +18,10 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
       lc.userName = "ubuntu"
       lc.groups = List("default")
       lc.name = "lctestname" + System.currentTimeMillis
-      val vm: VM = new AmazonVM(cloud, lc, 30)
+      val vm: VM = cloud.createVM(lc, true );
       vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
-      val vms = List(vm)
-      cloud.start(vms)
+//      val vms = List(vm)
+//      cloud.start(vms)
       val scaleGroup = cloud.getScalingGroup
       val scaleGroupName = lc.name + "scalegroup"
       var imageId: String = null
@@ -38,7 +38,8 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
         scaleGroup.createUpdateScalingTrigger(trigger)
       }
       finally {
-        cloud.terminate(vms)
+        vm.shutdown
+        //cloud.terminate(vms)
         scaleGroup.deleteScalingGroup(scaleGroupName)
         scaleGroup.deleteLaunchConfiguration(lc.name)
         if (imageId != null) {
