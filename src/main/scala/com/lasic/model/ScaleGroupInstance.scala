@@ -1,7 +1,7 @@
 package com.lasic.model
 
 import com.lasic.values.{BaseAction, NodeProperties, ScaleGroupProperties}
-import com.lasic.VM
+import com.lasic.cloud.VM
 
 /**
  * 

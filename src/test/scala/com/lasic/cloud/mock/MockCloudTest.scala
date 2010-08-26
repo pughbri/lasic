@@ -1,7 +1,7 @@
 package com.lasic.cloud
 
 import junit.framework._
-import com.lasic.VM
+import com.lasic.cloud.VM
 import mock.MockCloud
 
 
