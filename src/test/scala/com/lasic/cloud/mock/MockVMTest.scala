@@ -2,7 +2,7 @@ package com.lasic.cloud.mock
 
 import junit.framework.TestCase
 import com.lasic.cloud.{LaunchConfiguration, MachineState}
-import com.lasic.VM
+import com.lasic.cloud.VM
 
 /**
  *
@@ -25,7 +25,7 @@ class MockVMTest extends TestCase("MockVMTest") {
     Thread.sleep(200)
     assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
+    assert(vm.getMachineState() == MachineState.Rebooting, "expected rebooting, got " + vm.getMachineState())
     Thread.sleep(2000)
     assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
@@ -41,22 +41,21 @@ class MockVMTest extends TestCase("MockVMTest") {
     val vms: List[VM] = cloud.createVMs(new LaunchConfiguration, 1, true)
     val vm = vms(0)
     Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
+    assert(vm.getMachineState() == MachineState.Pending, "a expected pending, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
+    assert(vm.getMachineState() == MachineState.Pending, "b expected pending, got " + vm.getMachineState())
     Thread.sleep(2000)
-    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
+    assert(vm.getMachineState() == MachineState.Running, "c expected Running, got " + vm.getMachineState())
 
-    cloud.reboot(vms)
+    vm.reboot
     Thread.sleep(200)
     assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
     Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
+    assert(vm.getMachineState() == MachineState.Rebooting, "expected rebooting, got " + vm.getMachineState())
     Thread.sleep(2000)
     assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
 
-
-    cloud.terminate(vms)
+    vm.shutdown
     Thread.sleep(200)
     assert(vm.getMachineState() == MachineState.ShuttingDown|| vm.getMachineState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getMachineState())
 

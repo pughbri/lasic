@@ -1,6 +1,6 @@
 package com.lasic.interpreter
 
-import com.lasic.Cloud
+import com.lasic.cloud.Cloud
 import com.lasic.model.LasicProgram
 
 /**

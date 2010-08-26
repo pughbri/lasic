@@ -1,7 +1,7 @@
 package com.lasic.cloud.noop
 
 import com.lasic.util.Logging
-import com.lasic.VM
+import com.lasic.cloud.VM
 import com.lasic.cloud._
 
 class NoopVolume extends Volume with Logging{
