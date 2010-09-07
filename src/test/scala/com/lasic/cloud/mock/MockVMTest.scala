@@ -11,55 +11,44 @@ import com.lasic.cloud.VM
  */
 
 class MockVMTest extends TestCase("MockVMTest") {
+
+  /**
+   *  Test that VM goes through the expected states
+   */
   def testVMStates() = {
-    val vm = new MockVM(new MockCloud(2))
+    val vm = new MockVM(new MockCloud(1))
     vm.startup()
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
-    Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Pending, "expected pending, got " + vm.getMachineState())
-    Thread.sleep(2000)
-    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
+    waitForState(vm, MachineState.Pending, 5)
+    waitForState(vm, MachineState.Running, 2)
 
     vm.reboot()
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
-    Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Rebooting, "expected rebooting, got " + vm.getMachineState())
-    Thread.sleep(2000)
-    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
-
+    waitForState(vm, MachineState.Rebooting, 5)
+    waitForState(vm, MachineState.Running, 2)
 
     vm.shutdown()
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.ShuttingDown|| vm.getMachineState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getMachineState())
+    waitForState(vm, MachineState.Terminated, 3)
 
   }
 
+  /**
+   *  Test that a VM is created and gets started
+   */
   def testStartVMFromCloud() = {
-    val cloud = new MockCloud(2)
+    val cloud = new MockCloud(1)
     val vms: List[VM] = cloud.createVMs(new LaunchConfiguration, 1, true)
-    val vm = vms(0)
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.Pending, "a expected pending, got " + vm.getMachineState())
-    Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Pending, "b expected pending, got " + vm.getMachineState())
-    Thread.sleep(2000)
-    assert(vm.getMachineState() == MachineState.Running, "c expected Running, got " + vm.getMachineState())
-
-    vm.reboot
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.Pending || vm.getMachineState() == MachineState.Rebooting, "expected pending or rebooting, got " + vm.getMachineState())
-    Thread.sleep(1000)
-    assert(vm.getMachineState() == MachineState.Rebooting, "expected rebooting, got " + vm.getMachineState())
-    Thread.sleep(2000)
-    assert(vm.getMachineState() == MachineState.Running, "expected Running, got " + vm.getMachineState())
-
-    vm.shutdown
-    Thread.sleep(200)
-    assert(vm.getMachineState() == MachineState.ShuttingDown|| vm.getMachineState() == MachineState.Terminated, "expected shuttingdown or terminated, got " + vm.getMachineState())
-
-
+    waitForState(vms(0), MachineState.Running, 5)
   }
-  
+
+  def waitForState(vm: VM, expectedState: MachineState.MachineState, timeout: Int) {
+    val startTime = System.currentTimeMillis
+    var currState = vm.getMachineState
+    while (currState != expectedState) {
+      if (System.currentTimeMillis - startTime > (timeout * 1000)) {
+        throw new Exception("timed out waiting for state [" + expectedState + "]. Current state [" + currState + "]")
+      }
+      Thread.sleep(200)
+      currState = vm.getMachineState
+    }
+  }
+
 }

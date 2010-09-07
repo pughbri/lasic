@@ -16,16 +16,24 @@ object MockScalingGroup extends ScalingGroup with Logging {
   private var scaleGroups = List[InternalScaleGroup]()
   private var launchConfigs = List[String]()
   private var imageState = ImageState.Unknown
+  private val lock = "lock"
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger) = {
     logger.info("creating scaling trigger: " + trigger)
-    val scaleGroup = scaleGroups.find(t => t.name == trigger.autoScalingGroupName)
-    scaleGroup.get.triggers ::= trigger
+    lock.synchronized {
+      val scaleGroup = scaleGroups.find(t => t.name == trigger.autoScalingGroupName)
+      scaleGroup match {
+        case Some(s) => s.triggers ::= trigger
+        case None => throw new Exception("unknown scale group: " + trigger.autoScalingGroupName)
+      }
+    }
   }
 
   def deleteScalingGroup(name: String) = {
     logger.info("deleting scaling group: " + name)
-    scaleGroups = scaleGroups.filter(group => group.name != name)
+    lock.synchronized {
+      scaleGroups = scaleGroups.filter(group => group.name != name)
+    }
 
   }
 
@@ -33,17 +41,24 @@ object MockScalingGroup extends ScalingGroup with Logging {
     logger.info("creating scaling group: " + autoScalingGroupName)
     val group = new InternalScaleGroup
     group.name = autoScalingGroupName
-    scaleGroups ::= group
+    lock.synchronized {
+      scaleGroups ::= group
+    }
+
   }
 
   def deleteLaunchConfiguration(name: String) {
     logger.info("deleting launch config : " + name)
-    launchConfigs = launchConfigs.filter(configName => configName != name)
+    lock.synchronized {
+      launchConfigs = launchConfigs.filter(configName => configName != name)
+    }
   }
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration) {
     logger.info("creating launch config : " + config)
-    launchConfigs ::= config.name
+    lock.synchronized {
+      launchConfigs ::= config.name
+    }
   }
 
   def deleteSnapshotAndDeRegisterImage(imageId: String) {
@@ -52,12 +67,16 @@ object MockScalingGroup extends ScalingGroup with Logging {
 
   def createImageForScaleGroup(instanceId: String, name: String, description: String, reboot: Boolean) = {
     logger.info("creating image for scale group: " + name)
-    imageState = ImageState.Available
+    lock.synchronized {
+      imageState = ImageState.Available
+    }
     "mock-image-id"
   }
 
   def getImageState(imageId: String) = {
-    imageState
+    lock.synchronized {
+      imageState
+    }
   }
 
   def getScalingLaunchConfiguration(configName: String) = {
@@ -67,17 +86,22 @@ object MockScalingGroup extends ScalingGroup with Logging {
   }
 
   def getScaleGroups = {
-    scaleGroups
+    lock.synchronized {
+      scaleGroups
+    }
   }
 
   def getlaunchConfigs = {
-    launchConfigs
+    lock.synchronized {
+      launchConfigs
+    }
   }
 
   def reset() {
-    scaleGroups = List[InternalScaleGroup]()
-    launchConfigs = List[String]()
-    imageState = ImageState.Unknown
+    lock.synchronized {
+      scaleGroups = List[InternalScaleGroup]()
+      launchConfigs = List[String]()
+      imageState = ImageState.Unknown
+    }
   }
-
 }

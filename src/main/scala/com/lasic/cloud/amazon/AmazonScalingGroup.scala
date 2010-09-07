@@ -3,12 +3,16 @@ package com.lasic.cloud.amazon
 import collection.JavaConversions
 import collection.JavaConversions.asMap
 import collection.JavaConversions.asBuffer
+import collection.JavaConversions.asList
 import java.util.{List => JList}
 import com.xerox.amazonws.monitoring.{Statistics, StandardUnit}
 import com.lasic.cloud.ImageState._
 import com.lasic.cloud.{ImageState, ScalingTrigger, LaunchConfiguration, ScalingGroup}
 import collection.mutable.Buffer
 import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, LaunchConfiguration => AmazonLaunchConfig, ScalingTrigger => AmazonScalingTrigger}
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.autoscaling.model.{Dimension, CreateOrUpdateScalingTriggerRequest}
 
 /**
  *
@@ -63,23 +67,45 @@ class AmazonScalingGroup(val ec2: Jec2, val autoscaling: AutoScaling) extends Sc
   }
   
   def createUpdateScalingTrigger(trigger: ScalingTrigger) {
-    val scalingTrigger = new AmazonScalingTrigger(trigger.name,
-      trigger.autoScalingGroupName,
-      trigger.measureName,
-      Statistics.AVERAGE,
-      Map("AutoScalingGroupName" -> trigger.autoScalingGroupName), //dimensions
-      trigger.period,
-      StandardUnit.PERCENT,
-      null, //CustomUnit
-      trigger.lowerThreshold,
-      trigger.lowerBreachScaleIncrement,
-      trigger.upperThreshold,
-      trigger.upperBreachScaleIncrement,
-      trigger.breachDuration,
-      null, //status
-      null //createdTime
-      )
-    autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
+
+    //Typica is broken.  Use amazon api. http://code.google.com/p/typica/issues/detail?id=98
+    val scalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(ec2.getAwsAccessKeyId, ec2.getSecretAccessKey))
+
+    val triggerRequest = new CreateOrUpdateScalingTriggerRequest()
+    triggerRequest.setTriggerName(trigger.name)
+    triggerRequest.setAutoScalingGroupName(trigger.autoScalingGroupName)
+    triggerRequest.setMeasureName(trigger.measureName)
+    triggerRequest.setStatistic("Average")
+    val dimension = new Dimension().withName("AutoScalingGroupName").withValue(trigger.autoScalingGroupName)
+    triggerRequest.setDimensions(List(dimension))
+    triggerRequest.setPeriod(trigger.period)
+    triggerRequest.setUnit("Percent")
+    triggerRequest.setLowerThreshold(trigger.lowerThreshold)
+    triggerRequest.setLowerBreachScaleIncrement(trigger.lowerBreachScaleIncrement)
+    triggerRequest.setUpperThreshold(trigger.upperThreshold)
+    triggerRequest.setUpperBreachScaleIncrement(trigger.upperBreachScaleIncrement)
+    triggerRequest.setBreachDuration(trigger.breachDuration)
+    triggerRequest.setNamespace(trigger.namespace)
+    scalingClient.createOrUpdateScalingTrigger(triggerRequest)
+
+
+//    val scalingTrigger = new AmazonScalingTrigger(trigger.name,
+//      trigger.autoScalingGroupName,
+//      trigger.measureName,
+//      Statistics.AVERAGE,
+//      Map("AutoScalingGroupName" -> trigger.autoScalingGroupName), //dimensions
+//      trigger.period,
+//      StandardUnit.PERCENT,
+//      null, //CustomUnit
+//      trigger.lowerThreshold,
+//      trigger.lowerBreachScaleIncrement,
+//      trigger.upperThreshold,
+//      trigger.upperBreachScaleIncrement,
+//      trigger.breachDuration,
+//      null, //status
+//      null //createdTime
+//      )
+//    autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
   }
 
 

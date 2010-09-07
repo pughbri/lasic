@@ -7,6 +7,7 @@ class ScalingTrigger(
         var lowerThreshold: Double,
         var measureName: String,
         var name: String,
+        var namespace: String,
         var period: Int,
         var upperBreachScaleIncrement: String,
         var upperThreshold: Double

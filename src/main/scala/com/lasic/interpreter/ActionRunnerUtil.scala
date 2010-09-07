@@ -6,8 +6,7 @@ import com.lasic.model.{ScaleGroupInstance, NodeInstance, VMHolder, ScriptArgume
 import se.scalablesolutions.akka.actor.Actor._
 import java.io.File
 import java.util.Date
-import com.lasic.cloud.{ScalingGroup, ScalingTrigger, LaunchConfiguration}
-
+import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}
 
 protected class VMState() {
   var scpComplete = false
@@ -29,7 +28,7 @@ trait ActionRunnerUtil {
   /**
    * Spawns a thread in which all the scp, script and ip statements are run.  vmStat is updated as appropriate.
    */
-  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]): Unit = {
+  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]) {
     spawn {
       allSCPs.foreach {
         tuple => vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
@@ -113,7 +112,15 @@ trait ActionRunnerUtil {
             scaleGroupConfig.cloudName = scaleGroupConfig.name + "-" + dateString
 
             //create the image
-            val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, "Created by LASIC on " + dateString, false)
+            val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, "Created by LASIC for scale group on " + dateString, true)
+
+            //wait for image to be available
+            var imageState = ImageState.Unknown
+            while (imageState != ImageState.Available) {
+              Thread.sleep(10000)  // 10 seconds
+              imageState = scaleGroup.getImageState(imageID)
+            }
+
 
             //create the config
             val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
@@ -133,6 +140,7 @@ trait ActionRunnerUtil {
                   trigger.lowerThreshold,
                   trigger.measure,
                   trigger.name,
+                  trigger.namespace,
                   trigger.period,
                   trigger.upperBreachIncrement.toString,
                   trigger.upperThreshold)
