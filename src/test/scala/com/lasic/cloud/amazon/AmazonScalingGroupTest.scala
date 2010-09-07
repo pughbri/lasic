@@ -34,7 +34,7 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
         scaleGroup.createScalingLaunchConfiguration(lc)
         Thread.sleep(2000)
         scaleGroup.createScalingGroup(scaleGroupName, lc.name, 1, 2, List(lc.availabilityZone))
-        val trigger = new ScalingTrigger(scaleGroupName, 300, "1", 10, "CPUUtilization", "trigger" + System.currentTimeMillis, 60, "1", 60)
+        val trigger = new ScalingTrigger(scaleGroupName, 300, "1", 10, "CPUUtilization", "trigger" + System.currentTimeMillis, "AWS/EC2", 60, "1", 60)
         scaleGroup.createUpdateScalingTrigger(trigger)
       }
       finally {
