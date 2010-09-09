@@ -23,6 +23,10 @@ trait ScalingGroup {
 
   def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String])
 
+  def updateScalingGroup(autoScalingGroupName: String, min: Int, max: Int)
+
+  def describeAutoScalingGroup(autoScalingGroupName: String): ScalingGroupInfo
+
   def deleteScalingGroup(name: String)
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger)

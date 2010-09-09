@@ -1,11 +1,11 @@
 package com.lasic.interpreter
 
-import com.lasic.cloud.{VM, Cloud}
 import collection.immutable.List
 import com.lasic.model._
 import com.lasic.util.Logging
 import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud._
+import com.lasic.LasicProperties
 
 /**
  *
@@ -19,8 +19,10 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     Map.empty ++ (nodes.map {node => (node, new VMState)} ::: scaleGroups.map {scaleGroup => (scaleGroup, new VMState)})
   }
 
-  private var scaleGroupsToDelete = List[String]()
-  private var configsToDelete = List[String]()
+  private[interpreter] var scaleGroupsToDelete = List[String]()
+  private[interpreter] var configsToDelete = List[String]()
+
+  private val sleepDelay = LasicProperties.getProperty("SLEEP_DELAY", "10000").toInt
 
 
   private def setVMs() {
@@ -57,7 +59,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     while (waiting.size > 0) {
       val descriptions: List[String] = waiting.map(t => t.vmId + ":" + t.vmState)
       logger.info(statusString + descriptions)
-      Thread.sleep(10000)
+      Thread.sleep(sleepDelay)
       waiting = vmHolders.filter(t => test(t))
     }
   }
@@ -76,8 +78,17 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for new Scale Groups to come up: ")
   }
 
-  private def deleteOldScaleGroups {
+  private[interpreter] def deleteOldScaleGroups {
     val scalingGroup = cloud.getScalingGroup
+
+    //set the scale group size to 0 so all instances are down so that it can be deleted.
+    scaleGroupsToDelete foreach {
+      scaleGroupName =>
+        scalingGroup.updateScalingGroup(scaleGroupName, 0, 0)
+    }
+
+    waitForScaleGroupsToTerminateInstances(scaleGroupsToDelete)
+
     scaleGroupsToDelete foreach {
       scaleGroupName =>
         scalingGroup.deleteScalingGroup(scaleGroupName)
@@ -88,6 +99,27 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
         scalingGroup.deleteLaunchConfiguration(configName)
     }
   }
+
+  private def waitForScaleGroupsToTerminateInstances(scaleGroups: List[String]) {
+    val scalingGroup = cloud.getScalingGroup
+    var scaleGroupsStillTerminating = scala.collection.immutable.List[String]() ::: scaleGroups
+    while (scaleGroupsStillTerminating.size > 0) {
+      logger.info("waiting for scale groups to terminate instances: " + scaleGroupsStillTerminating)
+      Thread.sleep(sleepDelay)
+
+      scaleGroupsStillTerminating = scaleGroupsStillTerminating.filter(
+        name => {
+          val groupInfo = scalingGroup.describeAutoScalingGroup(name)
+          require(groupInfo.maxSize == 0,
+            "max size should be 0 for a scale group being deleted.  It is " + groupInfo.maxSize + " for " + name)
+          val instances = groupInfo.instances
+          instances != null && instances.size > 0
+        })
+
+
+    }
+  }
+
 
   private def printBoundLasicProgram {
     if (!scaleGroups.isEmpty) {

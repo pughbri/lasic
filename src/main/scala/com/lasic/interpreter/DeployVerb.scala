@@ -9,6 +9,8 @@ import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
 import se.scalablesolutions.akka.actor.Actor._
 import com.lasic.cloud._
+import java.util.Date
+import com.lasic.LasicProperties
 
 
 /**
@@ -22,6 +24,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
   private var volumes: List[VolumeInstance] = nodes.map(_.volumes).flatten
 
+  private val sleepDelay = LasicProperties.getProperty("SLEEP_DELAY", "10000").toInt
 
   private def validateProgram {}
 
@@ -78,7 +81,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     while (waiting.size > 0) {
       val descriptions: List[String] = waiting.map(t => t.vmId + ":" + t.vmState)
       logger.info(statusString + descriptions)
-      Thread.sleep(10000)
+      Thread.sleep(sleepDelay)
       waiting = vmHolders.filter(t => test(t))
     }
   }
@@ -89,7 +92,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     while (waiting.size > 0) {
       val descriptions: List[String] = waiting.map(v => v.volume.id + ":" + v.volume.info.state)
       logger.info(statusString + descriptions)
-      Thread.sleep(10000)
+      Thread.sleep(sleepDelay)
       waiting = volumes.filter(v => v.volume.info.state != state)
     }
   }
@@ -127,6 +130,16 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     println("}")
   }
 
+  private def setScaleGroupNames {
+    scaleGroups foreach {
+      scaleGroupInstance =>
+      //create unique names
+        val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
+        scaleGroupInstance.cloudName = scaleGroupInstance.localName + "-" + dateString
+        scaleGroupInstance.configuration.cloudName = scaleGroupInstance.configuration.name + "-" + dateString
+    }
+  }
+
 
   def doit() {
 
@@ -136,6 +149,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     // Startup everything that needs it
     launchAllAMIs
     createAllVolumes
+//    setScaleGroupNames
 
 
     // Wait for all resources to be created before proceeding
