@@ -1,7 +1,7 @@
 package com.lasic.cloud.mock
 
 import com.lasic.util.Logging
-import com.lasic.cloud.{ImageState, ScalingTrigger, LaunchConfiguration, ScalingGroup}
+import com.lasic.cloud._
 
 /**
  *
@@ -12,6 +12,8 @@ object MockScalingGroup extends ScalingGroup with Logging {
   class InternalScaleGroup {
     var name = ""
     var triggers = List[ScalingTrigger]()
+    var min = 0
+    var max = 0
   }
   private var scaleGroups = List[InternalScaleGroup]()
   private var launchConfigs = List[String]()
@@ -41,6 +43,8 @@ object MockScalingGroup extends ScalingGroup with Logging {
     logger.info("creating scaling group: " + autoScalingGroupName)
     val group = new InternalScaleGroup
     group.name = autoScalingGroupName
+    group.min = min
+    group.max = max
     lock.synchronized {
       scaleGroups ::= group
     }
@@ -104,4 +108,30 @@ object MockScalingGroup extends ScalingGroup with Logging {
       imageState = ImageState.Unknown
     }
   }
+
+  def updateScalingGroup(autoScalingGroupName: String, min: Int, max: Int) = {
+    lock.synchronized {
+      val scaleGroup = scaleGroups.find(t => t.name == autoScalingGroupName)
+      scaleGroup match {
+        case Some(s) => {
+          s.min = min
+          s.max = max
+        }
+        case None => throw new Exception("unknown scale group: " + autoScalingGroupName)
+      }
+    }
+  }
+
+  def describeAutoScalingGroup(autoScalingGroupName: String): ScalingGroupInfo = {
+    lock.synchronized {
+      val scaleGroup = scaleGroups.find(t => t.name == autoScalingGroupName)
+      scaleGroup match {
+        case Some(s) => {
+          new ScalingGroupInfo(autoScalingGroupName,"",s.min, s.max, 0,0, null, null)
+        }
+        case None => throw new Exception("unknown scale group: " + autoScalingGroupName)
+      }
+    }
+  }
+
 }

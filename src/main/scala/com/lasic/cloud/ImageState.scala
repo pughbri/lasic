@@ -10,4 +10,5 @@ object ImageState extends Enumeration {
   val Unknown = Value("unknown")
   val Pending = Value("pending")
   val Available = Value("available")
+  val Failed = Value("failed")
 }

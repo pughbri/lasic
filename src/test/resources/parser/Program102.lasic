@@ -38,8 +38,8 @@ system  "sys" {
     }
 
     paths {
-      /system['sys'][0]/scale-group['my-app']: "my-app-2010-08-23-14-30-12"
-      /system['sys'][0]/scale-group['my-app']/configuration['my-app-launchconfig']: "my-app-launchconfig-2010-08-23-14-30-12"
+      /system['sys'][0]/scale-group['my-app']: "orig-my-app-2010-08-23-14-30-12"
+      /system['sys'][0]/scale-group['my-app']/configuration['my-app-launchconfig']: "orig-my-app-launchconfig-2010-08-23-14-30-12"
    }
 }
 

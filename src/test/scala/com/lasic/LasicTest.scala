@@ -3,6 +3,7 @@ package com.lasic
 ;
 
 import cloud.amazon.AmazonCloud
+import cloud.LaunchConfiguration
 import cloud.mock.MockCloud
 import junit.framework._
 import java.io.File
@@ -15,6 +16,7 @@ import org.scalatest.junit.AssertionsForJUnit
  */
 class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
   override def setUp = {
+    LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
     new MockCloud().getScalingGroup.reset()
   }
 
@@ -39,12 +41,21 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
   }
 
   def testRunActionWithScaleGroup() = {
+    //create the "original scale group" that will be replaced
+    val scalingGroup = new MockCloud().getScalingGroup
+    val lc = new LaunchConfiguration
+    lc.name = "orig-my-app-launchconfig-2010-08-23-14-30-12"
+    scalingGroup.createScalingLaunchConfiguration(lc)
+    scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12",lc.name,3,5,null)
+
+    //run the action
     Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)))
-    val mockScalingGroup = new MockCloud().getScalingGroup
-    assert(mockScalingGroup.getScaleGroups.size === 1)
-    assert(mockScalingGroup.getScaleGroups(0).name.startsWith("my-app"))
-    assert(mockScalingGroup.getScaleGroups(0).triggers.size === 1)
-    assert(mockScalingGroup.getScaleGroups(0).triggers(0).breachDuration === 300)
+
+    //ensure that the original scale group is gone, and the new one is there
+    assert(scalingGroup.getScaleGroups.size === 1)
+    assert(scalingGroup.getScaleGroups(0).name.startsWith("my-app"))
+    assert(scalingGroup.getScaleGroups(0).triggers.size === 1)
+    assert(scalingGroup.getScaleGroups(0).triggers(0).breachDuration === 300)
   }
 
   def testDeployWithAmazon() = {
