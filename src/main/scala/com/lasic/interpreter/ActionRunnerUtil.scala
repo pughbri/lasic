@@ -8,6 +8,7 @@ import java.io.File
 import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}
 import java.lang.String
+import com.lasic.LasicProperties
 
 protected class VMState() {
   var scpComplete = false
@@ -25,6 +26,8 @@ trait ActionRunnerUtil {
   protected val vmState: Map[VMHolder, VMState]
   protected val nodes: List[NodeInstance]
   protected val scaleGroups: List[ScaleGroupInstance]
+
+  private val sleepDelay = LasicProperties.getProperty("SLEEP_DELAY", "10000").toInt
 
   /**
    * Spawns a thread in which all the scp, script and ip statements are run.  vmStat is updated as appropriate.
@@ -97,6 +100,17 @@ trait ActionRunnerUtil {
     }
   }
 
+
+  def setScaleGroupNames {
+    scaleGroups foreach {
+      scaleGroupInstance =>
+      //create unique names
+        val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
+        scaleGroupInstance.cloudName = scaleGroupInstance.localName + "-" + dateString
+        scaleGroupInstance.configuration.cloudName = scaleGroupInstance.configuration.name + "-" + dateString
+    }
+  }
+
   /**
    * create scale groups based on the "prototype vm" on each scaleGroupInstance.  Once the scale group is created,
    * the prototype VM will be shutdown.
@@ -106,20 +120,17 @@ trait ActionRunnerUtil {
         scaleGroupInstance =>
           spawn {
 
-            //create unique names
-            val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
-            scaleGroupInstance.cloudName = scaleGroupInstance.localName + "-" + dateString
+
             val scaleGroupConfig = scaleGroupInstance.configuration
-            scaleGroupConfig.cloudName = scaleGroupConfig.name + "-" + dateString
 
             //create the image
-            val desc= "Created by LASIC for scale group [" + scaleGroupInstance.cloudName + " on " + dateString + " from instanceid [" + scaleGroupInstance.vm.instanceId + "]"
+            val desc= "Created by LASIC for scale group [" + scaleGroupInstance.cloudName + "] from instanceid [" + scaleGroupInstance.vm.instanceId + "]"
             val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
 
             //wait for image to be available
             var imageState = ImageState.Unknown
             while (imageState != ImageState.Available) {
-              Thread.sleep(10000)  // 10 seconds
+              Thread.sleep(sleepDelay)
               imageState = scaleGroup.getImageState(imageID)
               if (imageState == ImageState.Failed) {
                 throw new Exception("Image creation failed for an unknown reason for imagedId [" + imageID + "]")

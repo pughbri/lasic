@@ -130,17 +130,6 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     println("}")
   }
 
-  private def setScaleGroupNames {
-    scaleGroups foreach {
-      scaleGroupInstance =>
-      //create unique names
-        val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
-        scaleGroupInstance.cloudName = scaleGroupInstance.localName + "-" + dateString
-        scaleGroupInstance.configuration.cloudName = scaleGroupInstance.configuration.name + "-" + dateString
-    }
-  }
-
-
   def doit() {
 
     // Error checks before doing anything
@@ -149,7 +138,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     // Startup everything that needs it
     launchAllAMIs
     createAllVolumes
-//    setScaleGroupNames
+    setScaleGroupNames
 
 
     // Wait for all resources to be created before proceeding
