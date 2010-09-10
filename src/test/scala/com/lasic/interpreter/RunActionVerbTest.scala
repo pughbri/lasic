@@ -12,7 +12,8 @@ import com.lasic.model.{SystemGroup, LasicProgram}
  * @author Brian Pugh
  */
 
-@RunWith(classOf[JUnitRunner]) class RunActionVerbTest extends FlatSpec with ShouldMatchers {
+@RunWith(classOf[JUnitRunner])
+class RunActionVerbTest extends FlatSpec with ShouldMatchers {
   "RunActionVerb" should "delete the scale group and config" in {
     val cloud = new MockCloud()
 

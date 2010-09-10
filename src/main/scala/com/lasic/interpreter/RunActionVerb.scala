@@ -149,9 +149,10 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
   def doit = {
     setVMs
     waitVMsToBeSet
+    saveOldScaleGroupAndConfig
+    setScaleGroupNames
     startAsyncRunAction(actionName)
     waitForAction
-    saveOldScaleGroupAndConfig
     createScaleGroups(cloud.getScalingGroup)
     waitForNewScaleGroups
     deleteOldScaleGroups
