@@ -12,6 +12,9 @@ import com.lasic.{LasicProperties}
 import com.xerox.amazonws.monitoring.{StandardUnit, Statistics}
 import com.xerox.amazonws.ec2.{ImageDescription, Jec2, AutoScaling, InstanceType, ReservationDescription, LaunchConfiguration => AmazonLaunchConfiguration, ScalingTrigger => AmazonScalingTrigger}
 import com.lasic.cloud._
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.ec2.AmazonEC2Client
+import com.amazonaws.services.ec2.model.{Instance, Reservation, DescribeInstancesRequest}
 
 /**
  * @author Brian Pugh
@@ -39,6 +42,12 @@ class AmazonCloud extends Cloud with Logging {
     new AutoScaling(key, secret);
   }
 
+  lazy val awsClient = {
+    val (key, secret) = ec2Keys
+    new AmazonEC2Client(new BasicAWSCredentials(key, secret))
+
+  }
+
 
   def ec2Keys = {
     val key: String = LasicProperties.getProperty("AWS_ACCESS_KEY")
@@ -54,102 +63,38 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
-    createVMs(numVMs, startVM) {new AmazonVM(ec2, launchConfig)}
+    createVMs(numVMs, startVM) {new AmazonVM(awsClient, launchConfig)}
   }
 
 
   def findVM(instanceId: String) = {
-
-    val descriptions = ec2.describeInstances(JavaConversions.asList(List(instanceId)))
+    var dir = new DescribeInstancesRequest()
+    dir.setInstanceIds(JavaConversions.asList(List(instanceId)))
+    val descriptions = awsClient.describeInstances(dir).getReservations()
     if (descriptions.size < 1) {
       null
     }
     else {
-      //descriptions(0).getInstances().foreach(instance => {
-      val instance = descriptions(0).getInstances()(0)
-      val vm = new AmazonVM(ec2, convertToLC(instance))
+      val instance = descriptions.get(0).getInstances.get(0)
+      val vm = new AmazonVM(awsClient, convertToLC(instance))
       vm.instanceId = instance.getInstanceId
       vm
-      //})
     }
   }
 
-  def convertToLC(instance: ReservationDescription#Instance): LaunchConfiguration = {
+  def convertToLC(instance:Instance): LaunchConfiguration = {
     val lc = new LaunchConfiguration
     lc.machineImage = instance.getImageId
     lc.ramdiskId = instance.getRamdiskId
     lc.kernelId = instance.getKernelId
     lc.instanceType = instance.getInstanceType.toString
-    lc.availabilityZone = instance.getAvailabilityZone
     lc
   }
-
-//  def start(vms: List[VM]) {
-//    //todo: don't just iterate.  Batching things together and making a single call with params is MUCH more efficient
-//    vms.foreach(vm => {startVM(vm)})
-//  }
-//
-//  private def startVM(vm: VM) {
-//    val amazonLC = MappingUtil.createAmazonLaunchConfiguration(vm.launchConfiguration)
-//    val rd: ReservationDescription = ec2.runInstances(amazonLC)
-//    rd.getInstances().foreach(instance => vm.instanceId = instance.getInstanceId)
-//  }
-  
-//  def reboot(vms: List[VM]) {
-//    //    val vm: AmazonVM = new AmazonVM(this, new LaunchConfiguration(null))
-//    //   logger.info(vm.launchConfiguration)
-//  }
-
-//  def terminate(vms: List[VM]) {
-//    vms.foreach(vm => {
-//      logger.debug("terminating " + vm.instanceId)
-//      var instances = new java.util.ArrayList[String]
-//      instances.add(vm.instanceId)
-//      ec2.terminateInstances(instances)
-//    }
-//      )
-//  }
-
-//  private def getInstance(vm: VM): ReservationDescription#Instance = {
-//    val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
-//    if (list.size != 1) {
-//      throw new IllegalStateException("expected a single reservation description for instance vmId " + vm.instanceId + " but got " + list.size)
-//    }
-//
-//    val instances: JList[ReservationDescription#Instance] = list.get(0).getInstances
-//    if (list.size != 1) {
-//      throw new IllegalStateException("expected a single instance for instance vmId " + vm.instanceId + " but got " + instances.size)
-//    }
-//
-//    instances.get(0)
-//  }
-
-//  def getState(vm: VM): MachineState = {
-//    MachineState.withName(getInstance(vm).getState)
-//  }
-
-//  def getPublicDns(vm: VM): String = {
-//    getInstance(vm).getDnsName()
-//  }
-//
-//  def getPrivateDns(vm: VM): String = {
-//    getInstance(vm).getPrivateDnsName()
-//  }
-
 
   def createVolume(config: VolumeConfiguration): Volume = {
     val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(config.size.toString, config.snapID, config.availabilityZone)
     new AmazonVolume(ec2, vi.getVolumeId)
   }
-
-//  def associateAddress(vm: VM, ip: String) = {
-//    ec2.associateAddress(vm.instanceId, ip)
-//  }
-
-
-//  def disassociateAddress(ip: String) = {
-//    ec2.disassociateAddress(ip)
-//  }
 
   def allocateAddress() = {
     ec2.allocateAddress()

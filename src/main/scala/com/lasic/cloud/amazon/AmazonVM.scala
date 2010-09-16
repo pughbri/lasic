@@ -1,46 +1,35 @@
 package com.lasic.cloud.amazon
 
-import java.lang.String
 import java.util.{List => JList}
 import scala.collection.JavaConversions.asBuffer
-import scala.collection.JavaConversions.asMap
-import collection.JavaConversions
-import com.lasic.cloud.MachineState._
-import com.lasic.cloud.ImageState._
-import com.lasic.util.Logging
-import com.lasic.{LasicProperties}
-import com.lasic.cloud._
-import com.xerox.amazonws.monitoring.{StandardUnit, Statistics}
-import com.xerox.amazonws.ec2.{ImageDescription, Jec2, AutoScaling, InstanceType, ReservationDescription, LaunchConfiguration => AmazonLaunchConfiguration, ScalingTrigger => AmazonScalingTrigger}
 
 
-import com.lasic.cloud.{Cloud, VM}
+import com.lasic.cloud.VM
 import java.io.File
 import collection.immutable.Map
 import java.lang.String
-import com.xerox.amazonws.ec2.{ReservationDescription, Jec2}
 import java.util.{List => JList}
 import com.lasic.cloud.MachineState._
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.cloud.ssh.{ConnectException, AuthFailureException, SshSession, BashPreparedScriptExecution}
-import scala.collection.JavaConversions.asMap
-import collection.JavaConversions
-
+import com.amazonaws.services.ec2.AmazonEC2Client
+import com.amazonaws.services.ec2.model._
 
 /**
  * User: Brian Pugh
  * Date: May 11, 2010
  */
 
-class AmazonVM(ec2: Jec2, val launchConfiguration: LaunchConfiguration, val timeout: Int) extends VM {
-  def this(ec2: Jec2, launchConfiguration: LaunchConfiguration) = this (ec2, launchConfiguration, 10)
+class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfiguration, val timeout: Int) extends VM {
+  def this(awsClient: AmazonEC2Client, launchConfiguration: LaunchConfiguration) = this (awsClient, launchConfiguration, 10)
 
   private var sshUp = false;
 
   def startup() {
-    val amazonLC = MappingUtil.createAmazonLaunchConfiguration(launchConfiguration)
-    val rd: ReservationDescription = ec2.runInstances(amazonLC)
-    rd.getInstances().foreach(instance => instanceId = instance.getInstanceId)
+    val request = MappingUtil.createAWSRunInstancesRequest(launchConfiguration)
+    val rir = awsClient.runInstances(request)
+    require(rir.getReservation.getInstances.size == 1, "Excepted behavior.  AWS api return multiple instances when we request that only one be created.")
+    rir.getReservation.getInstances.foreach(instance => instanceId = instance.getInstanceId)
   }
 
   def reboot() {
@@ -49,14 +38,16 @@ class AmazonVM(ec2: Jec2, val launchConfiguration: LaunchConfiguration, val time
 
   def shutdown() {
     logger.debug("terminating " + instanceId)
-    var instances = new java.util.ArrayList[String]
-    instances.add(instanceId)
-    ec2.terminateInstances(instances)
+    var instanceList = new java.util.ArrayList[String]
+    instanceList.add(instanceId)
+    var instances = new TerminateInstancesRequest().withInstanceIds(instanceList)
+    awsClient.terminateInstances(instances)
   }
 
   def associateAddressWith(ip: String) {
     try {
-      ec2.associateAddress(instanceId, ip)
+      var aar = new AssociateAddressRequest().withInstanceId(instanceId).withPublicIp(ip)
+      awsClient.associateAddress(aar)
       logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
     }
     catch {
@@ -68,24 +59,28 @@ class AmazonVM(ec2: Jec2, val launchConfiguration: LaunchConfiguration, val time
   }
 
   def disassociateAddress(ip: String) {
-    ec2.disassociateAddress(ip)
-
+    var dar = new DisassociateAddressRequest().withPublicIp(ip)
+    awsClient.disassociateAddress(dar)
     logger.info("Unssigned elastic ip : " + ip + " from instance id: " + this.instanceId)
   }
 
 
   def getMachineState(): MachineState = {
-    MachineState.withName(getInstance(this).getState)
+    MachineState.withName(getInstance(this).getState.getName)
   }
 
-  private def getInstance(vm: VM): ReservationDescription#Instance = {
-    val list: JList[ReservationDescription] = ec2.describeInstances(Array(vm.instanceId))
-    if (list.size != 1) {
-      throw new IllegalStateException("expected a single reservation description for instance vmId " + vm.instanceId + " but got " + list.size)
+  private def getInstance(vm: VM): Instance = {
+    var instanceList = new java.util.ArrayList[String]
+    instanceList.add(instanceId)
+    
+    var dir = new DescribeInstancesRequest().withInstanceIds(instanceList)
+    val dirr = awsClient.describeInstances(dir)
+    if (dirr.getReservations.size != 1) {
+      throw new IllegalStateException("expected a single reservation description for instance vmId " + vm.instanceId + " but got " + dirr.getReservations.get(0).getInstances.size)
     }
 
-    val instances: JList[ReservationDescription#Instance] = list.get(0).getInstances
-    if (list.size != 1) {
+    val instances = dirr.getReservations.get(0).getInstances
+    if (dirr.getReservations.get(0).getInstances.size != 1) {
       throw new IllegalStateException("expected a single instance for instance vmId " + vm.instanceId + " but got " + instances.size)
     }
 
@@ -129,7 +124,7 @@ class AmazonVM(ec2: Jec2, val launchConfiguration: LaunchConfiguration, val time
   }
 
   def getPublicDns(): String = {
-    getInstance(this).getDnsName()
+    getInstance(this).getPublicDnsName
   }
 
   def getPrivateDns(): String = {
