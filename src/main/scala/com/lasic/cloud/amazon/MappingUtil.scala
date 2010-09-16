@@ -1,10 +1,11 @@
 package com.lasic.cloud.amazon
 
-import com.xerox.amazonws.ec2.InstanceType
+import com.xerox.amazonws.ec2.{InstanceType => TypicaInstanceType}
 import com.xerox.amazonws.ec2.{LaunchConfiguration => AmazonLaunchConfiguration}
 import com.lasic.cloud.LaunchConfiguration
 import collection.JavaConversions
 import collection.JavaConversions.asBuffer
+import com.amazonaws.services.ec2.model.{InstanceType, Placement, RunInstancesRequest}
 
 /**
  *
@@ -12,15 +13,15 @@ import collection.JavaConversions.asBuffer
  */
 
 object MappingUtil {
-  def getInstanceType(instanceTypeStr: String) = {
-    val instanceType = InstanceType.getTypeFromString(instanceTypeStr)
+  def getTypicaInstanceType(instanceTypeStr: String) = {
+    val instanceType = TypicaInstanceType.getTypeFromString(instanceTypeStr)
     if (instanceType == null) {
       instanceTypeStr match {
-        case "small" => InstanceType.DEFAULT
-        case "medium" => InstanceType.MEDIUM_HCPU
-        case "large" => InstanceType.LARGE
-        case "xlarge" => InstanceType.XLARGE
-        case "xlargehmem" => InstanceType.XLARGE_HMEM
+        case "small" => TypicaInstanceType.DEFAULT
+        case "medium" => TypicaInstanceType.MEDIUM_HCPU
+        case "large" => TypicaInstanceType.LARGE
+        case "xlarge" => TypicaInstanceType.XLARGE
+        case "xlargehmem" => TypicaInstanceType.XLARGE_HMEM
       }
     }
     else {
@@ -28,14 +29,41 @@ object MappingUtil {
     }
   }
 
-  def createAmazonLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
+  def getAWSInstanceType(instanceTypeStr: String) = {
+    instanceTypeStr match {
+      case "micro" => InstanceType.T1Micro
+      case "small" => InstanceType.M1Small
+      case "medium" => InstanceType.C1Medium
+      case "large" => InstanceType.M1Large
+      case "xlarge" => InstanceType.M1Xlarge
+      case "xlargehmem" => InstanceType.M22xlarge
+    }
+  }
+
+
+  def createTypicaLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
     val launchConfig = new AmazonLaunchConfiguration(lasicLC.machineImage, 1, 1)
     launchConfig.setKernelId(lasicLC.kernelId)
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
-    launchConfig.setInstanceType(getInstanceType(lasicLC.instanceType))
+    launchConfig.setInstanceType(getTypicaInstanceType(lasicLC.instanceType))
     launchConfig.setKeyName(lasicLC.key);
     launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
+    launchConfig
+  }
+
+  def createAWSRunInstancesRequest(lasicLC: LaunchConfiguration): RunInstancesRequest = {
+    //    val launchConfig = new RunInstancesRequest(lasicLC.machineImage, 1, 1)
+    val launchConfig = new RunInstancesRequest()
+    launchConfig.setImageId(lasicLC.machineImage)
+    launchConfig.setMinCount(1)
+    launchConfig.setMaxCount(1)
+    launchConfig.setKernelId(lasicLC.kernelId)
+    launchConfig.setRamdiskId(lasicLC.ramdiskId)
+    launchConfig.setPlacement(new Placement().withAvailabilityZone(lasicLC.availabilityZone))
+    launchConfig.setInstanceType(getAWSInstanceType(lasicLC.instanceType).toString)
+    launchConfig.setKeyName(lasicLC.key);
+    launchConfig.setSecurityGroups(JavaConversions.asList(lasicLC.groups))
     launchConfig
   }
 

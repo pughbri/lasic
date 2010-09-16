@@ -47,9 +47,9 @@
         -->
 
         <dependency>
-            <artifactId>akka-core_2.8.0.RC3</artifactId>
+            <artifactId>akka-core_2.8.0</artifactId>
             <groupId>se.scalablesolutions.akka</groupId>
-            <version>0.9.1</version>
+            <version>0.10</version>
         </dependency>
 
         <dependency>
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk</artifactId>
-            <version>1.0.007</version>
+            <version>1.0.10</version>
         </dependency>        
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -160,6 +160,7 @@
                         </goals>
                     </execution>
                 </executions>
+                <version>2.14</version>
                 <configuration>
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>

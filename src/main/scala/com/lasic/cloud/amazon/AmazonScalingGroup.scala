@@ -12,6 +12,8 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.lasic.cloud._
 import com.amazonaws.services.autoscaling.model.{CreateOrUpdateScalingTriggerRequest, DescribeAutoScalingGroupsRequest}
 import com.amazonaws.services.autoscaling.model.{Dimension, UpdateAutoScalingGroupRequest}
+import com.amazonaws.services.ec2.AmazonEC2Client
+import com.amazonaws.services.ec2.model.CreateImageRequest
 
 /**
  *
@@ -20,13 +22,16 @@ import com.amazonaws.services.autoscaling.model.{Dimension, UpdateAutoScalingGro
 
 class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGroup {
   private val awsScalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(ec2.getAwsAccessKeyId, ec2.getSecretAccessKey))
+  private val awsClient = new AmazonEC2Client(new BasicAWSCredentials(ec2.getAwsAccessKeyId, ec2.getSecretAccessKey))
   implicit def unboxInt(i: java.lang.Integer) = i.intValue
   implicit def javaListToImmutableScalaList[A](list: JList[A]) : List[A] = {
      JavaConversions.asBuffer(list).toList 
   }
 
   def createImageForScaleGroup(instanceId: String, name: String, description: String, reboot: Boolean): String = {
-    ec2.createImage(instanceId, name, description, !reboot)
+//    ec2.createImage(instanceId, name, description, !reboot)
+    val imageRequest = new CreateImageRequest().withInstanceId(instanceId).withName(name).withDescription(description).withNoReboot(!reboot)
+    awsClient.createImage(imageRequest).getImageId
   }
 
   def getImageState(imageId: String): ImageState = {
@@ -50,7 +55,7 @@ class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGro
 
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration) {
-    var launchConfig = MappingUtil.createAmazonLaunchConfiguration(config)
+    var launchConfig = MappingUtil.createTypicaLaunchConfiguration(config)
     launchConfig.setConfigName(config.name)
     //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
     launchConfig.setSecurityGroup(null)
@@ -114,25 +119,6 @@ class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGro
     triggerRequest.setBreachDuration(trigger.breachDuration)
     triggerRequest.setNamespace(trigger.namespace)
     awsScalingClient.createOrUpdateScalingTrigger(triggerRequest)
-
-
-    //    val scalingTrigger = new AmazonScalingTrigger(trigger.name,
-    //      trigger.autoScalingGroupName,
-    //      trigger.measureName,
-    //      Statistics.AVERAGE,
-    //      Map("AutoScalingGroupName" -> trigger.autoScalingGroupName), //dimensions
-    //      trigger.period,
-    //      StandardUnit.PERCENT,
-    //      null, //CustomUnit
-    //      trigger.lowerThreshold,
-    //      trigger.lowerBreachScaleIncrement,
-    //      trigger.upperThreshold,
-    //      trigger.upperBreachScaleIncrement,
-    //      trigger.breachDuration,
-    //      null, //status
-    //      null //createdTime
-    //      )
-    //    autoscaling.createOrUpdateScalingTrigger(scalingTrigger)
   }
 
 

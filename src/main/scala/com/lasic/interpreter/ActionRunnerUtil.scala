@@ -9,6 +9,7 @@ import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}
 import java.lang.String
 import com.lasic.LasicProperties
+import com.lasic.util.Logging
 
 protected class VMState() {
   var scpComplete = false
@@ -22,7 +23,7 @@ protected class VMState() {
  * Utility for "running actions" that are useful for various verbs.
  * @author Brian Pugh
  */
-trait ActionRunnerUtil {
+trait ActionRunnerUtil extends Logging {
   protected val vmState: Map[VMHolder, VMState]
   protected val nodes: List[NodeInstance]
   protected val scaleGroups: List[ScaleGroupInstance]
@@ -111,64 +112,76 @@ trait ActionRunnerUtil {
     }
   }
 
+
+  def createImageForScaleGroup(scaleGroupInstance: ScaleGroupInstance, scaleGroup: ScalingGroup): String = {
+    //create the image
+    val desc = "Created by LASIC for scale group [" + scaleGroupInstance.cloudName + "] from instanceid [" + scaleGroupInstance.vm.instanceId + "]"
+    var imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
+
+    //wait for image to be available
+    var imageState = ImageState.Unknown
+    var numRetries = 0
+    while (imageState != ImageState.Available) {
+      Thread.sleep(sleepDelay)
+      imageState = scaleGroup.getImageState(imageID)
+      if (imageState == ImageState.Failed) {
+        if (numRetries >= 1) {
+          throw new Exception("Image creation failed for an unknown reason for imagedId [" + imageID + "] for scale group [" + scaleGroupInstance.cloudName + "]")
+        }
+        else {
+          logger.warn("creation of  image [ " + imageID + "] for scale group [" + scaleGroupInstance.cloudName + "] failed for unknown reason.  Trying one more time in 1 minute...")
+          Thread.sleep(60000)
+          imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
+          imageState = ImageState.Unknown
+          numRetries = numRetries + 1
+        }
+      }
+    }
+    imageID
+  }
+
   /**
    * create scale groups based on the "prototype vm" on each scaleGroupInstance.  Once the scale group is created,
    * the prototype VM will be shutdown.
    */
   def createScaleGroups(scaleGroup: ScalingGroup) {
-      scaleGroups.foreach {
-        scaleGroupInstance =>
-          spawn {
+    scaleGroups.foreach {
+      scaleGroupInstance =>
+        spawn {
+          var imageID = createImageForScaleGroup(scaleGroupInstance, scaleGroup)
 
+          //create the config
+          val scaleGroupConfig = scaleGroupInstance.configuration
+          val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
+          launchConfiguration.machineImage = imageID
+          launchConfiguration.name = scaleGroupConfig.cloudName
+          scaleGroup.createScalingLaunchConfiguration(launchConfiguration)
 
-            val scaleGroupConfig = scaleGroupInstance.configuration
+          //create the group
+          scaleGroup.createScalingGroup(scaleGroupInstance.cloudName, scaleGroupConfig.cloudName, scaleGroupConfig.minSize, scaleGroupConfig.maxSize, List(launchConfiguration.availabilityZone))
 
-            //create the image
-            val desc= "Created by LASIC for scale group [" + scaleGroupInstance.cloudName + "] from instanceid [" + scaleGroupInstance.vm.instanceId + "]"
-            val imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
-
-            //wait for image to be available
-            var imageState = ImageState.Unknown
-            while (imageState != ImageState.Available) {
-              Thread.sleep(sleepDelay)
-              imageState = scaleGroup.getImageState(imageID)
-              if (imageState == ImageState.Failed) {
-                throw new Exception("Image creation failed for an unknown reason for imagedId [" + imageID + "]")
-              }
-            }
-
-
-            //create the config
-            val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
-            launchConfiguration.machineImage = imageID
-            launchConfiguration.name = scaleGroupConfig.cloudName
-            scaleGroup.createScalingLaunchConfiguration(launchConfiguration)
-
-            //create the group
-            scaleGroup.createScalingGroup(scaleGroupInstance.cloudName, scaleGroupConfig.cloudName, scaleGroupConfig.minSize, scaleGroupConfig.maxSize, List(launchConfiguration.availabilityZone))
-
-            //create the triggers
-            scaleGroupInstance.triggers.foreach {
-              trigger =>
-                val scalingTrigger = new ScalingTrigger(scaleGroupInstance.cloudName,
-                  trigger.breachDuration,
-                  trigger.lowerBreachIncrement.toString,
-                  trigger.lowerThreshold,
-                  trigger.measure,
-                  trigger.name,
-                  trigger.namespace,
-                  trigger.period,
-                  trigger.upperBreachIncrement.toString,
-                  trigger.upperThreshold)
-                scaleGroup.createUpdateScalingTrigger(scalingTrigger)
-            }
-
-            //terminate the original vm
-            scaleGroupInstance.vm.shutdown
+          //create the triggers
+          scaleGroupInstance.triggers.foreach {
+            trigger =>
+              val scalingTrigger = new ScalingTrigger(scaleGroupInstance.cloudName,
+                trigger.breachDuration,
+                trigger.lowerBreachIncrement.toString,
+                trigger.lowerThreshold,
+                trigger.measure,
+                trigger.name,
+                trigger.namespace,
+                trigger.period,
+                trigger.upperBreachIncrement.toString,
+                trigger.upperThreshold)
+              scaleGroup.createUpdateScalingTrigger(scalingTrigger)
           }
-      }
 
+          //terminate the original vm
+          scaleGroupInstance.vm.shutdown
+        }
     }
+
+  }
 
 
   private def build(uri: URI): File = {
