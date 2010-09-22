@@ -18,6 +18,8 @@ protected class VMState() {
 }
 
 
+class NodeIPState (val node: NodeInstance,val elasticIp: String,var pubDnsMatch: Boolean)
+
 /**
  *
  * Utility for "running actions" that are useful for various verbs.
@@ -52,7 +54,15 @@ trait ActionRunnerUtil extends Logging {
         vmState(vmHolder).scriptsComplete = true
         )
       allIPs.foreach {
-        ip => vmHolder.vm.associateAddressWith(ip._2)
+        ip =>
+          vmHolder match {
+            case holder: NodeInstance => {
+              if (holder.idx == ip._1) {
+                holder.vm.associateAddressWith(ip._2)
+              }
+            }
+            case unknown => throw new IllegalStateException("unkown type of vmholder: cannot assign elastic ip: " + unknown.getClass)
+          }
       }
       vmState.synchronized(
         vmState(vmHolder).ipsComplete = true
@@ -186,5 +196,59 @@ trait ActionRunnerUtil extends Logging {
 
   private def build(uri: URI): File = {
     if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
+  }
+
+  def waitForElasticIpDnsChange(actionName: String) {
+    var ipNodeMap = List[NodeIPState]()
+    nodes.foreach({
+      node =>
+        val allIps = getNodeIps(node, actionName)
+        allIps.foreach({
+          ip =>
+            if (node.idx == ip._1 && ip._2 != null && ip._2 != "") {
+              ipNodeMap = new NodeIPState(node, ip._2, false) :: ipNodeMap
+            }
+        })
+    })
+    waitForElasticIpDnsChange(ipNodeMap, 120)
+  }
+
+  def isTimedOut(startTime: Long, maxWaitSeconds: Int): Boolean = {
+    (((System.currentTimeMillis - startTime) / 1000) > maxWaitSeconds)
+  }
+
+  private def waitForElasticIpDnsChange(ipNodeMap: List[NodeIPState], maxWaitSeconds: Int) {
+    var waiting = ipNodeMap
+    val startTime = System.currentTimeMillis
+    while (!waiting.isEmpty && !isTimedOut(startTime, maxWaitSeconds) ) {
+      ipNodeMap.foreach({
+        nodeIpState =>
+          if (!nodeIpState.pubDnsMatch && nodeIpState.node.vm.getPublicIpAddress != nodeIpState.elasticIp) {
+            logger.info("Waiting for publicDns: " + nodeIpState.node.vm.getPublicDns() + " to match elastic ip: " + nodeIpState.elasticIp)
+            Thread.sleep(sleepDelay)
+          }
+          else {
+            nodeIpState.pubDnsMatch = true
+          }
+      })
+      waiting = ipNodeMap.filter(nm => !nm.pubDnsMatch)
+    }
+    if (!waiting.isEmpty) {
+      logger.info("Timed out waiting for publicDns to be set for elastic ips after waiting " +
+              maxWaitSeconds + " seconds.  DNS entries may not reflect the new public DNS name for " +
+              waiting.map(_.node.vmId).mkString(", "))
+    }
+  }
+
+  private def getNodeIps(node: NodeInstance, actionName: String): Map[Int, String] = {
+    val allActions = node.parent.actions
+    val deployActions = allActions.filter(_.name == actionName)
+    var allIPs = Map[Int, String]()
+    deployActions.foreach {
+      action => {
+        allIPs = allIPs ++ action.ipMap
+      }
+    }
+    allIPs
   }
 }

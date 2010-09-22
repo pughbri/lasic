@@ -127,6 +127,10 @@ class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfig
     getInstance(this).getPublicDnsName
   }
 
+  def getPublicIpAddress(): String = {
+    getInstance(this).getPublicIpAddress
+  }
+
   def getPrivateDns(): String = {
     getInstance(this).getPrivateDnsName()
 

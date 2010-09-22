@@ -1,14 +1,12 @@
 package com.lasic.cloud.mock
 
 import java.io.File
-import com.lasic.cloud.{Cloud, VM}
+import com.lasic.cloud.VM
 import java.lang.String
-import scala.actors.Actor._
-import actors.Actor
 import com.lasic.cloud.MachineState._
 import util.Random
 import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
-import com.lasic.cloud.{VolumeAttachmentInfo, Volume, MachineState, LaunchConfiguration}
+import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import se.scalablesolutions.akka.actor.Actor._
 
 /**
@@ -20,7 +18,7 @@ object MockVM {
   val random = new Random(System.currentTimeMillis)
 }
 
-class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: MockCloud) extends VM /*with Actor*/ {
+class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: MockCloud) extends VM {
   //start()
 
   var isInit = false
@@ -48,7 +46,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
         publicDNS = "1.2.3." + MockVM.random.nextInt(256).toString
         privateDNS = "4.5.6." + MockVM.random.nextInt(256).toString
         machineState = MachineState.Running
-        Thread.sleep( delay * 1000 )
+        Thread.sleep(delay * 1000)
         isInit = true
       }
     }
@@ -98,7 +96,16 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
 
 
   def associateAddressWith(ip: String) {
-
+    if (ip == null || ip == "") {
+      logger.error("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
+    }
+    else {
+      logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
+      spawn {
+        Thread.sleep(delay * 1000)
+        publicDNS = ip
+      }
+    }
   }
 
   def disassociateAddress(ip: String) {
@@ -110,6 +117,8 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
   }
 
   def getPublicDns(): String = publicDNS
+
+  def getPublicIpAddress(): String = publicDNS
 
   def getPrivateDns(): String = privateDNS
 

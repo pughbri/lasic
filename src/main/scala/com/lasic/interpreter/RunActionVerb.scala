@@ -156,6 +156,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     createScaleGroups(cloud.getScalingGroup)
     waitForNewScaleGroups
     deleteOldScaleGroups
+    waitForElasticIpDnsChange(actionName)    
     printBoundLasicProgram
   }
 

@@ -16,7 +16,7 @@ import com.lasic.cloud.MachineState
  * To change this template use File | Settings | File Templates.
  */
 
-class NodeInstance(val parentGroup:NodeGroup,idx:Int) extends Pathable  with VMHolder {
+class NodeInstance(val parentGroup:NodeGroup,val idx:Int) extends Pathable  with VMHolder {
 
   var volumes:List[VolumeInstance] = List()
   var boundInstanceId: String = null
