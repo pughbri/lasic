@@ -163,6 +163,8 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     // Wait for scale groups to be configured
     waitForScaleGroupsConfigured
 
+    waitForElasticIpDnsChange("install")    
+
     // Print out the bound program so the user can see the IDs we are manipulating
     printBoundLasicProgram
   }

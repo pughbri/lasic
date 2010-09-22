@@ -143,6 +143,8 @@ trait VM extends Logging {
 //  }
 
   def getPublicDns(): String
+
+  def getPublicIpAddress(): String
 //  = {
 //    cloud.getPublicDns(this)
 //  }

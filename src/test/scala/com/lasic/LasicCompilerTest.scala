@@ -162,7 +162,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
 
   def testBoundPaths() = {
     val program = getLasicProgram(9);
-    assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)    
+    assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)
     assertEquals("i-54adb13b", program.instances(0).nodegroups(0).instances(1).boundInstanceId)
     assertEquals("i-54adb13c", program.instances(0).nodegroups(1).instances(0).boundInstanceId)
   }
@@ -172,9 +172,10 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
    */
   def testElasticIps() = {
     val program = getLasicProgram(101);
-    assertEquals(1, program.instances(0).nodegroups(0).actions(0).ipMap.size)
+    assertEquals(2, program.instances(0).nodegroups(0).actions(0).ipMap.size)
     assertEquals(2, program.instances(0).nodegroups(1).actions(0).ipMap.size)
-    assertEquals("123.123.123.123", program.instances(0).nodegroups(0).actions(0).ipMap(0))
+    assertEquals("123.123.123.333", program.instances(0).nodegroups(0).actions(0).ipMap(0))
+    assertEquals("123.123.123.444", program.instances(0).nodegroups(0).actions(0).ipMap(1))
     assertEquals("123.123.123.124", program.instances(0).nodegroups(1).actions(0).ipMap(0))
     assertEquals("123.123.123.125", program.instances(0).nodegroups(1).actions(0).ipMap(1))
   }
