@@ -59,7 +59,7 @@ class AmazonCloud extends Cloud with Logging {
 
 
   def getScalingGroup(): ScalingGroup = {
-    new AmazonScalingGroup(ec2, autoscaling)
+    new AmazonScalingGroup(awsClient, autoscaling)
   }
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
