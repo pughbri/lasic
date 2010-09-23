@@ -1,11 +1,12 @@
 package com.lasic.cloud.amazon
 
 import com.xerox.amazonws.ec2.{InstanceType => TypicaInstanceType}
-import com.xerox.amazonws.ec2.{LaunchConfiguration => AmazonLaunchConfiguration}
+import com.xerox.amazonws.ec2.{LaunchConfiguration => TypicaLaunchConfiguration}
 import com.lasic.cloud.LaunchConfiguration
 import collection.JavaConversions
 import collection.JavaConversions.asBuffer
 import com.amazonaws.services.ec2.model.{InstanceType, Placement, RunInstancesRequest}
+import com.amazonaws.services.autoscaling.model.CreateLaunchConfigurationRequest
 
 /**
  *
@@ -41,8 +42,8 @@ object MappingUtil {
   }
 
 
-  def createTypicaLaunchConfiguration(lasicLC: LaunchConfiguration): AmazonLaunchConfiguration = {
-    val launchConfig = new AmazonLaunchConfiguration(lasicLC.machineImage, 1, 1)
+  def createTypicaLaunchConfiguration(lasicLC: LaunchConfiguration): TypicaLaunchConfiguration = {
+    val launchConfig = new TypicaLaunchConfiguration(lasicLC.machineImage, 1, 1)
     launchConfig.setKernelId(lasicLC.kernelId)
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
@@ -67,15 +68,15 @@ object MappingUtil {
     launchConfig
   }
 
-  def createLaunchConfiguration(amazonLC: AmazonLaunchConfiguration): LaunchConfiguration = {
+  def createLaunchConfiguration(awsLC: RunInstancesRequest): LaunchConfiguration = {
     val lasicLC = new LaunchConfiguration()
-    lasicLC.machineImage = amazonLC.getImageId
-    lasicLC.kernelId = amazonLC.getKernelId
-    lasicLC.ramdiskId = amazonLC.getRamdiskId
-    lasicLC.availabilityZone = amazonLC.getAvailabilityZone
-    lasicLC.instanceType = amazonLC.getInstanceType.toString
-    lasicLC.key = amazonLC.getKeyName
-    lasicLC.groups = makeList(amazonLC.getSecurityGroup)
+    lasicLC.machineImage = awsLC.getImageId
+    lasicLC.kernelId = awsLC.getKernelId
+    lasicLC.ramdiskId = awsLC.getRamdiskId
+    lasicLC.availabilityZone = awsLC.getPlacement.getAvailabilityZone
+    lasicLC.instanceType = awsLC.getInstanceType.toString
+    lasicLC.key = awsLC.getKeyName
+    lasicLC.groups = makeList(awsLC.getSecurityGroups)
     lasicLC
   }
 

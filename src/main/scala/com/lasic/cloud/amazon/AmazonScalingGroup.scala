@@ -1,65 +1,66 @@
 package com.lasic.cloud.amazon
 
 import collection.JavaConversions
-import collection.JavaConversions.asBuffer
 import collection.JavaConversions.asList
 import java.util.{List => JList}
 import com.lasic.cloud.ImageState._
-import collection.mutable.Buffer
-import com.xerox.amazonws.ec2.{BlockDeviceMapping, ImageDescription, Jec2, AutoScaling, LaunchConfiguration => AmazonLaunchConfig, ScalingTrigger => AmazonScalingTrigger}
+import com.xerox.amazonws.ec2.{Jec2, AutoScaling, LaunchConfiguration => TypicaLaunchConfig, ScalingTrigger => AmazonScalingTrigger}
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
 import com.amazonaws.auth.BasicAWSCredentials
 import com.lasic.cloud._
-import com.amazonaws.services.autoscaling.model.{CreateOrUpdateScalingTriggerRequest, DescribeAutoScalingGroupsRequest}
-import com.amazonaws.services.autoscaling.model.{Dimension, UpdateAutoScalingGroupRequest}
 import com.amazonaws.services.ec2.AmazonEC2Client
-import com.amazonaws.services.ec2.model.CreateImageRequest
+import com.amazonaws.services.autoscaling.model.{CreateOrUpdateScalingTriggerRequest, DescribeAutoScalingGroupsRequest, DescribeLaunchConfigurationsRequest}
+import com.amazonaws.services.autoscaling.model.{UpdateAutoScalingGroupRequest, CreateLaunchConfigurationRequest, Dimension, DescribeLaunchConfigurationsResult}
+import com.amazonaws.services.ec2.model.{DeleteSnapshotRequest, DeregisterImageRequest, DescribeImagesRequest, CreateImageRequest}
 
 /**
  *
  * @author Brian Pugh
  */
 
-class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGroup {
-  private val awsScalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(ec2.getAwsAccessKeyId, ec2.getSecretAccessKey))
-  private val awsClient = new AmazonEC2Client(new BasicAWSCredentials(ec2.getAwsAccessKeyId, ec2.getSecretAccessKey))
+class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) extends ScalingGroup {
+  private val awsScalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(autoscaling.getAwsAccessKeyId, autoscaling.getSecretAccessKey))
+
   implicit def unboxInt(i: java.lang.Integer) = i.intValue
-  implicit def javaListToImmutableScalaList[A](list: JList[A]) : List[A] = {
-     JavaConversions.asBuffer(list).toList 
+
+  implicit def javaListToImmutableScalaList[A](list: JList[A]): List[A] = {
+    JavaConversions.asBuffer(list).toList
   }
 
   def createImageForScaleGroup(instanceId: String, name: String, description: String, reboot: Boolean): String = {
-//    ec2.createImage(instanceId, name, description, !reboot)
     val imageRequest = new CreateImageRequest().withInstanceId(instanceId).withName(name).withDescription(description).withNoReboot(!reboot)
     awsClient.createImage(imageRequest).getImageId
   }
 
   def getImageState(imageId: String): ImageState = {
-    val imageIds = new java.util.ArrayList[String]()
-    imageIds.add(imageId)
-    val imageDescriptions: JList[ImageDescription] = ec2.describeImages(imageIds)
-    require(imageDescriptions.size == 1)
-    ImageState.withName(imageDescriptions.get(0).getImageState)
+    val descImageResult = awsClient.describeImages(new DescribeImagesRequest().withImageIds(imageId))
+    require(descImageResult.getImages.size == 1)
+    ImageState.withName(descImageResult.getImages.get(0).getState)
   }
 
 
   def deleteSnapshotAndDeRegisterImage(imageId: String) = {
-    val imageDescriptions: Buffer[ImageDescription] = ec2.describeImages(JavaConversions.asList(List(imageId)))
-    require(imageDescriptions.size == 1)
-    ec2.deregisterImage(imageId)
-    val blockDeviceMappings: Buffer[BlockDeviceMapping] = imageDescriptions(0).getBlockDeviceMapping
-    blockDeviceMappings.foreach(bdMapping => {
-      ec2.deleteSnapshot(bdMapping.getSnapshotId)
-    })
+    val descImageResult = awsClient.describeImages(new DescribeImagesRequest().withImageIds(imageId))
+    require(descImageResult.getImages.size == 1)
+
+    awsClient.deregisterImage(new DeregisterImageRequest().withImageId(imageId))
+    val blockDeviceMappings = descImageResult.getImages.get(0).getBlockDeviceMappings
+    blockDeviceMappings foreach (
+            bdMapping => awsClient.deleteSnapshot(new DeleteSnapshotRequest().withSnapshotId(bdMapping.getEbs.getSnapshotId))
+            )
   }
 
 
   def createScalingLaunchConfiguration(config: LaunchConfiguration) {
-    var launchConfig = MappingUtil.createTypicaLaunchConfiguration(config)
-    launchConfig.setConfigName(config.name)
-    //todo: Typica seems to be sending invalid request for security group: see http://code.google.com/p/typica/issues/detail?id=103
-    launchConfig.setSecurityGroup(null)
-    autoscaling.createLaunchConfiguration(launchConfig)
+    val launchConfig = new CreateLaunchConfigurationRequest
+    launchConfig.setImageId(config.machineImage)
+    launchConfig.setInstanceType(MappingUtil.getAWSInstanceType(config.instanceType).toString)
+    launchConfig.setSecurityGroups(config.groups)
+    launchConfig.setLaunchConfigurationName(config.name)
+    launchConfig.setKeyName(config.key)
+    launchConfig.setKernelId(config.kernelId)
+    launchConfig.setRamdiskId(config.ramdiskId)
+    awsScalingClient.createLaunchConfiguration(launchConfig)
   }
 
 
@@ -102,7 +103,6 @@ class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGro
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger) {
 
-    //Typica is broken.  Use amazon api. http://code.google.com/p/typica/issues/detail?id=98
     val triggerRequest = new CreateOrUpdateScalingTriggerRequest()
     triggerRequest.setTriggerName(trigger.name)
     triggerRequest.setAutoScalingGroupName(trigger.autoScalingGroupName)
@@ -123,8 +123,20 @@ class AmazonScalingGroup(ec2: Jec2, autoscaling: AutoScaling) extends ScalingGro
 
 
   def getScalingLaunchConfiguration(configName: String) = {
-    val imageDescriptions: Buffer[AmazonLaunchConfig] = autoscaling.describeLaunchConfigurations(JavaConversions.asList(List(configName)))
-    require(imageDescriptions.size == 1)
-    MappingUtil.createLaunchConfiguration(imageDescriptions(0))
+    val dlcr = new DescribeLaunchConfigurationsRequest
+    dlcr.setLaunchConfigurationNames(JavaConversions.asList(List(configName)))
+    val imageDescriptions: DescribeLaunchConfigurationsResult = awsScalingClient.describeLaunchConfigurations(dlcr)
+    require(imageDescriptions.getLaunchConfigurations.size == 1)
+    val imd = imageDescriptions.getLaunchConfigurations.get(0)
+    val lasicLC = new LaunchConfiguration
+    lasicLC.machineImage = imd.getImageId
+    lasicLC.kernelId = imd.getKernelId
+    lasicLC.ramdiskId = imd.getRamdiskId
+    //    lasicLC.availabilityZone = imd.
+    lasicLC.instanceType = imd.getInstanceType.toString
+    lasicLC.key = imd.getKeyName
+    lasicLC.groups = imd.getSecurityGroups
+    lasicLC.name = imd.getLaunchConfigurationName
+    lasicLC
   }
 }
