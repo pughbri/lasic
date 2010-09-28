@@ -3,7 +3,7 @@ package com.lasic.interpreter
 import com.lasic.values.BaseAction
 import java.net.URI
 import com.lasic.model.{ScaleGroupInstance, NodeInstance, VMHolder, ScriptArgumentValue}
-import se.scalablesolutions.akka.actor.Actor._
+import concurrent.ops._
 import java.io.File
 import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}

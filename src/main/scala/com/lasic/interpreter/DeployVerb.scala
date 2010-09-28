@@ -7,9 +7,8 @@ import com.lasic.cloud.MachineState._
 import com.lasic.model._
 import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
-import se.scalablesolutions.akka.actor.Actor._
+import concurrent.ops._
 import com.lasic.cloud._
-import java.util.Date
 import com.lasic.LasicProperties
 
 
