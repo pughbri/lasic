@@ -3,7 +3,7 @@ package com.lasic.cloud.mock
 import com.lasic.util.Logging
 import java.util.Calendar
 import com.lasic.cloud._
-import se.scalablesolutions.akka.actor.Actor._
+import concurrent.ops._
 import com.lasic.cloud.VM
 
 /**

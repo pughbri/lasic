@@ -8,7 +8,7 @@ import com.lasic.cloud.Cloud
 import mock.MockCloud
 //import VolumeActor._
 //import VolumeActor.VolumeActorState._
-import se.scalablesolutions.akka.actor.{Actor, ActorRef}
+import concurrent.ops._
 import MachineState.MachineState
 
 /**
@@ -16,8 +16,7 @@ import MachineState.MachineState
  */
 class VolumeTest extends TestCase("MockVolumeTest") {
   //val cloud: Cloud = new AmazonCloud()
-  val cloud: Cloud = new MockCloud()
-  var actor:ActorRef = null
+  val cloud: Cloud = new MockCloud()  
 
 //  def actorIsInState(x: Any) = {
 //    val y = actor !! MsgQueryState

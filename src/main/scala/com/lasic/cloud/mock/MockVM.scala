@@ -7,7 +7,7 @@ import com.lasic.cloud.MachineState._
 import util.Random
 import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
-import se.scalablesolutions.akka.actor.Actor._
+import concurrent.ops._
 
 /**
  * User: Brian Pugh

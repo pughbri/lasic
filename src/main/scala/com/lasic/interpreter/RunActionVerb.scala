@@ -3,7 +3,7 @@ package com.lasic.interpreter
 import collection.immutable.List
 import com.lasic.model._
 import com.lasic.util.Logging
-import se.scalablesolutions.akka.actor.Actor._
+import concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
 
