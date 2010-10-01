@@ -1,15 +1,7 @@
 package com.lasic.cloud
 
-import amazon.AmazonCloud
 import junit.framework.TestCase
-//import com.lasic.interpreter.actors.VolumeActor.MsgQueryState
-import com.lasic.cloud.Cloud
-//import com.lasic.interpreter.actors.VolumeActor
 import mock.MockCloud
-//import VolumeActor._
-//import VolumeActor.VolumeActorState._
-import concurrent.ops._
-import MachineState.MachineState
 
 /**
  * A trait used to implement volume tests

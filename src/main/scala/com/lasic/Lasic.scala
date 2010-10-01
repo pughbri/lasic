@@ -2,7 +2,7 @@ package com.lasic
 
 import cloud.amazon.AmazonCloud
 import cloud.mock.MockCloud
-import interpreter.{RunActionVerb, DeployVerb}
+import interpreter.{ShutdownVerb, RunActionVerb, DeployVerb}
 import model.LasicProgram
 import parser.LasicCompiler
 import io.Source
@@ -28,8 +28,6 @@ object Lasic {
     runLasic(args)
     println("Ran in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
     System.exit(0)
-
-    3
   }
 
   def runLasic(args: Array[String]): Unit = {
@@ -78,6 +76,7 @@ object Lasic {
     val verb = cmdLineArgs.verbAndScript.get(0) match {
       case "deploy" => new DeployVerb(cloudProvider, program)
       case "runAction" => new RunActionVerb(cmdLineArgs.action, cloudProvider, program)
+      case "shutdown" => new ShutdownVerb(cloudProvider, program)
       case _ => printUsageAndExit(null, "unknown verb: " + cmdLineArgs.verbAndScript.get(0)); null
     }
 

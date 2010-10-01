@@ -2,7 +2,6 @@ package com.lasic
 
 ;
 
-import cloud.amazon.AmazonCloud
 import cloud.LaunchConfiguration
 import cloud.mock.MockCloud
 import junit.framework._
@@ -10,11 +9,10 @@ import java.io.File
 import org.scalatest.junit.AssertionsForJUnit
 
 
-
 /**
  * Unit test for simple Lasic.
  */
-class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
+class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   override def setUp = {
     LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
     new MockCloud().getScalingGroup.reset()
@@ -46,7 +44,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
     val lc = new LaunchConfiguration
     lc.name = "orig-my-app-launchconfig-2010-08-23-14-30-12"
     scalingGroup.createScalingLaunchConfiguration(lc)
-    scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12",lc.name,3,5,null)
+    scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12", lc.name, 3, 5, null)
 
     //run the action
     Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)))
@@ -58,6 +56,18 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
     assert(scalingGroup.getScaleGroups(0).triggers(0).breachDuration === 300)
   }
 
+  def testShutdown() = {
+    val scalingGroup = new MockCloud().getScalingGroup
+    val lc = new LaunchConfiguration
+    lc.name = "www-lasic-webapp-01-launchconfig"
+    scalingGroup.createScalingLaunchConfiguration(lc)
+    scalingGroup.createScalingGroup("www-lasic-webapp-01", lc.name, 3, 5, null)
+
+    Lasic.runLasic(Array("-c", "mock", "shutdown", getLasicFilePath(204)))
+    assert(scalingGroup.getScaleGroups.size === 0)
+  }
+
+
   def testDeployWithAmazon() = {
     if (false) {
       //in order to run this test you need to
@@ -66,10 +76,6 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
       //NOTE: the test does NOT shutdown the instance.  You need to shut it down manually after you run the test
       Lasic.runLasic(Array("-c", "aws", "deploy", getLasicFilePath(201)))
     }
-  }
-
-  def testRunScriptWithMock() = {
-    Lasic.runLasic(Array("-c", "mock", "-a", "snapshot","runAction", getLasicFilePath(202)))
   }
 
   def testParseArgs() = {
@@ -81,7 +87,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit{
 
 
     val cmdLineArgs2 = Lasic.parseArgs(Array("--cloud", "mock", "deploy", "someDeploy.lasic"))
-    assert(cmdLineArgs2.cloud== "mock", "Expected mock got " + cmdLineArgs2.cloud)
+    assert(cmdLineArgs2.cloud == "mock", "Expected mock got " + cmdLineArgs2.cloud)
     assert("someDeploy.lasic" == cmdLineArgs2.verbAndScript.get(1), "Expected someDeploy.lasic got " + cmdLineArgs2.verbAndScript.get(1))
     assert("deploy" == cmdLineArgs2.verbAndScript.get(0), "Expected deploy got " + cmdLineArgs2.verbAndScript.get(0))
   }

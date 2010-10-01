@@ -1,12 +1,9 @@
 package com.lasic.cloud
 
 import junit.framework.TestCase
-import mock.{MockCloud, MockVM}
 import ssh.{ConnectException, SshSession}
 import java.io.File
-import com.lasic.cloud.{Cloud, VM}
 import collection.immutable.{List, Map}
-import java.lang.String
 
 /**
  *
