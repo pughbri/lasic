@@ -29,7 +29,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     nodes.foreach {
       node =>
         spawn {
-          node.vm = setVM(LaunchConfiguration.build(node), node.boundInstanceId)
+          node.vm = VerbUtil.setVM(cloud, LaunchConfiguration.build(node), node.boundInstanceId)
         }
     }
     scaleGroups foreach {
@@ -44,38 +44,18 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     }
   }
 
-  private def setVM(lc: LaunchConfiguration, instanceId: String): VM = {
-    val vm = cloud.findVM(instanceId)
-    if (vm.launchConfiguration != null) {
-      vm.launchConfiguration.name = lc.name
-      vm.launchConfiguration.userName = lc.userName
-      vm.launchConfiguration.key = lc.key
-    }
-    vm
-  }
-
-  private def waitForVMState(vmHolders: List[VMHolder], test: VMHolder => Boolean, statusString: String) {
-    var waiting = vmHolders.filter(t => test(t))
-    while (waiting.size > 0) {
-      val descriptions: List[String] = waiting.map(t => t.vmId + ":" + t.vmState)
-      logger.info(statusString + descriptions)
-      Thread.sleep(sleepDelay)
-      waiting = vmHolders.filter(t => test(t))
-    }
-  }
-
   private def waitForAction {
-    waitForVMState(nodes ::: scaleGroups, {vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action to finish: ")
+    VerbUtil.waitForVMState(nodes ::: scaleGroups, {vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action to finish: ")
   }
 
   private def waitVMsToBeSet {
-    waitForVMState(scaleGroups ::: nodes,
+    VerbUtil.waitForVMState(scaleGroups ::: nodes,
       {vmHolder => vmHolder.vm == null || !vmHolder.vm.isInitialized},
       "Waiting to find node VM instances and create prototype VMs for scalegroups: ")
   }
 
   private def waitForNewScaleGroups {
-    waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for new Scale Groups to come up: ")
+    VerbUtil.waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for new Scale Groups to come up: ")
   }
 
   private[interpreter] def deleteOldScaleGroups {
@@ -87,7 +67,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
         scalingGroup.updateScalingGroup(scaleGroupName, 0, 0)
     }
 
-    waitForScaleGroupsToTerminateInstances(scaleGroupsToDelete)
+    VerbUtil.waitForScaleGroupsToTerminateInstances(cloud, scaleGroupsToDelete)
 
     scaleGroupsToDelete foreach {
       scaleGroupName =>
@@ -99,27 +79,6 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
         scalingGroup.deleteLaunchConfiguration(configName)
     }
   }
-
-  private def waitForScaleGroupsToTerminateInstances(scaleGroups: List[String]) {
-    val scalingGroup = cloud.getScalingGroup
-    var scaleGroupsStillTerminating = scala.collection.immutable.List[String]() ::: scaleGroups
-    while (scaleGroupsStillTerminating.size > 0) {
-      logger.info("waiting for scale groups to terminate instances: " + scaleGroupsStillTerminating)
-      Thread.sleep(sleepDelay)
-
-      scaleGroupsStillTerminating = scaleGroupsStillTerminating.filter(
-        name => {
-          val groupInfo = scalingGroup.describeAutoScalingGroup(name)
-          require(groupInfo.maxSize == 0,
-            "max size should be 0 for a scale group being deleted.  It is " + groupInfo.maxSize + " for " + name)
-          val instances = groupInfo.instances
-          instances != null && instances.size > 0
-        })
-
-
-    }
-  }
-
 
   private def printBoundLasicProgram {
     if (!scaleGroups.isEmpty) {

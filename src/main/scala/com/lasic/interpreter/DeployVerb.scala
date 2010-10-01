@@ -60,7 +60,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
 
   private def waitForScaleGroupsConfigured() {
-    waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for Scale Groups to come up: ")
+    VerbUtil.waitForVMState(scaleGroups, {vmHolder => vmHolder.vm.getMachineState != MachineState.ShuttingDown && vmHolder.vm.getMachineState != MachineState.Terminated}, "Waiting for Scale Groups to come up: ")
   }
 
   private def waitForVMState(state: MachineState, statusString: String) {
@@ -72,18 +72,9 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   }
 
   private def waitForVMState(test: VMHolder => Boolean, statusString: String) {
-    waitForVMState(nodes ::: scaleGroups, test, statusString)
+    VerbUtil.waitForVMState(nodes ::: scaleGroups, test, statusString)
   }
 
-  private def waitForVMState(vmHolders: List[VMHolder], test: VMHolder => Boolean, statusString: String) {
-    var waiting = vmHolders.filter(t => test(t))
-    while (waiting.size > 0) {
-      val descriptions: List[String] = waiting.map(t => t.vmId + ":" + t.vmState)
-      logger.info(statusString + descriptions)
-      Thread.sleep(sleepDelay)
-      waiting = vmHolders.filter(t => test(t))
-    }
-  }
 
 
   private def waitForVolumeState(state: VolumeState, statusString: String) {
