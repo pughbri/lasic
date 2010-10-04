@@ -3,7 +3,7 @@ package com.lasic.interpreter
 import com.lasic.values.BaseAction
 import java.net.URI
 import com.lasic.model.{ScaleGroupInstance, NodeInstance, VMHolder, ScriptArgumentValue}
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 import java.io.File
 import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}
@@ -36,7 +36,7 @@ trait ActionRunnerUtil extends Logging {
    * Spawns a thread in which all the scp, script and ip statements are run.  vmStat is updated as appropriate.
    */
   def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]) {
-    spawn {
+    spawn ("run action items") {
       allSCPs.foreach {
         tuple => vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
       }
@@ -157,7 +157,7 @@ trait ActionRunnerUtil extends Logging {
   def createScaleGroups(scaleGroup: ScalingGroup) {
     scaleGroups.foreach {
       scaleGroupInstance =>
-        spawn {
+        spawn ("create scale groups") {
           var imageID = createImageForScaleGroup(scaleGroupInstance, scaleGroup)
 
           //create the config

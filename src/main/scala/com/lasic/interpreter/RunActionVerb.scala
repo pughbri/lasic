@@ -3,7 +3,7 @@ package com.lasic.interpreter
 import collection.immutable.List
 import com.lasic.model._
 import com.lasic.util.Logging
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
 
@@ -28,13 +28,13 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
   private def setVMs() {
     nodes.foreach {
       node =>
-        spawn {
+        spawn ("find bound VMs for nodes") {
           node.vm = VerbUtil.setVM(cloud, LaunchConfiguration.build(node), node.boundInstanceId)
         }
     }
     scaleGroups foreach {
       scaleGroupInst =>
-        spawn {
+        spawn ("find bound scalegroups and launch new VM") {
           val scalingGroup = cloud.getScalingGroup
           val origConfig = scalingGroup.getScalingLaunchConfiguration(scaleGroupInst.configuration.cloudName)
           val newLaunchConfig: LaunchConfiguration = LaunchConfiguration.build(scaleGroupInst.configuration)

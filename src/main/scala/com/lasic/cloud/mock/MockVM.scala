@@ -7,7 +7,7 @@ import com.lasic.cloud.MachineState._
 import util.Random
 import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 
 /**
  * User: Brian Pugh
@@ -37,7 +37,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
 
 
   override def startup() {
-    spawn {
+    spawn("startup mock vm") {
       machineState.synchronized {
         //Thread.sleep(delay * 1000)
         machineState = MachineState.Pending
@@ -53,7 +53,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
   }
 
   override def reboot() {
-    spawn {
+    spawn ("roboot mock VM") {
       machineState.synchronized {
         machineState = MachineState.Rebooting
         Thread.sleep(delay * 1000)
@@ -63,7 +63,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
   }
 
   override def shutdown() {
-    spawn {
+    spawn("shutdown mock vm") {
       machineState.synchronized {
         machineState = MachineState.ShuttingDown
         Thread.sleep(delay * 1000)
@@ -101,7 +101,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
     }
     else {
       logger.info("Assigned elastic ip : " + ip + " to instance id: " + this.instanceId)
-      spawn {
+      spawn("associate ip with an instance") {
         Thread.sleep(delay * 1000)
         publicDNS = ip
       }

@@ -3,7 +3,7 @@ package com.lasic.cloud.mock
 import com.lasic.util.Logging
 import java.util.Calendar
 import com.lasic.cloud._
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 import com.lasic.cloud.VM
 
 /**
@@ -27,7 +27,7 @@ class MockVolume(val id:String, config:VolumeConfiguration ) extends Volume with
 
   def delete = {
     state = VolumeState.Deleting
-    spawn {
+    spawn("delete volume") {
       Thread.sleep(2000)
       state = VolumeState.Unknown
     }

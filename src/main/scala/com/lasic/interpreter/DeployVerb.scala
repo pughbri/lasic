@@ -7,7 +7,7 @@ import com.lasic.cloud.MachineState._
 import com.lasic.model._
 import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
 
@@ -30,14 +30,14 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def launchAllAMIs {
     nodes.foreach {
       node =>
-        spawn {
+        spawn ("Launch node instances") {
           node.vm = cloud.createVM(LaunchConfiguration.build(node), true)
           logger.debug("created instance for node: " + node)
         }
     }
     scaleGroups.foreach {
       scaleGroup =>
-        spawn {
+        spawn ("launch scale group instances") {
           scaleGroup.vm = cloud.createVM(LaunchConfiguration.build(scaleGroup.configuration), true)
         }
     }
@@ -46,7 +46,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def createAllVolumes {
     volumes.foreach(volInst =>
-      spawn {
+      spawn ("create volumes") {
         val volume = cloud.createVolume(VolumeConfiguration.build(volInst))
         volInst.volume = volume
       }
