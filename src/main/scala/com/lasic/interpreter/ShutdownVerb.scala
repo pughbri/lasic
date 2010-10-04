@@ -2,7 +2,7 @@ package com.lasic.interpreter
 
 import com.lasic.util.Logging
 import com.lasic.model.{NodeInstance, ScaleGroupInstance, LasicProgram}
-import concurrent.ops._
+import com.lasic.concurrent.ops._
 import com.lasic.cloud.{LaunchConfiguration, MachineState, Cloud}
 
 /**
@@ -18,7 +18,7 @@ class ShutdownVerb(val cloud: Cloud, val program: LasicProgram) extends Verb wit
     val scaleGroupManager = cloud.getScalingGroup
     scaleGroups.foreach {
       scaleGroup =>
-        spawn {
+        spawn ("shutdown scale groups") {
           scaleGroupManager.updateScalingGroup(scaleGroup.cloudName, 0, 0)
         }
     }
@@ -35,7 +35,7 @@ class ShutdownVerb(val cloud: Cloud, val program: LasicProgram) extends Verb wit
   def shutdownInstances() {
     nodes foreach {
       node =>
-        spawn {
+        spawn ("shutdown instances") {
           node.vm.shutdown
         }
     }
@@ -52,7 +52,7 @@ class ShutdownVerb(val cloud: Cloud, val program: LasicProgram) extends Verb wit
   def setVMs() {
     nodes.foreach {
       node =>
-        spawn {
+        spawn ("find instances for nodes") {
           node.vm = VerbUtil.setVM(cloud, LaunchConfiguration.build(node), node.boundInstanceId)
         }
     }
