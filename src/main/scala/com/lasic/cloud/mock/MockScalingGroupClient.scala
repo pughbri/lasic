@@ -8,12 +8,13 @@ import com.lasic.cloud._
  * @author Brian Pugh
  */
 
-object MockScalingGroup extends ScalingGroup with Logging {
+object MockScalingGroupClient extends ScalingGroupClient with Logging {
   class InternalScaleGroup {
     var name = ""
     var triggers = List[ScalingTrigger]()
     var min = 0
     var max = 0
+    var lbNames = List[String]()
   }
   private var scaleGroups = List[InternalScaleGroup]()
   private var launchConfigs = List[String]()
@@ -39,12 +40,13 @@ object MockScalingGroup extends ScalingGroup with Logging {
 
   }
 
-  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: scala.List[String]) = {
+  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, lbNames: List[String], availabilityZones: scala.List[String]) = {
     logger.info("creating scaling group: " + autoScalingGroupName)
     val group = new InternalScaleGroup
     group.name = autoScalingGroupName
     group.min = min
     group.max = max
+    group.lbNames = lbNames
     lock.synchronized {
       scaleGroups ::= group
     }

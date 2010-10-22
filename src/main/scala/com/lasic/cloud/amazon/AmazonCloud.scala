@@ -15,6 +15,8 @@ import com.lasic.cloud._
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.{Instance, Reservation, DescribeInstancesRequest}
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient
 
 /**
  * @author Brian Pugh
@@ -39,12 +41,23 @@ class AmazonCloud extends Cloud with Logging {
 
   lazy val autoscaling: AutoScaling = {
     val (key, secret) = ec2Keys
-    new AutoScaling(key, secret);
+    new AutoScaling(key, secret)
+  }
+
+  lazy val awsAutoScaling = {
+    val (key, secret) = ec2Keys
+    new AmazonAutoScalingClient(new BasicAWSCredentials(key, secret))
   }
 
   lazy val awsClient = {
     val (key, secret) = ec2Keys
     new AmazonEC2Client(new BasicAWSCredentials(key, secret))
+
+  }
+
+  lazy val awsLoadBalancer = {
+    val (key, secret) = ec2Keys
+    new AmazonElasticLoadBalancingClient(new BasicAWSCredentials(key, secret))
 
   }
 
@@ -58,8 +71,11 @@ class AmazonCloud extends Cloud with Logging {
   }
 
 
-  def getScalingGroup(): ScalingGroup = {
-    new AmazonScalingGroup(awsClient, autoscaling)
+  def getLoadBalancerClient(): LoadBalancerClient = {
+    new AmazonLoadBalancerClient(awsLoadBalancer)
+  }
+  def getScalingGroupClient(): ScalingGroupClient = {
+    new AmazonScalingGroupClient(awsClient, awsAutoScaling)
   }
 
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
@@ -68,10 +84,11 @@ class AmazonCloud extends Cloud with Logging {
 
 
   def findVM(instanceId: String) = {
+    require(instanceId != null, "must provide an instance id to find a vm")
     var dir = new DescribeInstancesRequest()
     dir.setInstanceIds(JavaConversions.asList(List(instanceId)))
     val descriptions = awsClient.describeInstances(dir).getReservations()
-    if (descriptions.size < 1) {
+    if (descriptions.size != 1) {
       null
     }
     else {

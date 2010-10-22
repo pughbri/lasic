@@ -22,7 +22,7 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
       vm.baseLasicDir = System.getProperty("user.home") + "/ec2-keys"
 //      val vms = List(vm)
 //      cloud.start(vms)
-      val scaleGroup = cloud.getScalingGroup
+      val scaleGroup = cloud.getScalingGroupClient
       val scaleGroupName = lc.name + "scalegroup"
       var imageId: String = null
       try {
@@ -33,7 +33,7 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
         lc.machineImage = imageId
         scaleGroup.createScalingLaunchConfiguration(lc)
         Thread.sleep(2000)
-        scaleGroup.createScalingGroup(scaleGroupName, lc.name, 1, 2, List(lc.availabilityZone))
+        scaleGroup.createScalingGroup(scaleGroupName, lc.name, 1, 2, List(), List(lc.availabilityZone))
         val trigger = new ScalingTrigger(scaleGroupName, 300, "1", 10, "CPUUtilization", "trigger" + System.currentTimeMillis, "AWS/EC2", 60, "1", 60)
         scaleGroup.createUpdateScalingTrigger(trigger)
       }
@@ -63,10 +63,10 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
     // 0 more seconds for the ssh daemon to come up
   }
 
-  def waitForImageToBeAvailable(scaleGroup: ScalingGroup, imageId: String) {
+  def waitForImageToBeAvailable(scalingGroupClient: ScalingGroupClient, imageId: String) {
     val startTime = System.currentTimeMillis
     var timedOut = false
-    while (!(scaleGroup.getImageState(imageId) == ImageState.Available) && !timedOut) {
+    while (!(scalingGroupClient.getImageState(imageId) == ImageState.Available) && !timedOut) {
       Thread.sleep(3000)
       if ((System.currentTimeMillis - startTime) > 120000) {
         timedOut = true

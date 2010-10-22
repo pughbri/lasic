@@ -46,7 +46,7 @@ class ScriptResolverTest extends FlatSpec with ShouldMatchers {
 
     //grab the scripts for the scale group and resolve them
     scaleGroup.actions should have size (1)
-    val allScripts = Map[String, Map[String, ScriptArgumentValue]]() ++ scaleGroup.actions(0).scriptMap
+    val allScripts = Map[String, Map[String, ArgumentValue]]() ++ scaleGroup.actions(0).scriptMap
     val resolvedScripts: Map[String, Map[String, List[String]]] = ScriptResolver.resolveScripts(scaleGroups(0), allScripts)
 
     //validate that everything resolved properly to the nodes private DNS
@@ -69,7 +69,7 @@ class ScriptResolverTest extends FlatSpec with ShouldMatchers {
 
     //grab the scripts for the node and resolve them
     node.parent.actions should have size (1)
-    val allScripts = Map[String, Map[String, ScriptArgumentValue]]() ++ node.parent.actions(0).scriptMap
+    val allScripts = Map[String, Map[String, ArgumentValue]]() ++ node.parent.actions(0).scriptMap
     val resolvedScripts: Map[String, Map[String, List[String]]] = ScriptResolver.resolveScripts(nodes(0), allScripts)
 
     //validate that everything resolved properly to the nodes private DNS

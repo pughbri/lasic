@@ -4,6 +4,7 @@ package com.lasic
 
 import cloud.LaunchConfiguration
 import cloud.mock.MockCloud
+import cloud.mock.MockLoadBalancerClient.InternalLoadBalancerInst
 import junit.framework._
 import java.io.File
 import org.scalatest.junit.AssertionsForJUnit
@@ -15,19 +16,51 @@ import org.scalatest.junit.AssertionsForJUnit
 class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   override def setUp = {
     LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
-    new MockCloud().getScalingGroup.reset()
+    new MockCloud().getScalingGroupClient.reset()
+    new MockCloud().getLoadBalancerClient.reset()
   }
 
   def getLasicFilePath(num: Int) = {
     new File(classOf[Application].getResource("/parser/Program" + num + ".lasic").toURI()).getCanonicalPath()
   }
 
-  def testDeployWithMock() = {
+  def testDeploy() = {
     Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(201)))
   }
 
-  def testDeployScaleGroupWithMock() = {
+  def testDeployScaleGroup() = {
     Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)))
+    val scalingGroup = new MockCloud().getScalingGroupClient
+    assert(scalingGroup.getScaleGroups.size === 1)
+    assert(scalingGroup.getScaleGroups(0).name.startsWith("www-lasic-webapp"))
+    assert(scalingGroup.getScaleGroups(0).triggers.size === 1)
+    assert(scalingGroup.getScaleGroups(0).triggers(0).breachDuration === 300)
+    assert(scalingGroup.getScaleGroups(0).lbNames.size == 2)
+    assert(scalingGroup.getScaleGroups(0).lbNames(0).startsWith("www-lasic-lb"))
+    assert(scalingGroup.getScaleGroups(0).lbNames(1).startsWith("www-lasic-lb"))
+  }
+
+  def testDeployLoadBalancer() = {
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)))
+    val lbClient = new MockCloud().getLoadBalancerClient
+    assert(lbClient.getLoadBalancers.size == 2)
+    lbClient.getLoadBalancers foreach {
+      lb =>
+      if (lb.name.startsWith("www-lasic-lb-1")) {
+        assert(lb.lbPort === 81)
+        assert(lb.instancePort === 82)
+        assert(lb.protocol === "HTTPS")
+        assert(lb.sslcertificate === "someid")
+      }
+      else if (lb.name.startsWith("www-lasic-lb-2")) {
+        assert(lb.lbPort === 90)
+        assert(lb.instancePort === 91)
+        assert(lb.protocol === "HTTP")
+      }
+      else {
+        fail("unexpected loadbalancer found: " + lb.name)
+      }
+    }
   }
 
   def testDeployWithElasticIps() = {
@@ -40,11 +73,11 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
 
   def testRunActionWithScaleGroup() = {
     //create the "original scale group" that will be replaced
-    val scalingGroup = new MockCloud().getScalingGroup
+    val scalingGroup = new MockCloud().getScalingGroupClient
     val lc = new LaunchConfiguration
     lc.name = "orig-my-app-launchconfig-2010-08-23-14-30-12"
     scalingGroup.createScalingLaunchConfiguration(lc)
-    scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12", lc.name, 3, 5, null)
+    scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12", lc.name, 3, 5, null, null)
 
     //run the action
     Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)))
@@ -57,14 +90,25 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   }
 
   def testShutdown() = {
-    val scalingGroup = new MockCloud().getScalingGroup
+    val cloud: MockCloud = new MockCloud()
+
+    //setup and "existing system"
+    val scalingGroup = cloud.getScalingGroupClient
     val lc = new LaunchConfiguration
     lc.name = "www-lasic-webapp-01-launchconfig"
     scalingGroup.createScalingLaunchConfiguration(lc)
-    scalingGroup.createScalingGroup("www-lasic-webapp-01", lc.name, 3, 5, null)
+    scalingGroup.createScalingGroup("www-lasic-webapp-01", lc.name, 3, 5, null, null)
+    val lbClient = cloud.getLoadBalancerClient
+    lbClient.createLoadBalancer("www-elastic-lb-2010-10-21-12-01-46",80,80,"HTTP","",List())
+    assert(scalingGroup.getScaleGroups.size === 1)
+    assert(lbClient.getLoadBalancers.size === 1)
 
+    //run bound script to shut it down
     Lasic.runLasic(Array("-c", "mock", "shutdown", getLasicFilePath(204)))
+
+    //validate everything is gone
     assert(scalingGroup.getScaleGroups.size === 0)
+    assert(lbClient.getLoadBalancers.size === 0)
   }
 
 

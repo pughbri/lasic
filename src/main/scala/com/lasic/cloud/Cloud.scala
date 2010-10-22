@@ -12,7 +12,9 @@ import com.lasic.cloud.MachineState._
  */
 trait Cloud {
 
-  def getScalingGroup(): ScalingGroup
+  def getScalingGroupClient(): ScalingGroupClient
+
+  def getLoadBalancerClient(): LoadBalancerClient
 
   def createVM(launchConfig:LaunchConfiguration, startVM:Boolean) = {
     createVMs(launchConfig,1,startVM)(0)

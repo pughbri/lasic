@@ -21,8 +21,9 @@ class ScaleGroupInstance extends Pathable with VMHolder {
   var triggers: List[TriggerInstance]    = List()
   var volumes = List[Map[String,String]]()
   var actions = List[BaseAction]()
+  var loadBalancers = List[ArgumentValue]()
 
-  def resolveScripts(args: Map[String, Map[String, ScriptArgumentValue]]): Map[String, Map[String, List[String]]] = {
+  def resolveScripts(args: Map[String, Map[String, ArgumentValue]]): Map[String, Map[String, List[String]]] = {
     ScriptResolver.resolveScripts(this, args)
   }
 }

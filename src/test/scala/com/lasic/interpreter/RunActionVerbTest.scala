@@ -17,10 +17,10 @@ class RunActionVerbTest extends FlatSpec with ShouldMatchers {
   "RunActionVerb" should "delete the scale group and config" in {
     val cloud = new MockCloud()
 
-    val scalingGroup = cloud.getScalingGroup
+    val scalingGroup = cloud.getScalingGroupClient
     scalingGroup.reset
-    scalingGroup.createScalingGroup("one", "config", 1, 3, null)
-    scalingGroup.createScalingGroup("two", "config2", 3, 8, null)
+    scalingGroup.createScalingGroup("one", "config", 1, 3, null, null)
+    scalingGroup.createScalingGroup("two", "config2", 3, 8, null, null)
     val program = new LasicProgram()
     program.rootGroup = new SystemGroup(program)
 

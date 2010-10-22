@@ -1,6 +1,10 @@
 /* A very simple test of script parameters which are LASIC paths */
 system  "sys1" {
     scale-group "grp1" {
+        load-balancers {
+          "my-load-balancer"
+        }
+
         configuration "grp1-config" {
             instancetype: "small"
             min-size: 1

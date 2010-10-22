@@ -1,6 +1,5 @@
 package com.lasic.interpreter
 
-import com.lasic.cloud.{VM, Cloud}
 import collection.immutable.List
 import com.lasic.cloud.VolumeState._
 import com.lasic.cloud.MachineState._
@@ -10,7 +9,7 @@ import com.lasic.util.Logging
 import com.lasic.concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
-
+import java.util.Date
 
 /**
  * Launches VM, attaches volumes, runs the "install" action for each one, and brings up scale groups.
@@ -18,6 +17,7 @@ import com.lasic.LasicProperties
 class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with Logging with ActionRunnerUtil {
   protected val nodes: List[NodeInstance] = program.find("//node[*][*]").map(_.asInstanceOf[NodeInstance])
   protected val scaleGroups: List[ScaleGroupInstance] = program.find("//scale-group[*]").map(_.asInstanceOf[ScaleGroupInstance])
+  protected val loadBalancers: List[LoadBalancerInstance] = program.find("//load-balancer[*]").map(_.asInstanceOf[LoadBalancerInstance])
   protected val vmState: Map[VMHolder, VMState] = {
     Map.empty ++ (nodes.map {node => (node, new VMState)} ::: scaleGroups.map {scaleGroup => (scaleGroup, new VMState)})
   }
@@ -30,14 +30,14 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def launchAllAMIs {
     nodes.foreach {
       node =>
-        spawn ("Launch node instances") {
+        spawn("Launch node instances") {
           node.vm = cloud.createVM(LaunchConfiguration.build(node), true)
           logger.debug("created instance for node: " + node)
         }
     }
     scaleGroups.foreach {
       scaleGroup =>
-        spawn ("launch scale group instances") {
+        spawn("launch scale group instances") {
           scaleGroup.vm = cloud.createVM(LaunchConfiguration.build(scaleGroup.configuration), true)
         }
     }
@@ -46,7 +46,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def createAllVolumes {
     volumes.foreach(volInst =>
-      spawn ("create volumes") {
+      spawn("create volumes") {
         val volume = cloud.createVolume(VolumeConfiguration.build(volInst))
         volInst.volume = volume
       }
@@ -74,7 +74,6 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
   private def waitForVMState(test: VMHolder => Boolean, statusString: String) {
     VerbUtil.waitForVMState(nodes ::: scaleGroups, test, statusString)
   }
-
 
 
   private def waitForVolumeState(state: VolumeState, statusString: String) {
@@ -117,7 +116,35 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     volumes foreach {
       volumeInst => println("    " + volumeInst.path + ": \"" + volumeInst.volume.id + "\"")
     }
+
+    loadBalancers foreach {
+      loadBalancer => println ("    " + loadBalancer.path + ": \"" + loadBalancer.cloudName + "\" // dns=" + loadBalancer.dnsName) 
+    }
     println("}")
+  }
+
+  private def createLoadBalancers {
+    loadBalancers foreach {
+      lbInst =>
+        spawn("create load balancers") {
+          lbInst.dnsName = cloud.getLoadBalancerClient().createLoadBalancer(lbInst.cloudName,
+            lbInst.lbPort,
+            lbInst.instancePort,
+            lbInst.protocol,
+            lbInst.sslcertificate,
+            List(LasicProperties.getProperty("availability_zone", "us-east-1d")))
+        }
+    }
+
+  }
+
+  def setLoadBalancerNames {
+    loadBalancers foreach {
+      lbInst =>
+      //create unique names
+        val dateString = new java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date())
+        lbInst.cloudName = lbInst.localName + "-" + dateString
+    }
   }
 
   def doit() {
@@ -128,7 +155,11 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     // Startup everything that needs it
     launchAllAMIs
     createAllVolumes
+
+    setLoadBalancerNames
     setScaleGroupNames
+
+    createLoadBalancers
 
 
     // Wait for all resources to be created before proceeding
@@ -146,14 +177,14 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     startAsyncRunAction("install")
 
     // Wait for all nodes to be configured
-    waitForActionItems
+    waitForActionItems   
 
-    createScaleGroups(cloud.getScalingGroup)
+    createScaleGroups(cloud.getScalingGroupClient)
 
     // Wait for scale groups to be configured
     waitForScaleGroupsConfigured
 
-    waitForElasticIpDnsChange("install")    
+    waitForElasticIpDnsChange("install")
 
     // Print out the bound program so the user can see the IDs we are manipulating
     printBoundLasicProgram

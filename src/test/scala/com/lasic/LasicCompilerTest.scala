@@ -51,8 +51,8 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     val scripts = node.parent.actions(0).scriptMap
     val args = scripts("another")
     assertEquals(2, args.size)
-    assertEquals(true, args("foo").isInstanceOf[LiteralScriptArgumentValue])
-    assertEquals(true, args("foo2").isInstanceOf[PathScriptArgumentValue])
+    assertEquals(true, args("foo").isInstanceOf[LiteralArgumentValue])
+    assertEquals(true, args("foo2").isInstanceOf[PathArgumentValue])
     val s: String = args("foo2").literal
     assertEquals("/system['sys1']/node['node1'][0]", s);
 
@@ -158,6 +158,17 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals(60, program.instances(0).scaleGroups(0).triggers(0).upperThreshold)
     assertEquals("Seconds", program.instances(0).scaleGroups(0).triggers(0).unit)
     assertEquals("test", program.instances(0).scaleGroups(0).actions(0).name)
+    assertEquals("my-load-balancer", program.instances(0).scaleGroups(0).loadBalancers(0).literal)
+  }
+
+  def testLoadBalancers {
+    val program = getLasicProgram(11)
+    assertEquals("www-lasic-lb", program.instances(0).loadBalancers(0).localName)
+    assertEquals(81, program.instances(0).loadBalancers(0).lbPort)
+    assertEquals(82, program.instances(0).loadBalancers(0).instancePort)
+    assertEquals("HTTPS", program.instances(0).loadBalancers(0).protocol)
+    assertEquals("someid", program.instances(0).loadBalancers(0).sslcertificate)
+    assertEquals("lb-cloudname", program.instances(0).loadBalancers(0).cloudName)
   }
 
   def testBoundPaths() = {

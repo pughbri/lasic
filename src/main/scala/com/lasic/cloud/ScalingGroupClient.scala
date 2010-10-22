@@ -7,7 +7,7 @@ import com.lasic.cloud.ImageState._
  * @author Brian Pugh
  */
 
-trait ScalingGroup {
+trait ScalingGroupClient {
 
   def getImageState(imageId: String): ImageState 
 
@@ -21,7 +21,7 @@ trait ScalingGroup {
 
   def deleteLaunchConfiguration(name: String)
 
-  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String])
+  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, lbNames: List[String], availabilityZones: List[String])
 
   def updateScalingGroup(autoScalingGroupName: String, min: Int, max: Int)
 

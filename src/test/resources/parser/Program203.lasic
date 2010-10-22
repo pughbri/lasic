@@ -1,6 +1,27 @@
 system "www.lasic.com" {
 
+  load-balancer "www-lasic-lb-1" {
+     props {
+        lb-port: 81
+        instance-port: 82
+        protocol: HTTPS
+        sslcertificate: "someid"
+     }
+  }
+
+  load-balancer "www-lasic-lb-2" {
+     props {
+        lb-port: 90
+        instance-port: 91
+        protocol: HTTP
+     }
+  }
+
   scale-group "www-lasic-webapp" {
+    load-balancers {
+        /system['www.lasic.com'][0]/load-balancer['www-lasic-lb-1']
+        /system['www.lasic.com'][0]/load-balancer['www-lasic-lb-2']
+    }
     configuration "junk" {
         groups: "default","web-server"
         key: "default"
