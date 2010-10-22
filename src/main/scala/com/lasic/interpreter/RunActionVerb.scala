@@ -27,15 +27,12 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
 
   private def setVMs() {
     nodes.foreach {
-      node =>
-        spawn ("find bound VMs for nodes") {
-          node.vm = VerbUtil.setVM(cloud, LaunchConfiguration.build(node), node.boundInstanceId)
-        }
+      node => node.vm = VerbUtil.setVM(cloud, node)
     }
     scaleGroups foreach {
       scaleGroupInst =>
         spawn ("find bound scalegroups and launch new VM") {
-          val scalingGroup = cloud.getScalingGroup
+          val scalingGroup = cloud.getScalingGroupClient
           val origConfig = scalingGroup.getScalingLaunchConfiguration(scaleGroupInst.configuration.cloudName)
           val newLaunchConfig: LaunchConfiguration = LaunchConfiguration.build(scaleGroupInst.configuration)
           newLaunchConfig.machineImage = origConfig.machineImage
@@ -48,10 +45,10 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
     VerbUtil.waitForVMState(nodes ::: scaleGroups, {vmHolder => !(vmState(vmHolder).ipsComplete)}, "Waiting for action to finish: ")
   }
 
-  private def waitVMsToBeSet {
-    VerbUtil.waitForVMState(scaleGroups ::: nodes,
+  private def waitToCreatePrototypeVMsForScaleGroup {
+    VerbUtil.waitForVMState(scaleGroups,
       {vmHolder => vmHolder.vm == null || !vmHolder.vm.isInitialized},
-      "Waiting to find node VM instances and create prototype VMs for scalegroups: ")
+      "Waiting to create prototype VMs for scalegroups: ")
   }
 
   private def waitForNewScaleGroups {
@@ -59,7 +56,7 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
   }
 
   private[interpreter] def deleteOldScaleGroups {
-    val scalingGroup = cloud.getScalingGroup
+    val scalingGroup = cloud.getScalingGroupClient
 
     //set the scale group size to 0 so all instances are down so that it can be deleted.
     scaleGroupsToDelete foreach {
@@ -107,15 +104,15 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
 
   def doit = {
     setVMs
-    waitVMsToBeSet
+    waitToCreatePrototypeVMsForScaleGroup
     saveOldScaleGroupAndConfig
     setScaleGroupNames
     startAsyncRunAction(actionName)
     waitForAction
-    createScaleGroups(cloud.getScalingGroup)
+    createScaleGroups(cloud.getScalingGroupClient)
     waitForNewScaleGroups
     deleteOldScaleGroups
-    waitForElasticIpDnsChange(actionName)    
+    waitForElasticIpDnsChange(actionName)
     printBoundLasicProgram
   }
 

@@ -48,7 +48,7 @@ object MappingUtil {
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
     launchConfig.setInstanceType(getTypicaInstanceType(lasicLC.instanceType))
-    launchConfig.setKeyName(lasicLC.key);
+    launchConfig.setKeyName(lasicLC.key)
     launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
     launchConfig
   }

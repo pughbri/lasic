@@ -1,6 +1,6 @@
 package com.lasic.parser.ast
 
-import com.lasic.model.ScriptArgumentValue
+import com.lasic.model.ArgumentValue
 import com.lasic.values.BaseAction
 
 /**

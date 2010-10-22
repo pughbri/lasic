@@ -18,6 +18,7 @@ class ASTSystem extends SystemProperties {
   val scaleGroups = new ListBuffer[ASTScaleGroup]()
   val subsystems = new ListBuffer[ASTSystem]()
   var boundPaths = Map[String, String]()
+  var loadBalancers = new ListBuffer[ASTLoadBalancer]()
 }
 
 

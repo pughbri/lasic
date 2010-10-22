@@ -1,0 +1,14 @@
+system  "sys1" {
+  load-balancer "www-lasic-lb" {
+     props {
+        lb-port: 81
+        instance-port: 82
+        protocol: HTTPS
+        sslcertificate: "someid"
+     }
+  }
+
+  paths {
+      /system['sys1'][0]/load-balancer['www-lasic-lb']: "lb-cloudname"
+  }
+}

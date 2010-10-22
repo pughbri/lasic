@@ -1,6 +1,6 @@
 package com.lasic.parser.ast
 import scala.collection.mutable._
-import com.lasic.model.ScriptArgumentValue
+import com.lasic.model.ArgumentValue
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,5 +11,5 @@ import com.lasic.model.ScriptArgumentValue
  */
 
 class ASTScript {
-  var scpMap = Map[String,Map[String,ScriptArgumentValue]]()
+  var scpMap = Map[String,Map[String,ArgumentValue]]()
 }

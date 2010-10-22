@@ -56,6 +56,7 @@ trait Pathable {
       case ("//system[*]", thing:SystemGroup) => true
       case ("//scale-group[*]", thing:ScaleGroupInstance) => true
       case ("//scale-group-configuration[*]", thing:ScaleGroupConfiguration) => true
+      case ("//load-balancer[*]", thing:LoadBalancerInstance) => true
       case (path,thing) => {
         val mypath = thing.path
         path.equals(mypath)

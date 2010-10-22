@@ -1,6 +1,6 @@
 package com.lasic.values
 
-import com.lasic.model.ScriptArgumentValue
+import com.lasic.model.ArgumentValue
 
 /**
  * 
@@ -10,6 +10,6 @@ import com.lasic.model.ScriptArgumentValue
 class BaseAction {
   var name: String = null
   var scpMap = Map[String,String]()
-  var scriptMap = Map[String,Map[String,ScriptArgumentValue]]()
+  var scriptMap = Map[String,Map[String,ArgumentValue]]()
   var ipMap = Map[Int,String]()
 }

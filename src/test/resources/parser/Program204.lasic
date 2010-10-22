@@ -1,5 +1,13 @@
 system "www.lasic.com" {
 
+  load-balancer "www-elastic-lb" {
+     props {
+        lb-port: 80
+        instance-port: 80
+        protocol: HTTP
+     }
+  }
+
   scale-group "www-lasic-webapp" {
     configuration "junk" {
         groups: "default","web-server"
@@ -86,6 +94,7 @@ system "www.lasic.com" {
 paths {
     /system['www.lasic.com'][0]/scale-group['www-lasic-webapp']: "www-lasic-webapp-01"
     /system['www.lasic.com'][0]/node['www-lasic-load-balancer'][0]: "i-bbbbbbbb"
+    /system['www.lasic.com'][0]/load-balancer['www-elastic-lb']: "www-elastic-lb-2010-10-21-12-01-46"
   }
 
 

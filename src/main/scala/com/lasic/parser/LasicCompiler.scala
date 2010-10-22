@@ -87,17 +87,30 @@ object LasicCompiler {
   }
 
   private def createScaleGroups(ast: ASTSystem, sysGroup: SystemGroup) = {
-    // create nodes
     sysGroup.instances.foreach {
       systemInstance =>
         systemInstance.scaleGroups = ast.scaleGroups.toList.map {
           case astScaleGroup =>
-            val scaleGroup = compile(astScaleGroup);
+            val scaleGroup = compile(astScaleGroup)
             scaleGroup.parentSystemInstance = systemInstance
             scaleGroup
         }
     }
   }
+
+
+  private def createLoadBalancers(ast: ASTSystem, sysGroup: SystemGroup) = {
+    sysGroup.instances.foreach {
+      systemInstance =>
+        systemInstance.loadBalancers = ast.loadBalancers.toList.map {
+          case astLoadBalancer =>
+            val loadBalancer = compile(astLoadBalancer)
+            loadBalancer.parentSystemInstance = systemInstance
+            loadBalancer
+        }
+    }
+  }
+
 
   private def createSubsystems(ast: ASTSystem, sysGroup: SystemGroup) = {
     sysGroup.instances.foreach {
@@ -148,6 +161,8 @@ object LasicCompiler {
     // Create all the scale groups in each SystemInstance
     createScaleGroups(ast, sysGroup)
 
+    createLoadBalancers(ast, sysGroup)
+
     // Create all the subsystems
     createSubsystems(ast, sysGroup)
 
@@ -171,7 +186,8 @@ object LasicCompiler {
           pathables(0) match {
             case nodeInstance: NodeInstance => nodeInstance.boundInstanceId = boundPath._2
             case scaleGroupInstance: ScaleGroupInstance => scaleGroupInstance.cloudName = boundPath._2
-            case scaleGroupConfig: ScaleGroupConfiguration=> scaleGroupConfig.cloudName = boundPath._2
+            case scaleGroupConfig: ScaleGroupConfiguration => scaleGroupConfig.cloudName = boundPath._2
+            case loadBalancerInstance: LoadBalancerInstance => loadBalancerInstance.cloudName = boundPath._2
             case _ => throw new Exception("Path " + boundPath + " does not resolve to a nodeinstance.  Resolves to " + pathables(0).getClass)
           }
         }
@@ -224,14 +240,15 @@ object LasicCompiler {
     val scaleGroup = new ScaleGroupInstance
     scaleGrpConfig.parentScaleGroupInstance = scaleGroup
     scaleGroup.localName = ast.name
-    scaleGroup.configuration  = scaleGrpConfig
+    scaleGroup.configuration = scaleGrpConfig
     scaleGroup.triggers = compileTriggers(ast.triggers)
-    scaleGroup.actions = compile(ast.actions)
+    scaleGroup.actions = compile(ast.actions)    
+    scaleGroup.loadBalancers = ast.loadBalancers
     scaleGroup
   }
 
   private def compileTriggers(astTriggers: List[ASTTrigger]) = {
-    astTriggers.map(createTriggerInstance(_))    
+    astTriggers.map(createTriggerInstance(_))
   }
 
   private def createTriggerInstance(astTrigger: ASTTrigger) = {
@@ -248,6 +265,16 @@ object LasicCompiler {
     triggerInstance.upperThreshold = astTrigger.upperThreshold
     triggerInstance.unit = astTrigger.unit
     triggerInstance
+  }
+
+  private def compile(ast: ASTLoadBalancer): LoadBalancerInstance = {
+    val loadBalancerInstance = new LoadBalancerInstance
+    loadBalancerInstance.localName = ast.localName
+    loadBalancerInstance.lbPort = ast.lbPort
+    loadBalancerInstance.instancePort = ast.instancePort
+    loadBalancerInstance.protocol = ast.protocol
+    loadBalancerInstance.sslcertificate = ast.sslcertificate
+    loadBalancerInstance
   }
 
 }

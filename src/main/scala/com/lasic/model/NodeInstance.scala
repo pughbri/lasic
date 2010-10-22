@@ -20,7 +20,7 @@ class NodeInstance(val parentGroup:NodeGroup,val idx:Int) extends Pathable  with
   def children = volumes
 
 
-  def resolveScripts(args: Map[String, Map[String, ScriptArgumentValue]]): Map[String, Map[String, List[String]]] = {
+  def resolveScripts(args: Map[String, Map[String, ArgumentValue]]): Map[String, Map[String, List[String]]] = {
     ScriptResolver.resolveScripts(this, args)
   }
 

@@ -2,14 +2,14 @@ package com.lasic.interpreter
 
 import com.lasic.values.BaseAction
 import java.net.URI
-import com.lasic.model.{ScaleGroupInstance, NodeInstance, VMHolder, ScriptArgumentValue}
 import com.lasic.concurrent.ops._
 import java.io.File
 import java.util.Date
-import com.lasic.cloud.{ImageState, ScalingGroup, ScalingTrigger, LaunchConfiguration}
+import com.lasic.cloud.{ImageState, ScalingGroupClient, ScalingTrigger, LaunchConfiguration}
 import java.lang.String
 import com.lasic.LasicProperties
 import com.lasic.util.Logging
+import com.lasic.model._
 
 protected class VMState() {
   var scpComplete = false
@@ -18,7 +18,7 @@ protected class VMState() {
 }
 
 
-class NodeIPState (val node: NodeInstance,val elasticIp: String,var pubDnsMatch: Boolean)
+class NodeIPState(val node: NodeInstance, val elasticIp: String, var pubDnsMatch: Boolean)
 
 /**
  *
@@ -36,19 +36,26 @@ trait ActionRunnerUtil extends Logging {
    * Spawns a thread in which all the scp, script and ip statements are run.  vmStat is updated as appropriate.
    */
   def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]) {
-    spawn ("run action items") {
+    spawn("run action items") {
       allSCPs.foreach {
-        tuple => vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
+        tuple => {
+          if (vmHolder.vm != null) {
+            vmHolder.vm.copyTo(build(new URI(tuple._1)), tuple._2)
+          }
+        }
       }
-      vmState.synchronized(
+      vmState.synchronized {
         vmState(vmHolder).scpComplete = true
-        )
+      }
+
       resolvedScripts.foreach {
         script =>
           val scriptName = script._1
           val argMap = script._2
           //vm.execute(scriptName)
-          vmHolder.vm.executeScript(scriptName, argMap)
+          if (vmHolder.vm != null) {
+            vmHolder.vm.executeScript(scriptName, argMap)
+          }
       }
       vmState.synchronized(
         vmState(vmHolder).scriptsComplete = true
@@ -58,7 +65,9 @@ trait ActionRunnerUtil extends Logging {
           vmHolder match {
             case holder: NodeInstance => {
               if (holder.idx == ip._1) {
-                holder.vm.associateAddressWith(ip._2)
+                if (holder.vm != null) {
+                  holder.vm.associateAddressWith(ip._2)
+                }
               }
             }
             case unknown => throw new IllegalStateException("unkown type of vmholder: cannot assign elastic ip: " + unknown.getClass)
@@ -74,10 +83,10 @@ trait ActionRunnerUtil extends Logging {
   /**
    * Find all actions mapping action name and return a tuple contain the scripts, scps and ips.
    */
-  def getActionItemMaps(actionName: String, allActions: List[BaseAction]): (Map[String, Map[String, ScriptArgumentValue]], Map[String, String], Map[Int, String]) = {
+  def getActionItemMaps(actionName: String, allActions: List[BaseAction]): (Map[String, Map[String, ArgumentValue]], Map[String, String], Map[Int, String]) = {
     val deployActions = allActions.filter(_.name == actionName)
     var allSCPs = Map[String, String]()
-    var allScripts = Map[String, Map[String, ScriptArgumentValue]]()
+    var allScripts = Map[String, Map[String, ArgumentValue]]()
     var allIPs = Map[Int, String]()
 
     deployActions.foreach {
@@ -123,17 +132,17 @@ trait ActionRunnerUtil extends Logging {
   }
 
 
-  def createImageForScaleGroup(scaleGroupInstance: ScaleGroupInstance, scaleGroup: ScalingGroup): String = {
+  def createImageForScaleGroup(scaleGroupInstance: ScaleGroupInstance, scalingGroupClient: ScalingGroupClient): String = {
     //create the image
     val desc = "Created by LASIC for scale group [" + scaleGroupInstance.cloudName + "] from instanceid [" + scaleGroupInstance.vm.instanceId + "]"
-    var imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
+    var imageID = scalingGroupClient.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
 
     //wait for image to be available
     var imageState = ImageState.Unknown
     var numRetries = 0
     while (imageState != ImageState.Available) {
       Thread.sleep(sleepDelay)
-      imageState = scaleGroup.getImageState(imageID)
+      imageState = scalingGroupClient.getImageState(imageID)
       if (imageState == ImageState.Failed) {
         if (numRetries >= 1) {
           throw new Exception("Image creation failed for an unknown reason for imagedId [" + imageID + "] for scale group [" + scaleGroupInstance.cloudName + "]")
@@ -141,7 +150,7 @@ trait ActionRunnerUtil extends Logging {
         else {
           logger.warn("creation of  image [ " + imageID + "] for scale group [" + scaleGroupInstance.cloudName + "] failed for unknown reason.  Trying one more time in 1 minute...")
           Thread.sleep(60000)
-          imageID = scaleGroup.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
+          imageID = scalingGroupClient.createImageForScaleGroup(scaleGroupInstance.vm.instanceId, scaleGroupInstance.cloudName, desc, true)
           imageState = ImageState.Unknown
           numRetries = numRetries + 1
         }
@@ -154,26 +163,32 @@ trait ActionRunnerUtil extends Logging {
    * create scale groups based on the "prototype vm" on each scaleGroupInstance.  Once the scale group is created,
    * the prototype VM will be shutdown.
    */
-  def createScaleGroups(scaleGroup: ScalingGroup) {
+  def createScaleGroups(scalingGroupClient: ScalingGroupClient) {
     scaleGroups.foreach {
-      scaleGroupInstance =>
-        spawn ("create scale groups") {
-          var imageID = createImageForScaleGroup(scaleGroupInstance, scaleGroup)
+      scaleGroupInst =>
+        spawn("create scale groups") {
+          var imageID = createImageForScaleGroup(scaleGroupInst, scalingGroupClient)
 
           //create the config
-          val scaleGroupConfig = scaleGroupInstance.configuration
-          val launchConfiguration = LaunchConfiguration.build(scaleGroupInstance.configuration)
+          val scaleGroupConfig = scaleGroupInst.configuration
+          val launchConfiguration = LaunchConfiguration.build(scaleGroupInst.configuration)
           launchConfiguration.machineImage = imageID
           launchConfiguration.name = scaleGroupConfig.cloudName
-          scaleGroup.createScalingLaunchConfiguration(launchConfiguration)
+          scalingGroupClient.createScalingLaunchConfiguration(launchConfiguration)
 
           //create the group
-          scaleGroup.createScalingGroup(scaleGroupInstance.cloudName, scaleGroupConfig.cloudName, scaleGroupConfig.minSize, scaleGroupConfig.maxSize, List(launchConfiguration.availabilityZone))
+          val loadBalancers = scaleGroupInst.loadBalancers map (ScriptResolver.resolveArgumentValue(scaleGroupInst, _))
+          scalingGroupClient.createScalingGroup(scaleGroupInst.cloudName,
+            scaleGroupConfig.cloudName,
+            scaleGroupConfig.minSize,
+            scaleGroupConfig.maxSize,
+            loadBalancers,
+            List(launchConfiguration.availabilityZone))
 
           //create the triggers
-          scaleGroupInstance.triggers.foreach {
+          scaleGroupInst.triggers.foreach {
             trigger =>
-              val scalingTrigger = new ScalingTrigger(scaleGroupInstance.cloudName,
+              val scalingTrigger = new ScalingTrigger(scaleGroupInst.cloudName,
                 trigger.breachDuration,
                 trigger.lowerBreachIncrement.toString,
                 trigger.lowerThreshold,
@@ -183,11 +198,11 @@ trait ActionRunnerUtil extends Logging {
                 trigger.period,
                 trigger.upperBreachIncrement.toString,
                 trigger.upperThreshold)
-              scaleGroup.createUpdateScalingTrigger(scalingTrigger)
+              scalingGroupClient.createUpdateScalingTrigger(scalingTrigger)
           }
 
           //terminate the original vm
-          scaleGroupInstance.vm.shutdown
+          scaleGroupInst.vm.shutdown
         }
     }
 
@@ -218,9 +233,9 @@ trait ActionRunnerUtil extends Logging {
   }
 
   private def waitForElasticIpDnsChange(ipNodeMap: List[NodeIPState], maxWaitSeconds: Int) {
-    var waiting = ipNodeMap
+    var waiting = ipNodeMap filter (_.node.vm != null)
     val startTime = System.currentTimeMillis
-    while (!waiting.isEmpty && !isTimedOut(startTime, maxWaitSeconds) ) {
+    while (!waiting.isEmpty && !isTimedOut(startTime, maxWaitSeconds)) {
       ipNodeMap.foreach({
         nodeIpState =>
           if (!nodeIpState.pubDnsMatch && nodeIpState.node.vm.getPublicIpAddress != nodeIpState.elasticIp) {
@@ -231,7 +246,7 @@ trait ActionRunnerUtil extends Logging {
             nodeIpState.pubDnsMatch = true
           }
       })
-      waiting = ipNodeMap.filter(nm => !nm.pubDnsMatch)
+      waiting = waiting filter(!_.pubDnsMatch)
     }
     if (!waiting.isEmpty) {
       logger.info("Timed out waiting for publicDns to be set for elastic ips after waiting " +

@@ -4,22 +4,18 @@ import collection.JavaConversions
 import collection.JavaConversions.asList
 import java.util.{List => JList}
 import com.lasic.cloud.ImageState._
-import com.xerox.amazonws.ec2.{Jec2, AutoScaling, LaunchConfiguration => TypicaLaunchConfig, ScalingTrigger => AmazonScalingTrigger}
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
-import com.amazonaws.auth.BasicAWSCredentials
-import com.lasic.cloud._
 import com.amazonaws.services.ec2.AmazonEC2Client
-import com.amazonaws.services.autoscaling.model.{CreateOrUpdateScalingTriggerRequest, DescribeAutoScalingGroupsRequest, DescribeLaunchConfigurationsRequest}
-import com.amazonaws.services.autoscaling.model.{UpdateAutoScalingGroupRequest, CreateLaunchConfigurationRequest, Dimension, DescribeLaunchConfigurationsResult}
 import com.amazonaws.services.ec2.model.{DeleteSnapshotRequest, DeregisterImageRequest, DescribeImagesRequest, CreateImageRequest}
+import com.amazonaws.services.autoscaling.model._
+import com.lasic.cloud.{ScalingTrigger, ScalingGroupInfo, ImageState, ScalingGroupClient, LaunchConfiguration => LasicLaunchConfig}
 
 /**
  *
  * @author Brian Pugh
  */
 
-class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) extends ScalingGroup {
-  private val awsScalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(autoscaling.getAwsAccessKeyId, autoscaling.getSecretAccessKey))
+class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: AmazonAutoScalingClient) extends ScalingGroupClient {
 
   implicit def unboxInt(i: java.lang.Integer) = i.intValue
 
@@ -51,7 +47,7 @@ class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) e
   }
 
 
-  def createScalingLaunchConfiguration(config: LaunchConfiguration) {
+  def createScalingLaunchConfiguration(config: LasicLaunchConfig) {
     val launchConfig = new CreateLaunchConfigurationRequest
     launchConfig.setImageId(config.machineImage)
     launchConfig.setInstanceType(MappingUtil.getAWSInstanceType(config.instanceType).toString)
@@ -65,11 +61,20 @@ class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) e
 
 
   def deleteLaunchConfiguration(name: String) {
-    autoscaling.deleteLaunchConfiguration(name)
+    val delLaunchConfigReq = new DeleteLaunchConfigurationRequest().withLaunchConfigurationName(name)
+    awsScalingClient.deleteLaunchConfiguration(delLaunchConfigReq)
   }
 
-  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, availabilityZones: List[String]) {
-    autoscaling.createAutoScalingGroup(autoScalingGroupName, launchConfigurationName, min, max, 0, JavaConversions.asList(availabilityZones))
+  def createScalingGroup(autoScalingGroupName: String, launchConfigurationName: String, min: Int, max: Int, lbNames: List[String], availabilityZones: List[String]) {
+    val scaleGrpReq = new CreateAutoScalingGroupRequest()
+    scaleGrpReq.setAutoScalingGroupName(autoScalingGroupName)
+    scaleGrpReq.setLaunchConfigurationName(launchConfigurationName)
+    scaleGrpReq.setMinSize(min)
+    scaleGrpReq.setMaxSize(max)
+    scaleGrpReq.setAvailabilityZones(availabilityZones)
+    scaleGrpReq.setCooldown(0)
+    scaleGrpReq.setLoadBalancerNames(lbNames)
+    awsScalingClient.createAutoScalingGroup(scaleGrpReq)
   }
 
   def updateScalingGroup(autoScalingGroupName: String, min: Int, max: Int) {
@@ -81,7 +86,7 @@ class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) e
   }
 
   def deleteScalingGroup(name: String) {
-    autoscaling.deleteAutoScalingGroup(name)
+    awsScalingClient.deleteAutoScalingGroup(new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(name))
   }
 
   def describeAutoScalingGroup(autoScalingGroupName: String): ScalingGroupInfo = {
@@ -128,7 +133,7 @@ class AmazonScalingGroup(awsClient: AmazonEC2Client, autoscaling: AutoScaling) e
     val imageDescriptions: DescribeLaunchConfigurationsResult = awsScalingClient.describeLaunchConfigurations(dlcr)
     require(imageDescriptions.getLaunchConfigurations.size == 1)
     val imd = imageDescriptions.getLaunchConfigurations.get(0)
-    val lasicLC = new LaunchConfiguration
+    val lasicLC = new LasicLaunchConfig
     lasicLC.machineImage = imd.getImageId
     lasicLC.kernelId = imd.getKernelId
     lasicLC.ramdiskId = imd.getRamdiskId

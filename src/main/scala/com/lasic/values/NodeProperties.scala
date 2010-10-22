@@ -1,6 +1,6 @@
 package com.lasic.values
 
-import com.lasic.model.{Action, ScriptArgumentValue}
+import com.lasic.model.{Action, ArgumentValue}
 
 trait NodeProperties {
   var name                    = ""

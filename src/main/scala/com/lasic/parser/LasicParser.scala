@@ -4,7 +4,7 @@ import ast._
 import util.parsing.combinator.JavaTokenParsers
 import scala.collection.mutable._
 import com.lasic.LasicProperties
-import com.lasic.model.{ScriptArgumentValue, PathScriptArgumentValue, LiteralScriptArgumentValue}
+import com.lasic.model.{ArgumentValue, PathArgumentValue, LiteralArgumentValue}
 import com.lasic.util.Logging
 import com.lasic.values.NodeProperties
 
@@ -28,8 +28,9 @@ class LasicParser extends JavaTokenParsers with Logging {
         listEntry match {
           case propertyMap: Map[Any, Any] => initSystemProperties(sys, propertyMap)
           case node: ASTNode => sys.nodes += node
-          case scaleGroup: ASTScaleGroup=> sys.scaleGroups += scaleGroup
+          case scaleGroup: ASTScaleGroup => sys.scaleGroups += scaleGroup
           case system: ASTSystem => sys.subsystems += system
+          case loadBalancer: ASTLoadBalancer => sys.loadBalancers += loadBalancer
           case x => logger.warn("Unknown object: " + x)
         }
     }
@@ -47,24 +48,25 @@ class LasicParser extends JavaTokenParsers with Logging {
   }
 
   def buildScaleGroup(name: String, body: List[Any]) = {
-    val sys = new ASTScaleGroup()
-    sys.name = name
+    val scaleGroup = new ASTScaleGroup()
+    scaleGroup.name = name
     body.foreach {
       listEntry =>
         listEntry match {
-          case propertyMap: Map[Any, Any] => sys.configuration = createScaleGroupConfiguration(propertyMap)
-          case astAction: ASTAction => sys.actions = astAction :: sys.actions
+          case propertyMap: Map[Any, Any] => scaleGroup.configuration = createScaleGroupConfiguration(propertyMap)
+          case astAction: ASTAction => scaleGroup.actions = astAction :: scaleGroup.actions
           case astVolume: ASTVolume =>
             val immutableMap = scala.collection.Map.empty ++ astVolume.params
-            sys.volumes = immutableMap :: sys.volumes
-          case astTrigger: ASTTrigger => sys.triggers = astTrigger :: sys.triggers
+            scaleGroup.volumes = immutableMap :: scaleGroup.volumes
+          case astTrigger: ASTTrigger => scaleGroup.triggers = astTrigger :: scaleGroup.triggers
+          case loadBalancers: List[ArgumentValue] => scaleGroup.loadBalancers = loadBalancers ::: scaleGroup.loadBalancers
           case _ =>
         }
     }
-    sys
+    scaleGroup
   }
 
-  def createScaleGroupConfiguration(props: Map[Any, Any]) =  {
+  def createScaleGroupConfiguration(props: Map[Any, Any]) = {
     val config = new ASTScaleGroupConfig
     config.minSize = props("min-size").asInstanceOf[Int]
     config.maxSize = props("max-size").asInstanceOf[Int]
@@ -93,20 +95,20 @@ class LasicParser extends JavaTokenParsers with Logging {
   }
 
   def buildNode(name: String, body: List[Any]) = {
-    val sys = new ASTNode()
-    sys.name = name
+    val node = new ASTNode()
+    node.name = name
     body.foreach {
       listEntry =>
         listEntry match {
-          case propertyMap: Map[Any, Any] => initNodeProperties(sys, propertyMap)
-          case astAction: ASTAction => sys.actions = astAction :: sys.actions
+          case propertyMap: Map[Any, Any] => initNodeProperties(node, propertyMap)
+          case astAction: ASTAction => node.actions = astAction :: node.actions
           case astVolume: ASTVolume =>
             val immutableMap = scala.collection.Map.empty ++ astVolume.params
-            sys.volumes = immutableMap :: sys.volumes
+            node.volumes = immutableMap :: node.volumes
           case _ =>
         }
     }
-    sys
+    node
   }
 
   def buildAction(actionName: String, body: List[Any]) = {
@@ -140,8 +142,25 @@ class LasicParser extends JavaTokenParsers with Logging {
       case ("instancetype", s: String) => nodeProps.instancetype = s
       case (x, y) => logger.warn("Unknown node property: " + x + " = " + y)
     }
-
   }
+
+  def buildLoadBalancer(name: String, body: List[Tuple2[String, Any]]) = {
+    val loadBalancer = new ASTLoadBalancer()
+    loadBalancer.localName = name
+    body.foreach {
+      listEntry =>
+        listEntry match {
+          case ("lb-port", i: Int) => loadBalancer.lbPort = i
+          case ("instance-port", i: Int) => loadBalancer.instancePort = i
+          case ("protocol", s: String) => loadBalancer.protocol = s
+          case ("sslcertificate", s: String) => loadBalancer.sslcertificate = s
+          case (x, y) => logger.warn("Unknown load balancer property: " + x + " = " + y)
+        }
+    }
+    loadBalancer
+  }
+
+
   /*==========================================================================================================
     SYSTEM bnf
     ==========================================================================================================*/
@@ -149,7 +168,7 @@ class LasicParser extends JavaTokenParsers with Logging {
     case _ ~ name ~ _ ~ body_tuple ~ _ => buildSystem(name, body_tuple._1, body_tuple._2)
   }
 
-  def system_body: Parser[(List[Any], Any)] = rep(system_props | node | scale_group | system) ~ opt(path_bindings) ^^ {
+  def system_body: Parser[(List[Any], Any)] = rep(system_props | node | scale_group | load_balancer | system) ~ opt(path_bindings) ^^ {
     case list_o_declarations ~ Some(x) => (list_o_declarations, x)
     case list_o_declarations ~ None => (list_o_declarations, None)
   }
@@ -192,7 +211,7 @@ class LasicParser extends JavaTokenParsers with Logging {
     case _ ~ name ~ _ ~ body_list ~ _ => buildScaleGroup(name, body_list)
   }
 
-  def scale_group_body = rep(scale_config | trigger | action | volume)
+  def scale_group_body = rep(scale_config | trigger | action | volume | load_balancers)
 
   def scale_config = "configuration" ~ aString ~ lbrace ~ rep(scale_group_prop) ~ rbrace ^^ {
     case _ ~ name ~ _ ~ list_o_props ~ _ => Map() ++ list_o_props + ("name" -> name)
@@ -225,6 +244,23 @@ class LasicParser extends JavaTokenParsers with Logging {
   }
 
   def trigger_string_prop_name = "measure" | "namespace" | "statistic" | "unit"
+
+  def load_balancers = "load-balancers" ~ lbrace ~ load_balancers_body ~ rbrace ^^ {
+    case _ ~ _ ~ list_of_loadbalancers ~ _ => list_of_loadbalancers
+  }
+
+
+  def load_balancers_body = rep(load_balancer_entry)
+
+  def load_balancer_entry = literal | path_value
+
+  def literal = aString ^^ {
+    case x => new LiteralArgumentValue(x)
+  }
+
+  def path_value = path ^^ {
+    case x => new PathArgumentValue(x)
+  }
 
   /*==========================================================================================================
   NODE bnf
@@ -277,15 +313,15 @@ class LasicParser extends JavaTokenParsers with Logging {
 
   def script_stmnt = aString ~ ":" ~ lbrace ~ rep(script_param) ~ rbrace ^^ {
     case name ~ _ ~ _ ~ arg_list ~ _ =>
-      val argMap = Map[String, ScriptArgumentValue]() ++ arg_list
+      val argMap = Map[String, ArgumentValue]() ++ arg_list
       (name -> argMap)
   }
 
-  def script_param: Parser[Tuple2[String, ScriptArgumentValue]] = script_param_literal | script_param_path
+  def script_param: Parser[Tuple2[String, ArgumentValue]] = script_param_literal | script_param_path
 
   def script_param_literal = ident ~ ":" ~ aString ^^ {
     case from ~ _ ~ to =>
-      (from -> new LiteralScriptArgumentValue(to))
+      (from -> new LiteralArgumentValue(to))
   }
 
   def path: Parser[String] = """/(((system|node)\['[a-zA-Z0-9 -_]+'\](\[[0-9]+\])?)|/)*""".r
@@ -293,7 +329,7 @@ class LasicParser extends JavaTokenParsers with Logging {
 
   def script_param_path = ident ~ ":" ~ path ^^ {
     case from ~ _ ~ to =>
-      (from -> new PathScriptArgumentValue(to))
+      (from -> new PathArgumentValue(to))
   }
 
 
@@ -334,10 +370,47 @@ class LasicParser extends JavaTokenParsers with Logging {
 
   def volume_param = {"size" | "device" | "mount"} ~ ":" ~ aString ^^ {case label ~ _ ~ value => (label -> value)}
 
+  /*==========================================================================================================
+  load-balancer bnf
+  ==========================================================================================================*/
+
+
+  def load_balancer = "load-balancer" ~ aString ~ lbrace ~ load_balancer_body ~ rbrace ^^ {
+    case _ ~ name ~ _ ~ body_list ~ _ => buildLoadBalancer(name, body_list)
+  }
+
+  def load_balancer_body = load_balancer_props ^^ {
+    map_o_props => List() ++ map_o_props
+  }
+
+  def load_balancer_props = "props" ~> "{" ~> rep(load_balancer_prop) <~ "}" ^^ {
+    list_o_props => Map() ++ list_o_props
+  }
+
+  def load_balancer_prop = load_balancer_numeric_prop | load_balancer_string_prop | load_balancer_protocol_prop
+
+  def load_balancer_numeric_prop = load_balancer_numeric_prop_name ~ ":" ~ wholeNumber ^^ {
+    case name ~ _ ~ value => (name -> value.toInt)
+  }
+
+  def load_balancer_numeric_prop_name = "lb-port" | "instance-port"
+
+  def load_balancer_string_prop = load_balancer_string_prop_name ~ ":" ~ aString ^^ {
+    case name ~ _ ~ value => (name -> value)
+  }
+
+  def load_balancer_string_prop_name = "sslcertificate"
+
+  def load_balancer_protocol_prop = "protocol" ~ ":" ~ protocols ^^ {
+    case _ ~ _ ~ value => ("protocol" -> value)
+  }
+
+  def protocols = "TCP" | "HTTPS" | "HTTP" | "SSL"
+
 
   /*==========================================================================================================
-    Misc bnf
-   ==========================================================================================================*/
+   Misc bnf
+  ==========================================================================================================*/
   def aString = stringLiteral ^^ {
     x =>
       val y = LasicProperties.resolveProperty(x);
