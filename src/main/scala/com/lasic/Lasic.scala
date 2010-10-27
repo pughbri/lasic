@@ -9,6 +9,7 @@ import io.Source
 import java.lang.System
 import com.beust.jcommander.{ParameterException, JCommander}
 import java.io.{FileNotFoundException, File}
+import actors.threadpool.TimeUnit
 
 
 /**
@@ -25,8 +26,14 @@ object Lasic {
 
   def main(args: Array[String]) {
     val startTime = System.currentTimeMillis
+
     runLasic(args)
-    println("Ran in " + ((System.currentTimeMillis - startTime) / 1000) + " seconds.")
+
+    val millis = System.currentTimeMillis - startTime
+    val minutes= TimeUnit.MILLISECONDS.toMinutes(millis)
+    val secs= TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
+    println("Ran in " + minutes + " min and " + secs + " seconds")
+
     System.exit(0)
   }
 
