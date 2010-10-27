@@ -37,7 +37,8 @@ object MappingUtil {
       case "medium" => InstanceType.C1Medium
       case "large" => InstanceType.M1Large
       case "xlarge" => InstanceType.M1Xlarge
-      case "xlargehmem" => InstanceType.M22xlarge
+      case "xlargehmem" => InstanceType.M2Xlarge
+      case "xlargedoublehmem" => InstanceType.M22xlarge
     }
   }
 
