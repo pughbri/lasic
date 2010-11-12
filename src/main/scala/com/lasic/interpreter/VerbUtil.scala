@@ -27,16 +27,7 @@ object VerbUtil extends Logging {
       logger.info("waiting for scale groups to terminate instances: " + scaleGroupsStillTerminating)
       Thread.sleep(sleepDelay)
 
-      scaleGroupsStillTerminating = scaleGroupsStillTerminating.filter(
-        name => {
-          //TODO: check "describeScalingActivites" instead of instances
-          val groupInfo = scalingGroup.describeAutoScalingGroup(name)
-          require(groupInfo.maxSize == 0,
-            "max size should be 0 for a scale group being deleted.  It is " + groupInfo.maxSize + " for " + name)
-          val instances = groupInfo.instances
-          instances != null && instances.size > 0
-        })
-
+      scaleGroupsStillTerminating = scaleGroupsStillTerminating filter(!scalingGroup.canScaleGroupBeShutdown(_))
     }
   }
 

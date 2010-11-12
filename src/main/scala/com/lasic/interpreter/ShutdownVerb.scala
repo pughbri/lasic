@@ -17,7 +17,7 @@ class ShutdownVerb(val cloud: Cloud, val program: LasicProgram) extends Verb wit
 
   def shutdownScaleGroups() {
     val scaleGroupManager = cloud.getScalingGroupClient
-    scaleGroups.foreach {
+    scaleGroups foreach {
       scaleGroup =>
         spawn("shutdown scale groups") {
           scaleGroupManager.updateScalingGroup(scaleGroup.cloudName, 0, 0)

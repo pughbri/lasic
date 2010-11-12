@@ -32,8 +32,8 @@ object MockScalingGroupClient extends ScalingGroupClient with Logging {
     }
   }
 
-  def deleteScalingGroup(name: String) = {
-    logger.info("deleting scaling group: " + name)
+  def deleteScalingGroup(name: String, maxWaitSeconds: Int = 10) = {
+    logger.info("deleting scaling group: " + name + " with maxWait at " + maxWaitSeconds)
     lock.synchronized {
       scaleGroups = scaleGroups.filter(group => group.name != name)
     }
@@ -134,6 +134,10 @@ object MockScalingGroupClient extends ScalingGroupClient with Logging {
         case None => throw new Exception("unknown scale group: " + autoScalingGroupName)
       }
     }
+  }
+
+  def canScaleGroupBeShutdown(autoScalingGroupName: String): Boolean = {
+    true
   }
 
 }
