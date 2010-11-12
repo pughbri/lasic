@@ -9,13 +9,17 @@ import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.{DeleteSnapshotRequest, DeregisterImageRequest, DescribeImagesRequest, CreateImageRequest}
 import com.amazonaws.services.autoscaling.model._
 import com.lasic.cloud.{ScalingTrigger, ScalingGroupInfo, ImageState, ScalingGroupClient, LaunchConfiguration => LasicLaunchConfig}
+import com.lasic.util.Logging
+import com.amazonaws.AmazonServiceException
+import com.lasic.LasicProperties
 
 /**
  *
  * @author Brian Pugh
  */
 
-class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: AmazonAutoScalingClient) extends ScalingGroupClient {
+class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: AmazonAutoScalingClient) extends ScalingGroupClient with Logging {
+  private val sleepDelay = LasicProperties.getProperty("SLEEP_DELAY", "10000").toInt
 
   implicit def unboxInt(i: java.lang.Integer) = i.intValue
 
@@ -85,25 +89,84 @@ class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: Ama
     awsScalingClient.updateAutoScalingGroup(updateRequest)
   }
 
-  def deleteScalingGroup(name: String) {
-    awsScalingClient.deleteAutoScalingGroup(new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(name))
+  def deleteScalingGroup(name: String, maxWaitSeconds: Int = 120) {
+    val startTime = System.currentTimeMillis
+    var deleted = false
+    while (!deleted) {
+      try {
+        awsScalingClient.deleteAutoScalingGroup(new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(name))
+        deleted = true
+      }
+      catch {
+        case ex: AmazonServiceException => {
+          if (isTimedOut(startTime, maxWaitSeconds)) throw ex
+          Thread.sleep(sleepDelay)
+          logger.info("Attempting to delete scale group " + name + ".")
+        }
+      }
+    }
+  }
+
+  private def isTimedOut(startTime: Long, maxWaitSeconds: Int): Boolean = {
+    (((System.currentTimeMillis - startTime) / 1000) > maxWaitSeconds)
   }
 
   def describeAutoScalingGroup(autoScalingGroupName: String): ScalingGroupInfo = {
     val request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(List(autoScalingGroupName))
     val groupsResult = awsScalingClient.describeAutoScalingGroups(request)
-    val scaleGroups = JavaConversions.asBuffer(groupsResult.getAutoScalingGroups)
-    require(scaleGroups.size == 1)
-    val scaleGroup = scaleGroups(0)
-    val instances = javaListToImmutableScalaList(scaleGroup.getInstances).map(inst => inst.getInstanceId)
-    new ScalingGroupInfo(scaleGroup.getAutoScalingGroupName,
-      scaleGroup.getLaunchConfigurationName,
-      scaleGroup.getMinSize,
-      scaleGroup.getMaxSize,
-      scaleGroup.getDesiredCapacity,
-      scaleGroup.getCooldown,
-      scaleGroup.getAvailabilityZones,
-      instances)
+    val scaleGroups = groupsResult.getAutoScalingGroups
+    var scaleGroupInfo: ScalingGroupInfo = null
+    require(scaleGroups.size <= 1, "should be at most one scale group with name [" + autoScalingGroupName + "]")
+    if (scaleGroups.size == 1) {
+      val scaleGroup = scaleGroups(0)
+      val instances = javaListToImmutableScalaList(scaleGroup.getInstances).map(_.getInstanceId)
+      scaleGroupInfo = new ScalingGroupInfo(scaleGroup.getAutoScalingGroupName,
+        scaleGroup.getLaunchConfigurationName,
+        scaleGroup.getMinSize,
+        scaleGroup.getMaxSize,
+        scaleGroup.getDesiredCapacity,
+        scaleGroup.getCooldown,
+        scaleGroup.getAvailabilityZones,
+        instances)
+    }
+    scaleGroupInfo
+  }
+
+  def canScaleGroupBeShutdown(autoScalingGroupName: String): Boolean = {
+    var canShutdown = false
+
+    //check for scaling activities
+    val request = new DescribeScalingActivitiesRequest().withAutoScalingGroupName(autoScalingGroupName)
+    val scalingActivitiesResult = awsScalingClient.describeScalingActivities(request)
+    val activities = scalingActivitiesResult.getActivities()
+    val activeScaleActivities = activities exists (_.getStatusCode == "InProgress")
+
+    //make sure there are no instances
+    if (!activeScaleActivities) {
+      val group = describeAutoScalingGroup(name)
+      canShutdown = (group == null || (group.maxSize == 0 && group.instances.size == 0))
+    }
+
+    if (logger.isDebugEnabled) {
+      logScaleGroupInfo(canShutdown, autoScalingGroupName, activeScaleActivities, activities)
+    }
+
+    canShutdown
+  }
+
+  private def logScaleGroupInfo(canShutdown: Boolean, autoScalingGroupName: String, activeScaleActivities: Boolean, activities: List[Activity]): Unit = {
+    val group = describeAutoScalingGroup(name)
+    var size = 0
+    if (group != null) {
+      size = group.instances.size
+    }
+    logger.debug("can shutdown: " + canShutdown
+            + ". Instance count: "
+            + size
+            + ".  Active scale activities for "
+            + autoScalingGroupName + ": "
+            + activeScaleActivities + ".  Details activities InProgress: "
+            + activities.filter(_.getStatusCode == "InProgress").mkString("\n "))
   }
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger) {

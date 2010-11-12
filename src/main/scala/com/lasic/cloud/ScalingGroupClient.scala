@@ -27,7 +27,9 @@ trait ScalingGroupClient {
 
   def describeAutoScalingGroup(autoScalingGroupName: String): ScalingGroupInfo
 
-  def deleteScalingGroup(name: String)
+  def canScaleGroupBeShutdown(autoScalingGroupName: String): Boolean
+
+  def deleteScalingGroup(name: String, maxWaitSeconds: Int = 120)
 
   def createUpdateScalingTrigger(trigger: ScalingTrigger)
 
