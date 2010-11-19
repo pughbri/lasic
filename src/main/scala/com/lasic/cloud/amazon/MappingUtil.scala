@@ -34,11 +34,14 @@ object MappingUtil {
     instanceTypeStr match {
       case "micro" => InstanceType.T1Micro
       case "small" => InstanceType.M1Small
-      case "medium" => InstanceType.C1Medium
       case "large" => InstanceType.M1Large
       case "xlarge" => InstanceType.M1Xlarge
       case "xlargehmem" => InstanceType.M2Xlarge
       case "xlargedoublehmem" => InstanceType.M22xlarge
+      case "xlargequadhmem" => InstanceType.M24xlarge
+      case "highcpumedium" => InstanceType.C1Medium
+      case "highcpuextralarge" => InstanceType.C1Xlarge
+      case "cluster" => InstanceType.Cc14xlarge
     }
   }
 
