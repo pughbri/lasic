@@ -15,4 +15,5 @@ trait Verb {
   val cloud:Cloud
   val program:LasicProgram
   def doit
+  def terminate {}
 }

@@ -87,7 +87,10 @@ object Lasic {
       case _ => printUsageAndExit(null, "unknown verb: " + cmdLineArgs.verbAndScript.get(0)); null
     }
 
+    val shutdownThread = new ShutdownThread(verb)
+    Runtime.getRuntime().addShutdownHook(shutdownThread)
     verb.doit
+    shutdownThread.verbCompleted
   }
 
   def printUsageAndExit(jcmder: JCommander, message: String) = {
