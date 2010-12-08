@@ -89,7 +89,7 @@ class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: Ama
     awsScalingClient.updateAutoScalingGroup(updateRequest)
   }
 
-  def deleteScalingGroup(name: String, maxWaitSeconds: Int = 120) {
+  def deleteScalingGroup(name: String, maxWaitSeconds: Int = 240) {
     val startTime = System.currentTimeMillis
     var deleted = false
     while (!deleted) {
