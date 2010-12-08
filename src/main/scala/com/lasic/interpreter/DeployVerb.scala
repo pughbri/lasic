@@ -105,7 +105,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def printBoundLasicProgram {
     println("paths {")
-    nodes foreach({
+    nodes foreach ({
       node => println("    " + node.path + ": \"" + node.vmId + "\"  // public=" + showValue(node.vmPublicDns) + "\tprivate=" + showValue(node.vmPrivateDns))
     })
     scaleGroups foreach {
@@ -149,47 +149,48 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   def doit() {
 
-    try {
-      // Error checks before doing anything
-      validateProgram
+    // Error checks before doing anything
+    validateProgram
 
-      // Startup everything that needs it
-      launchAllAMIs
-      createAllVolumes
+    // Startup everything that needs it
+    launchAllAMIs
+    createAllVolumes
 
-      setLoadBalancerNames
-      setScaleGroupNames
+    setLoadBalancerNames
+    setScaleGroupNames
 
-      createLoadBalancers
+    createLoadBalancers
 
 
-      // Wait for all resources to be created before proceeding
-      waitForAMIsToBoot
+    // Wait for all resources to be created before proceeding
+    waitForAMIsToBoot
 
-      //assignPrivateDNS2Nodes
+    //assignPrivateDNS2Nodes
 
-      waitForVolumes
+    waitForVolumes
 
-      // Attach all volumes in preparation for setup
-      attachAllVolumes
-      waitForVolumesToAttach
+    // Attach all volumes in preparation for setup
+    attachAllVolumes
+    waitForVolumesToAttach
 
-      // Configure all the nodes
-      startAsyncRunAction("install")
+    // Configure all the nodes
+    startAsyncRunAction("install")
 
-      // Wait for all nodes to be configured
-      waitForActionItems
+    // Wait for all nodes to be configured
+    waitForActionItems
 
-      createScaleGroups(cloud.getScalingGroupClient)
+    createScaleGroups(cloud.getScalingGroupClient)
 
-      // Wait for scale groups to be configured
-      waitForScaleGroupsConfigured
+    // Wait for scale groups to be configured
+    waitForScaleGroupsConfigured
 
-      waitForElasticIpDnsChange("install")
-    }
-    finally {
-      // Print out the bound program so the user can see the IDs we are manipulating
-      printBoundLasicProgram
-    }
+    waitForElasticIpDnsChange("install")
+    // Print out the bound program so the user can see the IDs we are manipulating
+    printBoundLasicProgram
+  }
+
+
+  override def terminate {
+    printBoundLasicProgram
   }
 }
