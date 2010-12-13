@@ -1,7 +1,5 @@
 package com.lasic.cloud.amazon
 
-import com.xerox.amazonws.ec2.{InstanceType => TypicaInstanceType}
-import com.xerox.amazonws.ec2.{LaunchConfiguration => TypicaLaunchConfiguration}
 import com.lasic.cloud.LaunchConfiguration
 import collection.JavaConversions
 import collection.JavaConversions.asBuffer
@@ -14,21 +12,6 @@ import com.amazonaws.services.autoscaling.model.CreateLaunchConfigurationRequest
  */
 
 object MappingUtil {
-  def getTypicaInstanceType(instanceTypeStr: String) = {
-    val instanceType = TypicaInstanceType.getTypeFromString(instanceTypeStr)
-    if (instanceType == null) {
-      instanceTypeStr match {
-        case "small" => TypicaInstanceType.DEFAULT
-        case "medium" => TypicaInstanceType.MEDIUM_HCPU
-        case "large" => TypicaInstanceType.LARGE
-        case "xlarge" => TypicaInstanceType.XLARGE
-        case "xlargehmem" => TypicaInstanceType.XLARGE_HMEM
-      }
-    }
-    else {
-      instanceType
-    }
-  }
 
   def getAWSInstanceType(instanceTypeStr: String) = {
     instanceTypeStr match {
@@ -43,18 +26,6 @@ object MappingUtil {
       case "highcpuextralarge" => InstanceType.C1Xlarge
       case "cluster" => InstanceType.Cc14xlarge
     }
-  }
-
-
-  def createTypicaLaunchConfiguration(lasicLC: LaunchConfiguration): TypicaLaunchConfiguration = {
-    val launchConfig = new TypicaLaunchConfiguration(lasicLC.machineImage, 1, 1)
-    launchConfig.setKernelId(lasicLC.kernelId)
-    launchConfig.setRamdiskId(lasicLC.ramdiskId)
-    launchConfig.setAvailabilityZone(lasicLC.availabilityZone)
-    launchConfig.setInstanceType(getTypicaInstanceType(lasicLC.instanceType))
-    launchConfig.setKeyName(lasicLC.key)
-    launchConfig.setSecurityGroup(JavaConversions.asList(lasicLC.groups))
-    launchConfig
   }
 
   def createAWSRunInstancesRequest(lasicLC: LaunchConfiguration): RunInstancesRequest = {

@@ -1,22 +1,17 @@
 package com.lasic.cloud.amazon
 
 import java.lang.String
-import java.util.{List => JList}
 import scala.collection.JavaConversions.asBuffer
 import scala.collection.JavaConversions.asMap
 import collection.JavaConversions
-import com.lasic.cloud.MachineState._
-import com.lasic.cloud.ImageState._
 import com.lasic.util.Logging
 import com.lasic.{LasicProperties}
-import com.xerox.amazonws.monitoring.{StandardUnit, Statistics}
-import com.xerox.amazonws.ec2.{ImageDescription, Jec2, AutoScaling, InstanceType, ReservationDescription, LaunchConfiguration => AmazonLaunchConfiguration, ScalingTrigger => AmazonScalingTrigger}
 import com.lasic.cloud._
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.ec2.AmazonEC2Client
-import com.amazonaws.services.ec2.model.{Instance, Reservation, DescribeInstancesRequest}
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient
+import com.amazonaws.services.ec2.model.{ReleaseAddressRequest, CreateVolumeRequest, Instance, DescribeInstancesRequest}
 
 /**
  * @author Brian Pugh
@@ -24,25 +19,6 @@ import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingCli
  */
 
 class AmazonCloud extends Cloud with Logging {
-  lazy val ec2: Jec2 = {
-    val (key, secret) = ec2Keys
-    var cloudApiHost = LasicProperties.getProperty("CLOUD_API_HOST")
-    if (cloudApiHost == null) {
-      new Jec2(key, secret)
-    }
-    else {
-      var cloudApiPath = LasicProperties.getProperty("CLOUD_API_PATH", "/services/Eucalyptus")
-      var ec2tmp = new Jec2(key, secret, false, cloudApiHost, 8773)
-      ec2tmp.setResourcePrefix(cloudApiPath)
-      ec2tmp.setSignatureVersion(1)
-      ec2tmp
-    }
-  }
-
-  lazy val autoscaling: AutoScaling = {
-    val (key, secret) = ec2Keys
-    new AutoScaling(key, secret)
-  }
 
   lazy val awsAutoScaling = {
     val (key, secret) = ec2Keys
@@ -52,7 +28,6 @@ class AmazonCloud extends Cloud with Logging {
   lazy val awsClient = {
     val (key, secret) = ec2Keys
     new AmazonEC2Client(new BasicAWSCredentials(key, secret))
-
   }
 
   lazy val awsLoadBalancer = {
@@ -61,7 +36,6 @@ class AmazonCloud extends Cloud with Logging {
 
   }
 
-
   def ec2Keys = {
     val key: String = LasicProperties.getProperty("AWS_ACCESS_KEY")
     val secret: String = LasicProperties.getProperty("AWS_SECRET_KEY")
@@ -69,7 +43,6 @@ class AmazonCloud extends Cloud with Logging {
       throw new Exception("must provide both AWS_ACCESS_KEY and AWS_SECRET_KEY in properties file")
     (key, secret)
   }
-
 
   def getLoadBalancerClient(): LoadBalancerClient = {
     new AmazonLoadBalancerClient(awsLoadBalancer)
@@ -81,7 +54,6 @@ class AmazonCloud extends Cloud with Logging {
   override def createVMs(launchConfig: LaunchConfiguration, numVMs: Int, startVM: Boolean): List[VM] = {
     createVMs(numVMs, startVM) {new AmazonVM(awsClient, launchConfig)}
   }
-
 
   def findVM(instanceId: String) = {
     require(instanceId != null, "must provide an instance id to find a vm")
@@ -109,16 +81,16 @@ class AmazonCloud extends Cloud with Logging {
   }
 
   def createVolume(config: VolumeConfiguration): Volume = {
-    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.createVolume(config.size.toString, config.snapID, config.availabilityZone)
-    new AmazonVolume(ec2, vi.getVolumeId)
+    val createVolReq = new CreateVolumeRequest().withSize(config.size).withSnapshotId(config.snapID).withAvailabilityZone(config.availabilityZone)
+    val volumeResult = awsClient.createVolume(createVolReq)
+    new AmazonVolume(awsClient, volumeResult.getVolume.getVolumeId)
   }
 
   def allocateAddress() = {
-    ec2.allocateAddress()
+    awsClient.allocateAddress.getPublicIp
   }
 
-
   def releaseAddress(ip: String) = {
-    ec2.releaseAddress(ip)
+    awsClient.releaseAddress(new ReleaseAddressRequest().withPublicIp(ip))
   }
 }

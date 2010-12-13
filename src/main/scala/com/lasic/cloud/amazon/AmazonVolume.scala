@@ -1,60 +1,44 @@
 package com.lasic.cloud.amazon
 
-import com.lasic.cloud.VolumeState._
 import com.lasic.cloud.VolumeInfo
 import com.lasic.cloud._
-import com.xerox.amazonws.ec2.{ Jec2, AttachmentInfo => XAttachmentInfo}
-import java.util.{List => JList}
-import collection.JavaConversions
-
-
-//import amazon.{AmazonVolume, AmazonVM}
+import com.amazonaws.services.ec2.AmazonEC2Client
+import com.amazonaws.services.ec2.model.{AttachVolumeRequest, DeleteVolumeRequest, DescribeVolumesRequest}
 import java.lang.String
-import java.util.Iterator
-import java.util.{List => JList}
-import com.xerox.amazonws.ec2.{AutoScaling, Jec2, ReservationDescription, AttachmentInfo => XAttachmentInfo}
-import com.xerox.amazonws.ec2.InstanceType
 import scala.collection.JavaConversions.asBuffer
-import collection.JavaConversions
-import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
-import com.lasic.cloud.{VM, Cloud}
+import com.lasic.cloud.VM
 
-class AmazonVolume(ec2: Jec2, val id:String) extends Volume with Logging{
+class AmazonVolume(val awsClient: AmazonEC2Client, val id:String) extends Volume with Logging{
 
   def info:VolumeInfo = {
-    val args = Array[String](id)
-    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args)(0)
-    new VolumeInfo(vi.getVolumeId, vi.getSize.toInt, vi.getSnapshotId, vi.getZone, VolumeState.string2State(vi.getStatus))
+    val descVolumsReq = new DescribeVolumesRequest().withVolumeIds(id)
+    val descVolumesResult = awsClient.describeVolumes(descVolumsReq)
+    require(descVolumesResult.getVolumes.size == 1)
+    val volume = descVolumesResult.getVolumes.get(0)
+    new VolumeInfo(volume.getVolumeId, volume.getSize.intValue, volume.getSnapshotId, volume.getAvailabilityZone, VolumeState.string2State(volume.getState))
   }
 
   def attachInfo:VolumeAttachmentInfo = {
-    val args = Array[String](id)
-    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args)(0)
-    val infoList = vi.getAttachmentInfo
-    if ( infoList.size==0 )
-      return null;
+    val descVolumsReq = new DescribeVolumesRequest().withVolumeIds(id)
+    val volume = awsClient.describeVolumes(descVolumsReq).getVolumes.get(0)
+    val attachments = volume.getAttachments
+    if ( attachments.size==0 )
+          return null;
 
-//    val args = List(vmId)
-//    val volList:JList = ec2.describeVolumes(args)
-//    val vi: com.xerox.amazonws.ec2.VolumeInfo = ec2.describeVolumes(args).get(0)
-//    val list:List = vi.getAttachmentInfo
-//    if ( list.size==0 )
-//      return null
-    val device = infoList.first.getDevice
-    val instanceID = infoList.first.getInstanceId
+    val device = attachments.first.getDevice
+    val instanceID = attachments.first.getInstanceId
     new VolumeAttachmentInfo(instanceID, device)
-
-
   }
 
   def delete = {
-    ec2.deleteVolume(id)
+    val delRequest = new DeleteVolumeRequest().withVolumeId(id)
+    awsClient.deleteVolume(delRequest)
   }
 
   def attachTo(vm:VM, deviceName:String) {
-    // Ensure we only attach to MockVM!
     val theVM = vm.asInstanceOf[AmazonVM]
-    ec2.attachVolume( id, theVM.instanceId, deviceName)
+    val attachVolumenReq = new AttachVolumeRequest().withVolumeId(id).withInstanceId(theVM.instanceId).withDevice(deviceName)
+    awsClient.attachVolume(attachVolumenReq)
   }
 }
