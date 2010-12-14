@@ -213,6 +213,7 @@ object LasicCompiler {
     val nodeGroup = new NodeGroup
     copyNodeProperties(nodeGroup, ast)
     nodeGroup.actions = compile(ast.actions)
+    nodeGroup.loadBalancers = ast.loadBalancers
     createInstances(nodeGroup, ast)
     nodeGroup
   }

@@ -11,4 +11,6 @@ trait LoadBalancerClient {
 
   def deleteLoadBalancer(name: String)
 
+  def registerWith(loadBalancer: String, vm: VM)
+
 }

@@ -1,0 +1,7 @@
+system  "sys1" {
+    node "node1" {
+        load-balancers {
+          "a-elb"
+        }
+    }
+}

@@ -26,6 +26,12 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
 
   def testDeploy() = {
     Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(201)))
+    val lbClient = new MockCloud().getLoadBalancerClient
+    val lbMappings = lbClient.getLoadBalancerMappings
+    assert(lbMappings.size == 1, "should only be 1 instance mapping to load balancer mapping")
+    lbMappings foreach {
+      t2 => assert(t2._2 == "test-lb")
+    }
   }
 
   def testDeployScaleGroup() = {
