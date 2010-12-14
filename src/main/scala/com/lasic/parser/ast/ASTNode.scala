@@ -1,6 +1,7 @@
 package com.lasic.parser.ast
 
 import com.lasic.values.{BaseAction, NodeProperties}
+import com.lasic.model.ArgumentValue
 
 /**
  * Created by IntelliJ IDEA.
@@ -14,6 +15,7 @@ import com.lasic.values.{BaseAction, NodeProperties}
 class ASTNode extends NodeProperties {
   var volumes                 = List[Map[String,String]]()
   var actions                 = List[BaseAction]()
+  var loadBalancers           = List[ArgumentValue]()
 
 
 }

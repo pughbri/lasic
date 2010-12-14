@@ -105,6 +105,7 @@ class LasicParser extends JavaTokenParsers with Logging {
           case astVolume: ASTVolume =>
             val immutableMap = scala.collection.Map.empty ++ astVolume.params
             node.volumes = immutableMap :: node.volumes
+          case loadBalancers: List[ArgumentValue] => node.loadBalancers = loadBalancers ::: node.loadBalancers
           case _ =>
         }
     }
@@ -271,7 +272,7 @@ class LasicParser extends JavaTokenParsers with Logging {
     case _ ~ name ~ _ ~ body_list ~ _ => buildNode(name, body_list)
   }
 
-  def node_body = rep(node_props | action | volume)
+  def node_body = rep(node_props | action | volume | load_balancers)
 
   def node_props = "props" ~> "{" ~> rep(node_prop) <~ "}" ^^ {
     list_o_props => Map() ++ list_o_props

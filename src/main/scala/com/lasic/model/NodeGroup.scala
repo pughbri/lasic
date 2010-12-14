@@ -20,5 +20,6 @@ class NodeGroup extends NodeProperties with Pathable {
 
   var volumes = List[Map[String,String]]()
   var actions = List[BaseAction]()
+  var loadBalancers = List[ArgumentValue]()
   
 }

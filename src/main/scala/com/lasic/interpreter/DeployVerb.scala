@@ -105,9 +105,9 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
   private def printBoundLasicProgram {
     println("paths {")
-    nodes foreach ({
+    nodes foreach {
       node => println("    " + node.path + ": \"" + node.vmId + "\"  // public=" + showValue(node.vmPublicDns) + "\tprivate=" + showValue(node.vmPrivateDns))
-    })
+    }
     scaleGroups foreach {
       scaleGroup =>
         println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
@@ -147,6 +147,17 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     }
   }
 
+  def registerInstancesWithLoadBalancer {
+    nodes foreach {
+      node =>
+       val loadBalancers = node.parent.loadBalancers map (ScriptResolver.resolveArgumentValue(node, _))
+       loadBalancers foreach {
+          loadBalancer =>
+             cloud.getLoadBalancerClient.registerWith(loadBalancer, node.vm)
+       }
+    }
+  }
+
   def doit() {
 
     // Error checks before doing anything
@@ -180,6 +191,8 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     waitForActionItems
 
     createScaleGroups(cloud.getScalingGroupClient)
+
+    registerInstancesWithLoadBalancer
 
     // Wait for scale groups to be configured
     waitForScaleGroupsConfigured

@@ -171,6 +171,11 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals("lb-cloudname", program.instances(0).loadBalancers(0).cloudName)
   }
 
+  def testNodeWithLoadBalancer {
+    val program = getLasicProgram(12);
+    assertEquals("a-elb", program.instances(0).nodegroups(0).loadBalancers(0).literal)
+  }
+
   def testBoundPaths() = {
     val program = getLasicProgram(9);
     assertEquals("i-54adb13a", program.instances(0).nodegroups(0).instances(0).boundInstanceId)

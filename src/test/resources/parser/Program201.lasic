@@ -1,5 +1,8 @@
 system "www.lasic.com" {
   node "www-lasic-webapp" {
+    load-balancers {
+       "test-lb"
+    }
     props {
        groups: "default","web-server"
        key: "default"
