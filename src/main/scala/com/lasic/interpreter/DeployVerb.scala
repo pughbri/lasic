@@ -135,7 +135,16 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
             List(LasicProperties.getProperty("availability_zone", "us-east-1d")))
         }
     }
+  }
 
+   private def waitForLoadBalancersToInitialize() {
+    var waiting = loadBalancers filter(_.dnsName == "")
+    while (waiting.size > 0) {
+      val descriptions = waiting map(_.cloudName)
+      logger.info("waiting for loadbalancers to initialize:" + descriptions)
+      Thread.sleep(sleepDelay)
+      waiting = loadBalancers filter(_.dnsName == "")
+    }
   }
 
   def setLoadBalancerNames {
@@ -166,19 +175,15 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     // Startup everything that needs it
     launchAllAMIs
     createAllVolumes
-
     setLoadBalancerNames
     setScaleGroupNames
-
     createLoadBalancers
 
 
     // Wait for all resources to be created before proceeding
     waitForAMIsToBoot
-
-    //assignPrivateDNS2Nodes
-
     waitForVolumes
+    waitForLoadBalancersToInitialize
 
     // Attach all volumes in preparation for setup
     attachAllVolumes
