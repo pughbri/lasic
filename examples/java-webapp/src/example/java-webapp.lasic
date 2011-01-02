@@ -24,7 +24,7 @@ system "java-web-app" {
 
     action "install" {
       scp {
-        "file:web-app-install.sh":"~/webAppInstall.sh"
+        "http://lasic.googlecode.com/hg/examples/java-webapp/src/example/web-app-install.sh?r=a97481e7841f7204de9d97dd635da7bedf6f1b7b":"~/webAppInstall.sh"
         "file:java-webapp.war":"~/java-webapp.war"
       }
       
@@ -54,8 +54,8 @@ system "java-web-app" {
 
     action "install" {
       scp {
-        "file:mysql-install.sh":"~/mysql-install.sh"
-        "file:webapp.sql":"~/webapp.sql"
+        "http://lasic.googlecode.com/hg/examples/java-webapp/src/example/mysql-install.sh?r=a97481e7841f7204de9d97dd635da7bedf6f1b7b":"~/mysql-install.sh"
+        "http://lasic.googlecode.com/hg/examples/java-webapp/src/example/webapp.sql?r=a97481e7841f7204de9d97dd635da7bedf6f1b7b":"~/webapp.sql"
       }
 
       scripts {
