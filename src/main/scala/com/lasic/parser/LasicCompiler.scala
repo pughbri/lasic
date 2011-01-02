@@ -16,7 +16,7 @@ import com.lasic.values.{NodeProperties, BaseAction}
  */
 
 object LasicCompiler {
-  var blockComment = """(/\*([^*]|(\*+[^*/]))*\*+/)|(//.*)""".r
+  var blockComment = """(/\*([^*]|(\*+[^*/]))*\*+/)|([^:]//.*)""".r
 
   private def stripComments(s: String) = {
     blockComment.replaceAllIn(s, " ")

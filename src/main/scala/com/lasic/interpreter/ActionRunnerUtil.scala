@@ -1,15 +1,15 @@
 package com.lasic.interpreter
 
 import com.lasic.values.BaseAction
-import java.net.URI
 import com.lasic.concurrent.ops._
-import java.io.File
 import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroupClient, ScalingTrigger, LaunchConfiguration}
 import java.lang.String
 import com.lasic.LasicProperties
 import com.lasic.util.Logging
 import com.lasic.model._
+import java.io.{FileOutputStream, File}
+import java.net.{URLEncoder, URI}
 
 protected class VMState() {
   var scpComplete = false
@@ -208,10 +208,34 @@ trait ActionRunnerUtil extends Logging {
 
   }
 
-
   private def build(uri: URI): File = {
-    if (uri.isOpaque) new File(uri.toString.split(":")(1)) else new File(uri)
+    uri.getScheme match {
+      case "file" => convertFileURIToFile(uri)
+      case "http" => convertHttpURIToFile(uri)
+    }
   }
+
+  def convertFileURIToFile(uri: URI): File = {
+    if (uri.isOpaque)
+      new File(uri.toString.split(":")(1))
+    else
+      new File(uri)
+  }
+
+  def convertHttpURIToFile(uri: URI): File = {
+    val is = uri.toURL.openStream()
+    val tmpFile = System.getProperty("java.io.tmpdir") + "/" +  URLEncoder.encode(uri.toString, "UTF-8")
+    val fos = new FileOutputStream(tmpFile)
+    var oneChar = is.read()
+    while (oneChar != -1) {
+      fos.write(oneChar)
+      oneChar = is.read()
+    }
+    fos.close()
+    is.close()
+    new File(tmpFile)
+  }
+
 
   def waitForElasticIpDnsChange(actionName: String) {
     var ipNodeMap = List[NodeIPState]()
@@ -246,7 +270,7 @@ trait ActionRunnerUtil extends Logging {
             nodeIpState.pubDnsMatch = true
           }
       })
-      waiting = waiting filter(!_.pubDnsMatch)
+      waiting = waiting filter (!_.pubDnsMatch)
     }
     if (!waiting.isEmpty) {
       logger.info("Timed out waiting for publicDns to be set for elastic ips after waiting " +
