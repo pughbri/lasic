@@ -25,7 +25,7 @@ system "java-web-app" {
     action "install" {
       scp {
         "http://lasic.googlecode.com/hg/examples/java-webapp/src/example/web-app-install.sh?r=a97481e7841f7204de9d97dd635da7bedf6f1b7b":"~/webAppInstall.sh"
-        "file:java-webapp.war":"~/java-webapp.war"
+        "http://lasic.googlecode.com/hg/examples/java-webapp/src/example/java-webapp.war?r=675bcbe878a386c54b55ea025ab6bdbb871ab41f":"~/java-webapp.war"
       }
       
       scripts {
