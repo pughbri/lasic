@@ -17,7 +17,7 @@ system "java-web-app" {
       groups: "default"
       key: "default"
       instancetype: "small"
-      count: 1
+      count: 2
       machineimage: "ami-508c7839"
       user: "ubuntu"
     }
