@@ -1,5 +1,7 @@
 package com.lasic.cloud.ssh
 
+import com.lasic.values.{ScriptArgument, ResolvedScriptArgument}
+
 /**
  *
  * @author Brian Pugh
@@ -8,6 +10,11 @@ package com.lasic.cloud.ssh
 class BashPreparedScriptExecution(session: SshSession,
                                   script: String,
                                   envVars: Map[String, List[String]])  extends PreparedScriptExecution(session, script, envVars) {
+
+  def this(session: SshSession, script: String, scriptArgs: List[ResolvedScriptArgument]) = {
+     this(session, script, BashPreparedScriptExecution.convertArgs(scriptArgs))
+  }
+
   /**
    * Adds export statements for variables to cmd
    */
@@ -67,4 +74,15 @@ class BashPreparedScriptExecution(session: SshSession,
   }
 
 
+}
+
+object BashPreparedScriptExecution {
+   private def convertArgs(scriptArgs: List[ResolvedScriptArgument]) = {
+    val tmp: List[Tuple2[String, List[String]]] = scriptArgs map {
+      scriptArg => {
+          (scriptArg.argName, scriptArg.argValues.map(_.literal))
+      }
+    }
+    Map.empty ++ tmp
+  }
 }

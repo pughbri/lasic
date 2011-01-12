@@ -14,6 +14,7 @@ import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.cloud.ssh.{ConnectException, AuthFailureException, SshSession, BashPreparedScriptExecution}
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model._
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
 
 /**
  * User: Brian Pugh
@@ -199,9 +200,9 @@ class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfig
   }
 
 
-  def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) = {
+  def executeScript(scriptDefinition : ResolvedScriptDefinition) {
     withSshSession(timeout) {
-      session => new BashPreparedScriptExecution(session, scriptAbsPath, variables).execute()
+      session => new BashPreparedScriptExecution(session, scriptDefinition.scriptName, scriptDefinition.scriptArguments).execute()
     }
   }
 }

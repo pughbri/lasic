@@ -1,5 +1,7 @@
 package com.lasic.model
 
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
+
 /**
  * Created by IntelliJ IDEA.
  * User: lmonson
@@ -20,7 +22,7 @@ class NodeInstance(val parentGroup:NodeGroup,val idx:Int) extends Pathable  with
   def children = volumes
 
 
-  def resolveScripts(args: Map[String, Map[String, ArgumentValue]]): Map[String, Map[String, List[String]]] = {
+  def resolveScripts(args: List[ScriptDefinition]): List[ResolvedScriptDefinition] = {
     ScriptResolver.resolveScripts(this, args)
   }
 

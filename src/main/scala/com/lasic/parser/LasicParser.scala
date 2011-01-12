@@ -7,6 +7,8 @@ import com.lasic.LasicProperties
 import com.lasic.model.{ArgumentValue, PathArgumentValue, LiteralArgumentValue}
 import com.lasic.util.Logging
 import com.lasic.values.NodeProperties
+import com.lasic.values.ScriptDefinition
+import com.lasic.values.ScriptArgument
 
 /**
  * Created by IntelliJ IDEA.
@@ -120,10 +122,16 @@ class LasicParser extends JavaTokenParsers with Logging {
         listEntry match {
           case astScp: ASTScp => action.scpMap = action.scpMap ++ astScp.scpMap
           case astScript: ASTScript =>
-            action.scriptMap = action.scriptMap ++ astScript.scpMap.map {
-              tuple => (tuple._1, scala.collection.Map.empty ++ tuple._2)
-
+            val scriptDefinitions = astScript.scpMap map {
+              //tuple => (tuple._1, scala.collection.Map.empty ++ tuple._2)
+              tuple => {
+                val scriptArguments = tuple._2 map {
+                   argTuple => ScriptArgument(argTuple._1, argTuple._2)
+                }
+                ScriptDefinition(tuple._1, scriptArguments.toList)
+              }
             }
+            action.scriptDefinitions = action.scriptDefinitions ::: scriptDefinitions.toList
           case astIp: ASTIp => action.ipMap = action.ipMap ++ astIp.ipMap
           case _ =>
         }

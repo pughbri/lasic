@@ -6,6 +6,7 @@ import java.lang.String
 import com.lasic.cloud.MachineState._
 import com.lasic.util.Logging
 import com.lasic.LasicProperties
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition, ResolvedScriptArgument}
 
 /**
  * User: Brian Pugh
@@ -61,7 +62,7 @@ trait VM extends Logging {
 
   def execute(executableAbsPath: String)
 
-  def executeScript(scriptAbsPath: String, variables: Map[String, List[String]])
+  def executeScript(scriptDefinition : ResolvedScriptDefinition)
 
 //  def attach(volumeInfo: VolumeInfo, devicePath: String): AttachmentInfo = {
 //    cloud.attach(volumeInfo, this, devicePath)
