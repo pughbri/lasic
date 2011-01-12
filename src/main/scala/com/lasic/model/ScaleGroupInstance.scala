@@ -1,7 +1,7 @@
 package com.lasic.model
 
-import com.lasic.values.{BaseAction, NodeProperties, ScaleGroupProperties}
 import com.lasic.cloud.VM
+import com.lasic.values._
 
 /**
  * 
@@ -23,7 +23,7 @@ class ScaleGroupInstance extends Pathable with VMHolder {
   var actions = List[BaseAction]()
   var loadBalancers = List[ArgumentValue]()
 
-  def resolveScripts(args: Map[String, Map[String, ArgumentValue]]): Map[String, Map[String, List[String]]] = {
+  def resolveScripts(args: List[ScriptDefinition]): List[ResolvedScriptDefinition] = {
     ScriptResolver.resolveScripts(this, args)
   }
 }

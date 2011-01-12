@@ -224,7 +224,7 @@ object LasicCompiler {
         val action = new Action()
         action.name = astAction.name
         action.scpMap = astAction.scpMap
-        action.scriptMap = astAction.scriptMap
+        action.scriptDefinitions = astAction.scriptDefinitions
         action.ipMap = astAction.ipMap
         action
       }

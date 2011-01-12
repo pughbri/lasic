@@ -1,6 +1,5 @@
 package com.lasic.interpreter
 
-import com.lasic.values.BaseAction
 import com.lasic.concurrent.ops._
 import java.util.Date
 import com.lasic.cloud.{ImageState, ScalingGroupClient, ScalingTrigger, LaunchConfiguration}
@@ -10,6 +9,7 @@ import com.lasic.util.Logging
 import com.lasic.model._
 import java.io.{FileOutputStream, File}
 import java.net.{URLEncoder, URI}
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition, BaseAction}
 
 protected class VMState() {
   var scpComplete = false
@@ -35,7 +35,7 @@ trait ActionRunnerUtil extends Logging {
   /**
    * Spawns a thread in which all the scp, script and ip statements are run.  vmStat is updated as appropriate.
    */
-  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: Map[String, Map[String, scala.List[String]]], allIPs: Map[Int, String]) {
+  def runActionItems(vmHolder: VMHolder, allSCPs: Map[String, String], resolvedScripts: List[ResolvedScriptDefinition], allIPs: Map[Int, String]) {
     spawn("run action items") {
       allSCPs.foreach {
         tuple => {
@@ -48,13 +48,10 @@ trait ActionRunnerUtil extends Logging {
         vmState(vmHolder).scpComplete = true
       }
 
-      resolvedScripts.foreach {
-        script =>
-          val scriptName = script._1
-          val argMap = script._2
-          //vm.execute(scriptName)
+      resolvedScripts foreach {
+        scriptDefinition =>
           if (vmHolder.vm != null) {
-            vmHolder.vm.executeScript(scriptName, argMap)
+            vmHolder.vm.executeScript(scriptDefinition)
           }
       }
       vmState.synchronized(
@@ -83,16 +80,16 @@ trait ActionRunnerUtil extends Logging {
   /**
    * Find all actions mapping action name and return a tuple contain the scripts, scps and ips.
    */
-  def getActionItemMaps(actionName: String, allActions: List[BaseAction]): (Map[String, Map[String, ArgumentValue]], Map[String, String], Map[Int, String]) = {
+  def getActionItemMaps(actionName: String, allActions: List[BaseAction]): (List[ScriptDefinition], Map[String, String], Map[Int, String]) = {
     val deployActions = allActions.filter(_.name == actionName)
     var allSCPs = Map[String, String]()
-    var allScripts = Map[String, Map[String, ArgumentValue]]()
+    var allScripts = List[ScriptDefinition]()
     var allIPs = Map[Int, String]()
 
     deployActions.foreach {
       action => {
         allSCPs = allSCPs ++ action.scpMap
-        allScripts = allScripts ++ action.scriptMap
+        allScripts = allScripts ::: action.scriptDefinitions
         allIPs = allIPs ++ action.ipMap
       }
     }

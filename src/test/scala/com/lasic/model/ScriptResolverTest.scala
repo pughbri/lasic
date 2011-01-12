@@ -7,6 +7,8 @@ import org.scalatest.matchers.ShouldMatchers
 import org.apache.commons.io.IOUtils
 import com.lasic.parser.LasicCompiler
 import com.lasic.cloud.mock.{MockCloud, MockVM}
+import com.lasic.values.{ScriptDefinition, ResolvedScriptArgument, ResolvedScriptDefinition}
+import scala.None
 
 /**
  *
@@ -46,15 +48,20 @@ class ScriptResolverTest extends FlatSpec with ShouldMatchers {
 
     //grab the scripts for the scale group and resolve them
     scaleGroup.actions should have size (1)
-    val allScripts = Map[String, Map[String, ArgumentValue]]() ++ scaleGroup.actions(0).scriptMap
-    val resolvedScripts: Map[String, Map[String, List[String]]] = ScriptResolver.resolveScripts(scaleGroups(0), allScripts)
+    val allScripts = List[ScriptDefinition]() ::: scaleGroup.actions(0).scriptDefinitions
+    val resolvedScripts: List[ResolvedScriptDefinition] = ScriptResolver.resolveScripts(scaleGroups(0), allScripts)
 
     //validate that everything resolved properly to the nodes private DNS
     resolvedScripts should have size (1)
-    val variableValueMap = resolvedScripts("~/install-lasic-webapp.sh")
-    val values = variableValueMap("NODE")
-    values should have size (1)
-    values(0) should be === "private-dns-test"
+    resolvedScripts(0).scriptName should be === "~/install-lasic-webapp.sh"
+    resolvedScripts(0).scriptArguments should have size (2)
+    val argOption : Option[ResolvedScriptArgument] = resolvedScripts(0).scriptArguments find (_.argName == "NODE")
+    val arg: ResolvedScriptArgument = argOption match {
+      case None => fail("Argument value NODE not found for script " + resolvedScripts(0).scriptName)
+      case Some(x) => x
+    }
+    arg.argValues should have size (1)
+    arg.argValues(0).literal should be === "private-dns-test"
   }
 
   "ScriptResolver" should "resolve a scalegroup path to the scalegroup cloud name" in {
@@ -69,14 +76,20 @@ class ScriptResolverTest extends FlatSpec with ShouldMatchers {
 
     //grab the scripts for the node and resolve them
     node.parent.actions should have size (1)
-    val allScripts = Map[String, Map[String, ArgumentValue]]() ++ node.parent.actions(0).scriptMap
-    val resolvedScripts: Map[String, Map[String, List[String]]] = ScriptResolver.resolveScripts(nodes(0), allScripts)
+    val allScripts = List[ScriptDefinition]() ++ node.parent.actions(0).scriptDefinitions
+    val resolvedScripts: List[ResolvedScriptDefinition] = ScriptResolver.resolveScripts(nodes(0), allScripts)
 
     //validate that everything resolved properly to the nodes private DNS
     resolvedScripts should have size (1)
-    val variableValueMap = resolvedScripts("~/install-lasic-lb.sh")
-    val values = variableValueMap("SCALEGROUP")
-    values should have size (1)
-    values(0) should be === "www-lasic-webapp-01"
+    resolvedScripts(0).scriptName should be === "~/install-lasic-lb.sh"
+    resolvedScripts(0).scriptArguments should have size (2)
+    val argOption : Option[ResolvedScriptArgument] = resolvedScripts(0).scriptArguments find (_.argName == "SCALEGROUP")
+     val arg: ResolvedScriptArgument = argOption match {
+      case None => fail("Argument value SCALEGROUP not found for script " + resolvedScripts(0).scriptName)
+      case Some(x) => x
+    }
+
+    arg.argValues should have size (1)
+    arg.argValues(0).literal should be === "www-lasic-webapp-01"
   }
 }

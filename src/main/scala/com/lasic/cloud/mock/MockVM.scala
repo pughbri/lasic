@@ -8,6 +8,7 @@ import util.Random
 import com.lasic.cloud.ssh.{SshSession, BashPreparedScriptExecution}
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.concurrent.ops._
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
 
 /**
  * User: Brian Pugh
@@ -53,7 +54,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
   }
 
   override def reboot() {
-    spawn ("roboot mock VM") {
+    spawn("roboot mock VM") {
       machineState.synchronized {
         machineState = MachineState.Rebooting
         Thread.sleep(delay * 1000)
@@ -80,7 +81,7 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
     //withDelay(logger.info("executing " + executableAbsPath))
   }
 
-  override def executeScript(scriptAbsPath: String, variables: Map[String, List[String]]) {
+  override def executeScript(scriptDefinition: ResolvedScriptDefinition) {
     class MockSshSession extends SshSession(getPublicDns, "ubuntu", new File("")) {
       override def sendCommand(cmd: String) = {
         logger.info("sending command [" + cmd + "] to " + userName + "@" + dnsName)
@@ -88,12 +89,11 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
       }
     }
     withDelay {
-      logger.debug("prepare to execute " + scriptAbsPath + ".  Env vars: " + variables.mkString(", "))
-      new BashPreparedScriptExecution(new MockSshSession, scriptAbsPath, variables).execute()
+      logger.debug("prepare to execute " + scriptDefinition.scriptName + ".  Env vars: " + scriptDefinition.scriptArguments.mkString(", "))
+      new BashPreparedScriptExecution(new MockSshSession, scriptDefinition.scriptName, scriptDefinition.scriptArguments).execute()
 
     }
   }
-
 
   def associateAddressWith(ip: String) {
     if (ip == null || ip == "") {
@@ -134,8 +134,6 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
     null
   }
 
-  //override def getMachineState() = machineState
-
   private def withDelay(callback: => Unit): Unit = {
     Thread.sleep(delay * 1000)
     callback
@@ -146,46 +144,10 @@ class MockVM(delay: Int, val launchConfiguration: LaunchConfiguration, cloud: Mo
     isInit
   }
 
-  //  def act() {
-  //    loop {
-  //      react {
-  //        case StateChange(state, 0) => {
-  //          assignState(state)
-  //          //println(machineState)
-  //        }
-  //        case StateChange(state, delaySecs) => {
-  //          setServerRunningWithDelay(state, delay)
-  //          //println(machineState)
-  //        }
-  //        case state: MachineState.Value => {
-  //          assignState(state)
-  //          //println(machineState)
-  //        }
-  //        case ("init",initValue:Boolean,delay:Int) => setInitWithDelay(initValue,delay)
-  //        case ("init",initValue:Boolean) => isInit = initValue
-  //      }
-  //    }
-  //  }
-
   def assignState(s: MachineState.Value) {
     if (instanceId == null)
       instanceId = "i-" + new Random().nextInt(5000)
     machineState = s
   }
 
-  //  def setServerRunningWithDelay(state: MachineState.Value, delay: Int) {
-  //    val mainActor = self
-  //    actor {
-  //      Thread.sleep(delay * 1000)
-  //      mainActor ! state
-  //    }
-  //  }
-  //
-  //  def setInitWithDelay(init:Boolean, delay:Int) {
-  //    val mainActor = self
-  //    actor {
-  //      Thread.sleep(delay * 1000)
-  //      mainActor ! ("init",init)
-  //    }
-  //  }
 }
