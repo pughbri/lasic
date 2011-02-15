@@ -1,6 +1,6 @@
 package com.lasic.model
 
-import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
+import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition, ScriptArgument}
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,7 +23,9 @@ class NodeInstance(val parentGroup:NodeGroup,val idx:Int) extends Pathable  with
 
 
   def resolveScripts(args: List[ScriptDefinition]): List[ResolvedScriptDefinition] = {
-    ScriptResolver.resolveScripts(this, args)
+    val lasicEnvVars = ScriptArgument("NAME", LiteralArgumentValue(parent.name)) :: ScriptArgument("INDEX", LiteralArgumentValue(idx.toString)) :: Nil
+    val argsWithEnvVars = args map (scriptDef => ScriptDefinition(scriptDef.scriptName, scriptDef.scriptArguments ::: lasicEnvVars))
+    ScriptResolver.resolveScripts(this, argsWithEnvVars )
   }
 
 }

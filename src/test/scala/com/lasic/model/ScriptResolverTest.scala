@@ -16,14 +16,7 @@ import scala.None
  */
 
 @RunWith(classOf[JUnitRunner])
-class ScriptResolverTest extends FlatSpec with ShouldMatchers {
-  def getLasicProgram(i: Int) = {
-    val path = "/model/Program%03d.lasic".format(i)
-    val is = getClass.getResourceAsStream(path)
-    val program = IOUtils.toString(is);
-    LasicCompiler.compile(program)
-  }
-
+class ScriptResolverTest extends FlatSpec with ShouldMatchers with ProgramLoader {
 
   "ScriptResolver" should "resolve a node path to the instance's private DNS" in {
 
