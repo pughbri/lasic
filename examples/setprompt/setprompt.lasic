@@ -13,7 +13,7 @@ system "set-prompt-example" {
 
     action "install" {
       scp {
-        "file:setprompt-ubuntu.sh":"~/setprompt.sh"
+        "http://lasic.googlecode.com/hg/examples/setprompt/setprompt-ubuntu.sh":"~/setprompt.sh"
       }
       
       scripts {
