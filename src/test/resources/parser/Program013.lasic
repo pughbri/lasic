@@ -1,0 +1,50 @@
+system  "sys1" {
+    abstract node "base-node" {
+        props {
+            machineimage: "machineimage"
+            count: 1
+        }
+        action "test" {
+            scp {
+                "src1":"dest1"
+            }
+            scripts {
+                "base_script": {}
+            }
+		}
+
+		action "test3" {
+            scp {
+                "src3":"dest3"
+            }
+            scripts {
+                "base_script3": {}
+            }
+		}
+    }
+
+    node "node1" extends "base-node" {
+        props {
+            count: 2
+            instancetype:     "large"
+        }
+        action "test2" {
+          scp {
+                "src2":"dest2"
+            }
+            scripts {
+                "some_script": {}
+            }
+		}
+
+	    action "test3" {
+          scp {
+                "src-sub3":"dest-sub3"
+            }
+            scripts {
+                "some_script_sub3": {}
+            }
+		}
+    }
+
+}

@@ -96,8 +96,8 @@ class LasicParser extends JavaTokenParsers with Logging {
     astTrigger
   }
 
-  def buildNode(name: String, body: List[Any]) = {
-    val node = new ASTNode()
+  def buildNode(name: String, body: List[Any], parentNode: Option[String], isAbstract: Boolean = false) = {
+    val node = new ASTNode(isAbstract, parentNode)
     node.name = name
     body.foreach {
       listEntry =>
@@ -276,8 +276,13 @@ class LasicParser extends JavaTokenParsers with Logging {
   ==========================================================================================================*/
 
 
-  def node = "node" ~ aString ~ lbrace ~ node_body ~ rbrace ^^ {
-    case _ ~ name ~ _ ~ body_list ~ _ => buildNode(name, body_list)
+  def node = opt("abstract") ~"node" ~ aString ~ opt(extends_body) ~ lbrace ~ node_body ~ rbrace ^^ {
+    case Some(x) ~ _ ~ name ~ parentNode ~ _ ~ body_list ~ _ => buildNode(name, body_list, parentNode, true)
+    case None ~ _ ~ name ~ parentNode ~ _ ~ body_list ~ _ => buildNode(name, body_list, parentNode)
+  }
+
+  def extends_body = "extends" ~ aString ^^ {
+    case _ ~ parentNode => parentNode
   }
 
   def node_body = rep(node_props | action | volume | load_balancers)

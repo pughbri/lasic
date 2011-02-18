@@ -77,9 +77,10 @@ object LasicCompiler {
     // create nodes
     sysGroup.instances.foreach {
       systemInstance =>
-        systemInstance.nodegroups = ast.nodes.toList.map {
+        val concreteNodes = ast.nodes.toList filter (!_.isAbstract)
+        systemInstance.nodegroups = concreteNodes map {
           case node =>
-            val nodeGroup: NodeGroup = compile(node);
+            val nodeGroup: NodeGroup = compile(node, ast.nodes.toList);
             nodeGroup.parentSystemInstance = systemInstance
             nodeGroup
         }
@@ -197,23 +198,50 @@ object LasicCompiler {
   }
 
   def copyNodeProperties(to: NodeProperties, from: NodeProperties): Unit = {
-    to.name = from.name
-    to.count = from.count
-    to.machineimage = from.machineimage
-    to.kernelid = from.kernelid
-    to.ramdiskid = from.ramdiskid
-    to.groups = from.groups.map {x => x}
-    to.key = from.key
-    to.user = from.user
-    to.instancetype = from.instancetype
+    to.copySetProperties(from)
   }
 
-  private def compile(ast: ASTNode): NodeGroup = {
-    // Create the group
+  private def compile(ast: ASTNode, allAstNodes: List[ASTNode]): NodeGroup = {
+    //find the parent node if it exists
+    ast.parentNode match {
+      case Some(parentNodeName) => {
+        val parentNodeAst = allAstNodes find (_.name == parentNodeName)
+        parentNodeAst match {
+          case Some(parentNode) => compile(ast,parentNodeAst)
+          case None => throw new CompilationFailureException("unknown parent node '" + parentNodeName + "' on node '" + ast.name + "'")
+        }
+      }
+      case None => compile(ast, None)
+    }
+  }
+
+  private def compile(ast: ASTNode, parentAstOption: Option[ASTNode]): NodeGroup = {
     val nodeGroup = new NodeGroup
+    var baseActions = List[Action]()
+    parentAstOption match {
+      case Some(parentAst) => {  //set the values from the base node
+        copyNodeProperties(nodeGroup, parentAst)
+        baseActions = compile(parentAst.actions)
+        nodeGroup.loadBalancers = parentAst.loadBalancers
+      }
+      case None => //no base node so do nothing
+    }
+
     copyNodeProperties(nodeGroup, ast)
-    nodeGroup.actions = compile(ast.actions)
-    nodeGroup.loadBalancers = ast.loadBalancers
+    val subNodeActions = compile(ast.actions)
+
+    //add the "baseactions" that aren't "overridden" to the node groups action list
+    baseActions foreach {
+      action => {
+        subNodeActions find (_.name == action.name) match {
+          case Some(x) => // exists in subnode so is "overridden"
+          case None => nodeGroup.actions = action :: nodeGroup.actions
+        }
+      }
+
+    }
+    nodeGroup.actions = nodeGroup.actions ::: subNodeActions
+    nodeGroup.loadBalancers = nodeGroup.loadBalancers ::: ast.loadBalancers
     createInstances(nodeGroup, ast)
     nodeGroup
   }
@@ -243,7 +271,7 @@ object LasicCompiler {
     scaleGroup.localName = ast.name
     scaleGroup.configuration = scaleGrpConfig
     scaleGroup.triggers = compileTriggers(ast.triggers)
-    scaleGroup.actions = compile(ast.actions)    
+    scaleGroup.actions = compile(ast.actions)
     scaleGroup.loadBalancers = ast.loadBalancers
     scaleGroup
   }
