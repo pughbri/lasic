@@ -205,6 +205,39 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals("123.123.123.125", program.instances(0).nodegroups(1).actions(0).ipMap(1))
   }
 
+
+
+
+    /**
+   * Ensure that the abstract node is NOT put into the model
+   */
+  def testAbstractNode() = {
+    val program = getLasicProgram(13);
+    assertEquals(1, program.instances(0).nodegroups.size)
+    assertEquals("node1", program.instances(0).nodegroups(0).name)
+  }
+
+  def testNodeInheritance() = {
+    val program = getLasicProgram(13);
+    assertEquals(1, program.instances(0).nodegroups.size)
+
+    val nodegroup = program.instances(0).nodegroups(0)
+    assertEquals(2, nodegroup.children.size) //count is 2 in script of subnode
+    assertEquals("machineimage", nodegroup.machineimage)
+    assertEquals("large", nodegroup.instancetype)
+    assertEquals(3, nodegroup.actions.size) //one script from base and one from subnode
+    val action1 = nodegroup.actions find (_.name == "test")
+    assertEquals(action1.get.scpMap("src1"), "dest1")
+    assert(action1.get.scriptDefinitions.find(_.scriptName == "base_script") != None)
+
+    val action2 = nodegroup.actions find (_.name == "test2")
+    assertEquals(action2.get.scpMap("src2"), "dest2")
+    assert(action2.get.scriptDefinitions.find(_.scriptName == "some_script") != None)
+
+    val action3 = nodegroup.actions find (_.name == "test3")
+    assertEquals(action3.get.scpMap("src-sub3"), "dest-sub3")
+    assert(action3.get.scriptDefinitions.find(_.scriptName == "some_script_sub3") != None)
+  }
   /**
    *  Parse a basic, but non trivial, program and test a variety of features about it
    */

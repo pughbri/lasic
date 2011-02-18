@@ -12,12 +12,10 @@ import com.lasic.model.ArgumentValue
  */
 
 
-class ASTNode extends NodeProperties {
+class ASTNode(val isAbstract: Boolean = false, val parentNode: Option[String]) extends NodeProperties {
   var volumes                 = List[Map[String,String]]()
   var actions                 = List[BaseAction]()
   var loadBalancers           = List[ArgumentValue]()
-
-
 }
 
 

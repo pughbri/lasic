@@ -8,18 +8,20 @@ system "java-web-app" {
      }
   }
 
-  node "web-app" {
-    load-balancers {
-      /system['java-web-app'][0]/load-balancer['web-lb']
-    }
-
-    props {
+  abstract node "base-web-app" {
+     props {
       groups: "default"
       key: "default"
       instancetype: "small"
       count: 2
       machineimage: "ami-508c7839"
       user: "ubuntu"
+    }
+ }
+
+  node "web-app" extends "base-web-app" {
+    load-balancers {
+      /system['java-web-app'][0]/load-balancer['web-lb']
     }
 
     action "install" {
@@ -36,14 +38,9 @@ system "java-web-app" {
     }
   }
 
-  node "mysql-db" {
+  node "mysql-db" extends "base-web-app" {
     props {
-      groups: "default"
-      key: "default"
-      instancetype: "small"
       count: 1
-      machineimage: "ami-508c7839"
-      user: "ubuntu"
     }
 
     volume "mysql_partition" {
