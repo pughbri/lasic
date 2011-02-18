@@ -189,6 +189,7 @@ object LasicCompiler {
             case scaleGroupInstance: ScaleGroupInstance => scaleGroupInstance.cloudName = boundPath._2
             case scaleGroupConfig: ScaleGroupConfiguration => scaleGroupConfig.cloudName = boundPath._2
             case loadBalancerInstance: LoadBalancerInstance => loadBalancerInstance.cloudName = boundPath._2
+            case volumeInstance: VolumeInstance => volumeInstance.id = boundPath._2
             case _ => throw new Exception("Path " + boundPath + " does not resolve to a nodeinstance.  Resolves to " + pathables(0).getClass)
           }
         }

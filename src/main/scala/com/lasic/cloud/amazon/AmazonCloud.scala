@@ -11,7 +11,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient
-import com.amazonaws.services.ec2.model.{ReleaseAddressRequest, CreateVolumeRequest, Instance, DescribeInstancesRequest}
+import com.amazonaws.services.ec2.model.{ReleaseAddressRequest, CreateVolumeRequest, Instance, DescribeInstancesRequest, DescribeVolumesRequest}
 
 /**
  * @author Brian Pugh
@@ -84,6 +84,17 @@ class AmazonCloud extends Cloud with Logging {
     val createVolReq = new CreateVolumeRequest().withSize(config.size).withSnapshotId(config.snapID).withAvailabilityZone(config.availabilityZone)
     val volumeResult = awsClient.createVolume(createVolReq)
     new AmazonVolume(awsClient, volumeResult.getVolume.getVolumeId)
+  }
+
+  def findVolume(id: String): Volume = {
+    val volRequest = new DescribeVolumesRequest()
+    volRequest.withVolumeIds(JavaConversions.asList(List(id)))
+    val volDescriptions = awsClient.describeVolumes(volRequest).getVolumes
+    if (volDescriptions.size != 1) {
+      null
+    } else {
+      new AmazonVolume(awsClient, volDescriptions.get(0).getVolumeId)
+    }
   }
 
   def allocateAddress() = {
