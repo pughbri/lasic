@@ -125,6 +125,7 @@ class LasicCompilerTest extends TestCase("LasicCompilerTest") {
     assertEquals(100, program.instances(0).nodegroups(0).instances(0).volumes(0).volSize)
     assertEquals("/dev/sdh", program.instances(0).nodegroups(0).instances(0).volumes(0).device)
     assertEquals("/home/fs/lotsofdata", program.instances(0).nodegroups(0).instances(0).volumes(0).mount)
+    assertEquals("vol-1231534", program.instances(0).nodegroups(0).instances(0).volumes(0).id)
 
     assertEquals("node1-volume2", program.instances(0).nodegroups(0).instances(0).volumes(1).name)
     assertEquals(200, program.instances(0).nodegroups(0).instances(0).volumes(1).volSize)

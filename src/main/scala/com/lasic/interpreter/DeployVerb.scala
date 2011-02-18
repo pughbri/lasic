@@ -4,6 +4,7 @@ import collection.immutable.List
 import com.lasic.cloud.VolumeState._
 import com.lasic.cloud.MachineState._
 import com.lasic.model._
+import com.lasic.exceptions.NotFoundException
 import com.lasic.interpreter.VerbUtil._
 import com.lasic.util.Logging
 import com.lasic.concurrent.ops._
@@ -43,14 +44,32 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     }
   }
 
+  private def resolveExistingVolumes {
+    var ok = true
+    volumes.foreach(volInst =>
+      if (volInst.id != "") {
+        val volume = cloud.findVolume(volInst.id)
+        if (volume == null) {
+          logger.error("Volume with instance id '" + volInst.id + "' does not exist.")
+          ok = false
+        } else {
+          volInst.volume = volume
+        }
+      }
+    )
+    if (!ok) {
+      throw new NotFoundException("Specified volumes not found!")
+    }
+  }
 
   private def createAllVolumes {
     volumes.foreach(volInst =>
-      spawn("create volumes") {
-        val volume = cloud.createVolume(VolumeConfiguration.build(volInst))
-        volInst.volume = volume
+      spawn("create/find volumes") {
+        if (volInst.id == "") {
+          volInst.volume = cloud.createVolume(VolumeConfiguration.build(volInst))
+        }
       }
-      )
+    )
   }
 
 
@@ -173,6 +192,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     validateProgram
 
     // Startup everything that needs it
+    resolveExistingVolumes
     launchAllAMIs
     createAllVolumes
     setLoadBalancerNames

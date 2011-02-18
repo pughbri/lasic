@@ -40,6 +40,11 @@ class MockCloud(startupDelay: Int) extends Cloud with Logging {
     new MockVolume(id, config )
   }
 
+  def findVolume(id: String): Volume = {
+    val config = new VolumeConfiguration(100, "snap", "zone")
+    new MockVolume(id, config)
+  }
+
   def allocateAddress() = {
     val random: Random = new Random()
     "10.255." + +random.nextInt(200) + "." + random.nextInt(200);

@@ -52,6 +52,8 @@ trait Cloud {
    */
   def createVolume(config:VolumeConfiguration): Volume
 
+  def findVolume(id: String): Volume
+
 //  def deleteVolume(volumeId: String)
 //
 //  def attach(volumeInfo: VolumeInfo, vm: VM, devicePath: String): AttachmentInfo
