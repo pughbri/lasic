@@ -8,13 +8,16 @@ import com.lasic.cloud.VM
 import java.io.File
 import collection.immutable.Map
 import java.lang.String
-import java.util.{List => JList}
+import java.util.{List => JList, ArrayList}
+import com.lasic.{LasicProperties}
 import com.lasic.cloud.MachineState._
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.cloud.ssh.{ConnectException, AuthFailureException, SshSession, BashPreparedScriptExecution}
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model._
 import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
+import com.amazonaws.services.ec2.model.{CreateTagsRequest, Tag}
+
 
 /**
  * User: Brian Pugh
@@ -30,7 +33,20 @@ class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfig
     val request = MappingUtil.createAWSRunInstancesRequest(launchConfiguration)
     val rir = awsClient.runInstances(request)
     require(rir.getReservation.getInstances.size == 1, "Excepted behavior.  AWS api return multiple instances when we request that only one be created.")
-    rir.getReservation.getInstances.foreach(instance => instanceId = instance.getInstanceId)
+    var resources = new ArrayList[String];
+    var tags = new ArrayList[Tag];
+
+    rir.getReservation.getInstances.foreach(instance => {
+        instanceId = instance.getInstanceId
+        resources.add(instanceId)      
+      })
+    tags.add(new Tag("Name", launchConfiguration.name))
+    val reference = LasicProperties.getProperty("REFERENCE")
+    if(reference != null) {
+      tags.add(new Tag("Reference", reference))
+    }
+    val createTagsRequest = new CreateTagsRequest(resources, tags)
+    awsClient.createTags(createTagsRequest)
   }
 
   def reboot() {
