@@ -8,6 +8,7 @@ import com.lasic.cloud.{ScalingTrigger, VolumeConfiguration, MachineState, Launc
 import java.lang.String
 import com.lasic.util.Logging
 import org.apache.commons.logging.LogFactory
+import com.lasic.util._
 
 /**
  * User: pughbc
@@ -24,7 +25,7 @@ class AmazonCloudTest extends AmazonBaseTest {
       val handle = cloud.createVolume(config)
       assert(handle != null)
       for (i <- 1 to 100) {
-        println(handle.info.state)
+        PrintLine(handle.info.state)
       }
 
     }
@@ -78,7 +79,7 @@ class AmazonCloudTest extends AmazonBaseTest {
       //      try {
       //
       //        val attachmentInfo = vm.attach(volumeInfo, devicePath)
-      //        println(attachmentInfo)
+      //        PrintLine(attachmentInfo)
       //      }
       //      finally {
       //        try {

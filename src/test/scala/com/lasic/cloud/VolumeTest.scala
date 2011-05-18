@@ -2,6 +2,7 @@ package com.lasic.cloud
 
 import junit.framework.TestCase
 import mock.MockCloud
+import com.lasic.util._
 
 /**
  * A trait used to implement volume tests
@@ -27,7 +28,7 @@ class VolumeTest extends TestCase("MockVolumeTest") {
     assert(volume.info.availabilityZone != null)
     assert(volume.info.state == VolumeState.Available)
     volume.delete
-    println(volume.info)
+    PrintLine(volume.info)
 
   }
 

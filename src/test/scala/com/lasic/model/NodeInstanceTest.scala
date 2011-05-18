@@ -5,6 +5,7 @@ import org.scalatest.matchers.ShouldMatchers
 import com.lasic.values.{ResolvedScriptArgument, ResolvedScriptDefinition, ScriptDefinition}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import com.lasic.util._
 
 /**
  *
@@ -30,7 +31,7 @@ class NodeInstanceTest extends FlatSpec with ShouldMatchers with ProgramLoader {
     //validate that everything resolved properly to the nodes private DNS
     resolvedScripts should have size (1)
     resolvedScripts(0).scriptName should be === "~/install-lasic-lb.sh"
-    println(resolvedScripts(0).scriptArguments.size)
+    PrintLine(resolvedScripts(0).scriptArguments.size)
     resolvedScripts(0).scriptArguments should have size (4)
     val argOption: Option[ResolvedScriptArgument] = resolvedScripts(0).scriptArguments find (_.argName == "NAME")
     val arg: ResolvedScriptArgument = argOption match {

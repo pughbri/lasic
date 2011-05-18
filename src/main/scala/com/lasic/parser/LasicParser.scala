@@ -147,6 +147,7 @@ class LasicParser extends JavaTokenParsers with Logging {
       case ("ramdiskid", s: String) => nodeProps.ramdiskid = s
       case ("groups", s: List[String]) => nodeProps.groups = s
       case ("key", s: String) => nodeProps.key = s
+      case ("data", s: String) => nodeProps.data = s
       case ("user", s: String) => nodeProps.user = s
       case ("instancetype", s: String) => nodeProps.instancetype = s
       case (x, y) => logger.warn("Unknown node property: " + x + " = " + y)
@@ -303,7 +304,7 @@ class LasicParser extends JavaTokenParsers with Logging {
     case name ~ _ ~ value => (name -> value)
   }
 
-  def node_string_prop_name = "count" | "machineimage" | "kernelid" | "ramdiskid" | "key" | "user" | "instancetype"
+  def node_string_prop_name = "count" | "machineimage" | "kernelid" | "ramdiskid" | "key" | "user" | "data" | "instancetype"
 
   def node_list_prop = node_list_prop_name ~ ":" ~ repsep(aString, ",") ^^ {
     case name ~ _ ~ value_list => (name -> value_list)

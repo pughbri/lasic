@@ -6,6 +6,7 @@ import com.lasic.util.Logging
 import com.lasic.concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
+import com.lasic.util._
 
 /**
  *
@@ -79,15 +80,15 @@ class RunActionVerb(val actionName: String, val cloud: Cloud, val program: Lasic
 
   private def printBoundLasicProgram {
     if (!scaleGroups.isEmpty) {
-      println("/**scale group paths were modified**/")
-      println("paths {")
+      PrintLine("/**scale group paths were modified**/")
+      PrintLine("paths {")
       scaleGroups foreach {
         scaleGroup =>
-          println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
-          println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
+          PrintLine("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
+          PrintLine("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
       }
     }
-    println("}")
+    PrintLine("}")
   }
 
   private def saveOldScaleGroupAndConfig {

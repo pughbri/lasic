@@ -5,6 +5,7 @@ import collection.JavaConversions
 import collection.JavaConversions.asBuffer
 import com.amazonaws.services.ec2.model.{InstanceType, Placement, RunInstancesRequest}
 import com.amazonaws.services.autoscaling.model.CreateLaunchConfigurationRequest
+import org.apache.commons.codec.binary.Base64
 
 /**
  *
@@ -38,7 +39,10 @@ object MappingUtil {
     launchConfig.setRamdiskId(lasicLC.ramdiskId)
     launchConfig.setPlacement(new Placement().withAvailabilityZone(lasicLC.availabilityZone))
     launchConfig.setInstanceType(getAWSInstanceType(lasicLC.instanceType).toString)
-    launchConfig.setKeyName(lasicLC.key);
+    launchConfig.setKeyName(lasicLC.key)
+    if (lasicLC.userData != null) {
+      launchConfig.setUserData(Base64.encodeBase64String(lasicLC.userData.getBytes))
+    }
     launchConfig.setSecurityGroups(JavaConversions.asList(lasicLC.groups))
     launchConfig
   }

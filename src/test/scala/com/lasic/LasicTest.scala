@@ -25,7 +25,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   }
 
   def testDeploy() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(201)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(201)), System.out)
     val lbClient = new MockCloud().getLoadBalancerClient
     val lbMappings = lbClient.getLoadBalancerMappings
     assert(lbMappings.size == 1, "should only be 1 instance mapping to load balancer mapping")
@@ -35,7 +35,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   }
 
   def testDeployScaleGroup() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)), System.out)
     val scalingGroup = new MockCloud().getScalingGroupClient
     assert(scalingGroup.getScaleGroups.size === 1)
     assert(scalingGroup.getScaleGroups(0).name.startsWith("www-lasic-webapp"))
@@ -47,7 +47,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   }
 
   def testDeployLoadBalancer() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(203)), System.out)
     val lbClient = new MockCloud().getLoadBalancerClient
     assert(lbClient.getLoadBalancers.size == 2)
     lbClient.getLoadBalancers foreach {
@@ -70,11 +70,11 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   }
 
   def testDeployWithElasticIps() = {
-    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(101)))
+    Lasic.runLasic(Array("-c", "mock", "deploy", getLasicFilePath(101)), System.out)
   }
 
   def testRunActionWithElasticIps() = {
-    Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction", getLasicFilePath(101)))
+    Lasic.runLasic(Array("-c", "mock", "-a", "assignips", "runAction", getLasicFilePath(101)), System.out)
   }
 
   def testRunActionWithScaleGroup() = {
@@ -86,7 +86,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
     scalingGroup.createScalingGroup("orig-my-app-2010-08-23-14-30-12", lc.name, 3, 5, null, null)
 
     //run the action
-    Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)))
+    Lasic.runLasic(Array("-c", "mock", "-a", "switchScaleGroup", "runAction", getLasicFilePath(102)), System.out)
 
     //ensure that the original scale group is gone, and the new one is there
     assert(scalingGroup.getScaleGroups.size === 1)
@@ -110,7 +110,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
     assert(lbClient.getLoadBalancers.size === 1)
 
     //run bound script to shut it down
-    Lasic.runLasic(Array("-c", "mock", "shutdown", getLasicFilePath(204)))
+    Lasic.runLasic(Array("-c", "mock", "shutdown", getLasicFilePath(204)), System.out)
 
     //validate everything is gone
     assert(scalingGroup.getScaleGroups.size === 0)
@@ -124,7 +124,7 @@ class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
       //1) put real aws keys in src/test/lasic.properties (AWS_ACCESS_KEY and AWS_SECRET_KEY)
       //2) put a "default" key for your account in ~/.lasic/default.pem
       //NOTE: the test does NOT shutdown the instance.  You need to shut it down manually after you run the test
-      Lasic.runLasic(Array("-c", "aws", "deploy", getLasicFilePath(201)))
+      Lasic.runLasic(Array("-c", "aws", "deploy", getLasicFilePath(201)), System.out)
     }
   }
 
