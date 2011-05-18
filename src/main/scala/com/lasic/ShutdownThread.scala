@@ -1,6 +1,7 @@
 package com.lasic
 
 import interpreter.Verb
+import com.lasic.util._
 
 /**
  *
@@ -14,9 +15,9 @@ class ShutdownThread(val verb: Verb) extends Thread {
   override def run() {
     lock synchronized {
       if (callTerminate) {
-        System.out.println("Abnormally Terminating LASIC. Giving verb a change to cleanup...");
+        PrintLine("Abnormally Terminating LASIC. Giving verb a change to cleanup...");
         verb.terminate
-        System.out.println("LASIC terminated");
+        PrintLine("LASIC terminated");
       }
     }
   }

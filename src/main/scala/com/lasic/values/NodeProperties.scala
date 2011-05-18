@@ -9,6 +9,7 @@ trait NodeProperties {
   private var groupsVar: Option[List[String]] = None
   private var keyVar: Option[String] = None
   private var userVar: Option[String] = None
+  private var userDataVar: Option[String] = None
   private var instancetypeVar: Option[String] = None
 
   def name: String = {
@@ -100,6 +101,17 @@ trait NodeProperties {
     userVar = new Some(user)
   }
 
+  def data: String = {
+    userDataVar match {
+      case Some(x) => x
+      case None => null
+    }
+  }
+
+  def data_=(userData: String) {
+    userDataVar = new Some(userData)
+  }
+
   def instancetype: String = {
     instancetypeVar match {
       case Some(x) => x
@@ -142,6 +154,10 @@ trait NodeProperties {
     }
     that.userVar match {
       case Some(x) => userVar = that.userVar
+      case None =>
+    }
+    that.userDataVar match {
+      case Some(x) => userDataVar = that.userDataVar
       case None =>
     }
     that.instancetypeVar match {

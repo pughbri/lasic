@@ -1,5 +1,6 @@
 package com.lasic.cloud
 
+import com.lasic.util._
 /**
  *
  * User: Brian Pugh
@@ -14,7 +15,7 @@ object VolumeState extends Enumeration {
   val Deleting = Value("deleting")
   
   def string2State(s: String): VolumeState.Value = {
-    println( "State scanned is: " + s)
+    PrintLine( "State scanned is: " + s)
     for (ms <- iterator) {
       if (s.toLowerCase.equals(ms.toString.toLowerCase)) return ms
     }

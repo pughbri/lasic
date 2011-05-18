@@ -13,6 +13,8 @@ import com.lasic.{LasicProperties}
 import com.lasic.cloud.MachineState._
 import com.lasic.cloud.{MachineState, LaunchConfiguration}
 import com.lasic.cloud.ssh.{ConnectException, AuthFailureException, SshSession, BashPreparedScriptExecution}
+import com.amazonaws.AmazonClientException
+import com.amazonaws.AmazonServiceException
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model._
 import com.lasic.values.{ResolvedScriptDefinition, ScriptDefinition}
@@ -46,7 +48,26 @@ class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfig
       tags.add(new Tag("Reference", reference))
     }
     val createTagsRequest = new CreateTagsRequest(resources, tags)
-    awsClient.createTags(createTagsRequest)
+    //If the service is slow then this can fail
+    var tries = 3
+    var tagged = false
+    while (!tagged && tries > 0) {
+      if (tries == 0) {
+        awsClient.createTags(createTagsRequest)        
+      } else {
+        try {
+          awsClient.createTags(createTagsRequest)
+          tagged = true
+        } catch {
+          case ase: AmazonServiceException =>
+            Thread.sleep(500)
+          case ace: AmazonClientException =>
+            Thread.sleep(500)
+        }
+      }
+      tries = tries - 1
+    }
+    
   }
 
   def reboot() {

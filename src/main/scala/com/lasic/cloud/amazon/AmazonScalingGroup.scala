@@ -12,6 +12,7 @@ import com.lasic.cloud.{ScalingTrigger, ScalingGroupInfo, ImageState, ScalingGro
 import com.lasic.util.Logging
 import com.amazonaws.AmazonServiceException
 import com.lasic.LasicProperties
+import org.apache.commons.codec.binary.Base64
 
 /**
  *
@@ -58,6 +59,9 @@ class AmazonScalingGroupClient(awsClient: AmazonEC2Client, awsScalingClient: Ama
     launchConfig.setSecurityGroups(config.groups)
     launchConfig.setLaunchConfigurationName(config.name)
     launchConfig.setKeyName(config.key)
+    if (config.userData != null) {
+      launchConfig.setUserData(config.userData)
+    }
     launchConfig.setKernelId(config.kernelId)
     launchConfig.setRamdiskId(config.ramdiskId)
     awsScalingClient.createLaunchConfiguration(launchConfig)

@@ -2,6 +2,7 @@ package com.lasic.cloud
 
 import com.lasic.model.NodeInstance
 import com.lasic.LasicProperties
+import com.lasic.model.ScaleGroupConfiguration
 import com.lasic.values.NodeProperties
 
 /**
@@ -18,6 +19,7 @@ class LaunchConfiguration {
   var instanceType = "small"
   var userName: String = null
   var s3Download: String = null
+  var userData: String = null
   var availabilityZone: String = LasicProperties.getProperty("availability_zone", "us-east-1d")
 
 
@@ -34,12 +36,15 @@ class LaunchConfiguration {
           "instanceType [" + instanceType + "]" +
           "userName [" + userName + "]" +
           "s3Download [" + s3Download + "]" +
+          "userData [" + userData + "]" +
           "availabilityZone [" + availabilityZone + "]"
 }
 
 object LaunchConfiguration {
+  
   def build(node: NodeInstance): LaunchConfiguration = {
-    build(node.parent)
+    val lc = build(node.parent)
+    lc
   }
 
   def build(nodeProps: NodeProperties) = {
@@ -51,6 +56,7 @@ object LaunchConfiguration {
       lc.kernelId = nodeProps.kernelid
       lc.key = nodeProps.key
       lc.groups = nodeProps.groups
+      lc.userData = nodeProps.data
       //lc.instanceType = node.parent.instancetype
       lc.userName = nodeProps.user
       lc.instanceType = nodeProps.instancetype
@@ -59,4 +65,11 @@ object LaunchConfiguration {
     }
     lc
   }
+
+  def buildMaster(nodeProps: NodeProperties) = {
+    val lc = build(nodeProps)
+    lc.userData = null
+    lc
+  }
+
 }

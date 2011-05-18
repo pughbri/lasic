@@ -11,6 +11,7 @@ import com.lasic.concurrent.ops._
 import com.lasic.cloud._
 import com.lasic.LasicProperties
 import java.util.Date
+import com.lasic.util._
 
 /**
  * Launches VM, attaches volumes, runs the "install" action for each one, and brings up scale groups.
@@ -39,7 +40,7 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
     scaleGroups.foreach {
       scaleGroup =>
         spawn("launch scale group instances") {
-          scaleGroup.vm = cloud.createVM(LaunchConfiguration.build(scaleGroup.configuration), true)
+          scaleGroup.vm = cloud.createVM(LaunchConfiguration.buildMaster(scaleGroup.configuration), true)
         }
     }
   }
@@ -123,23 +124,23 @@ class DeployVerb(val cloud: Cloud, val program: LasicProgram) extends Verb with 
 
 
   private def printBoundLasicProgram {
-    println("paths {")
+    PrintLine("paths {")
     nodes foreach {
-      node => println("    " + node.path + ": \"" + node.vmId + "\"  // public=" + showValue(node.vmPublicDns) + "\tprivate=" + showValue(node.vmPrivateDns))
+      node => PrintLine("    " + node.path + ": \"" + node.vmId + "\"  // public=" + showValue(node.vmPublicDns) + "\tprivate=" + showValue(node.vmPrivateDns))
     }
     scaleGroups foreach {
       scaleGroup =>
-        println("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
-        println("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
+        PrintLine("    " + scaleGroup.path + ": \"" + scaleGroup.cloudName + "\"")
+        PrintLine("    " + scaleGroup.configuration.path + ": \"" + scaleGroup.configuration.cloudName + "\"")
     }
     volumes foreach {
-      volumeInst => println("    " + volumeInst.path + ": \"" + volumeInst.volume.id + "\"")
+      volumeInst => PrintLine("    " + volumeInst.path + ": \"" + volumeInst.volume.id + "\"")
     }
 
     loadBalancers foreach {
-      loadBalancer => println("    " + loadBalancer.path + ": \"" + loadBalancer.cloudName + "\" // dns=" + loadBalancer.dnsName)
+      loadBalancer => PrintLine("    " + loadBalancer.path + ": \"" + loadBalancer.cloudName + "\" // dns=" + loadBalancer.dnsName)
     }
-    println("}")
+    PrintLine("}")
   }
 
   private def createLoadBalancers {

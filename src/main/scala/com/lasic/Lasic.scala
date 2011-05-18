@@ -8,8 +8,9 @@ import parser.LasicCompiler
 import io.Source
 import java.lang.System
 import com.beust.jcommander.{ParameterException, JCommander}
-import java.io.{FileNotFoundException, File}
+import java.io.{FileNotFoundException, File, PrintStream}
 import actors.threadpool.TimeUnit
+import com.lasic.util._
 
 
 /**
@@ -27,17 +28,18 @@ object Lasic {
   def main(args: Array[String]) {
     val startTime = System.currentTimeMillis
 
-    runLasic(args)
+    runLasic(args, System.out)
 
     val millis = System.currentTimeMillis - startTime
     val minutes= TimeUnit.MILLISECONDS.toMinutes(millis)
     val secs= TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
-    println("Ran in " + minutes + " min and " + secs + " seconds")
+    PrintLine("Ran in " + minutes + " min and " + secs + " seconds")
 
     System.exit(0)
   }
 
-  def runLasic(args: Array[String]): Unit = {
+  def runLasic(args: Array[String], printStream: PrintStream): Unit = {
+    PrintLine.printStream = printStream
     val cmdLineArgs = parseArgs(args)
     val program = compile(cmdLineArgs)
     execute(program, cmdLineArgs)
@@ -94,7 +96,7 @@ object Lasic {
   }
 
   def printUsageAndExit(jcmder: JCommander, message: String) = {
-    println(message)
+    PrintLine(message)
     if (jcmder != null) {
       jcmder.usage
     }

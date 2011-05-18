@@ -2,6 +2,7 @@ package com.lasic.cloud.amazon
 
 import com.lasic.cloud.VM
 import com.lasic.cloud._
+import com.lasic.util._
 
 /**
  *
@@ -29,7 +30,7 @@ class AmazonScalingGroupTest extends AmazonBaseTest {
         waitForVMToStart(vm)
         imageId = scaleGroup.createImageForScaleGroup(vm.instanceId, "imagetest" + System.currentTimeMillis, "test image creation", false)
         waitForImageToBeAvailable(scaleGroup, imageId)
-        println(imageId)
+        PrintLine(imageId)
         lc.machineImage = imageId
         scaleGroup.createScalingLaunchConfiguration(lc)
         Thread.sleep(2000)
