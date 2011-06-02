@@ -17,6 +17,9 @@ class CommandLineArgs {
 
   @Parameter(names = Array("-a", "--action"), description = "Action to be performed when used with the runAction verb")
   var action:String = null
+  
+  @Parameter(names = Array("-e", "--env"), description = "Environment name specifying which properties file to use")
+  var env:String = null
 
   @Parameter(description = "verb script")
   var verbAndScript:java.util.List[String] = null

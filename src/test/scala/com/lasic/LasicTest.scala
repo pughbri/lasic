@@ -4,7 +4,6 @@ package com.lasic
 
 import cloud.LaunchConfiguration
 import cloud.mock.MockCloud
-import cloud.mock.MockLoadBalancerClient.InternalLoadBalancerInst
 import junit.framework._
 import java.io.File
 import org.scalatest.junit.AssertionsForJUnit
@@ -15,7 +14,7 @@ import org.scalatest.junit.AssertionsForJUnit
  */
 class LasicTest extends TestCase("lasic") with AssertionsForJUnit {
   override def setUp = {
-    LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
+    System.setProperty("properties.file", new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath())
     new MockCloud().getScalingGroupClient.reset()
     new MockCloud().getLoadBalancerClient.reset()
   }

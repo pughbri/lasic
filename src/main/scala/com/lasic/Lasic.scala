@@ -41,6 +41,7 @@ object Lasic {
   def runLasic(args: Array[String], printStream: PrintStream): Unit = {
     PrintLine.printStream = printStream
     val cmdLineArgs = parseArgs(args)
+    LasicProperties.setEnv(cmdLineArgs.env)
     val program = compile(cmdLineArgs)
     execute(program, cmdLineArgs)
   }
