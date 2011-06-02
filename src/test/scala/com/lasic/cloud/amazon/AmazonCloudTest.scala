@@ -9,6 +9,7 @@ import java.lang.String
 import com.lasic.util.Logging
 import org.apache.commons.logging.LogFactory
 import com.lasic.util._
+import com.lasic._
 
 /**
  * User: pughbc
@@ -17,6 +18,10 @@ import com.lasic.util._
  */
 
 class AmazonCloudTest extends AmazonBaseTest {
+
+  override def setUp = {
+    LasicProperties.setProperties(new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath())
+  }
 
   def testVolume() {
     if (doActualCloudOperations) {
