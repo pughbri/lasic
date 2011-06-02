@@ -14,7 +14,7 @@ import java.lang.String
 
 class LasicPropertiesTest extends TestCase("MockCloudTest") {
   override def setUp = {
-	 LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
+    System.setProperty("properties.file", new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath())
   }
 
   def testGetProperty() = {

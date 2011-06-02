@@ -11,7 +11,7 @@ import java.io.File
  */
 class LasicCompilerTest extends TestCase("LasicCompilerTest") {
   override def setUp = {
-    LasicProperties.propFilename = new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath()
+    System.setProperty("properties.file", new File(classOf[Application].getResource("/lasic.properties").toURI()).getCanonicalPath())
   }
 
   /**
