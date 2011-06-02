@@ -41,7 +41,11 @@ object Lasic {
   def runLasic(args: Array[String], printStream: PrintStream): Unit = {
     PrintLine.printStream = printStream
     val cmdLineArgs = parseArgs(args)
-    LasicProperties.setEnv(cmdLineArgs.env)
+    val propertiesFile = cmdLineArgs.env match {
+      case null => System.getProperty("user.home") + "/.lasic/lasic.properties"
+      case env => System.getProperty("user.home")+"/.lasic/"+env+".properties"
+    }
+    LasicProperties.setProperties(propertiesFile)
     val program = compile(cmdLineArgs)
     execute(program, cmdLineArgs)
   }

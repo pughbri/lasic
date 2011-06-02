@@ -16,16 +16,10 @@ object LasicProperties extends Logging {
 
   private var env: String = null
 
-  lazy val config = {
-    new PropertiesConfiguration(if (env != null) {
-      System.getProperty("user.home")+"/.lasic/"+env+".properties"
-    } else {  
-      propFilenameInternal
-    })
-  }
+  var config: PropertiesConfiguration = null
 
-  def setEnv(env: String) = {
-    this.env = env
+  def setProperties(fileName: String) = {
+    config = new PropertiesConfiguration(fileName)
   }
   
   private[this] var propFilenameInternal = {
