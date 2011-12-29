@@ -112,7 +112,21 @@ class AmazonVM(awsClient: AmazonEC2Client, val launchConfiguration: LaunchConfig
     instanceList.add(instanceId)
     
     var dir = new DescribeInstancesRequest().withInstanceIds(instanceList)
-    val dirr = awsClient.describeInstances(dir)
+    var dirr: DescribeInstancesResult = null
+    var exceptionCnt: Int = 0
+    while (dirr == null) {
+      try {
+        dirr = awsClient.describeInstances(dir)
+      }
+      catch {
+        case ase: AmazonServiceException => {
+          exceptionCnt += 1
+          logger.warn("AmazonServiceException " + ase.getMessage + " (waiting for " + exceptionCnt + " second(s) and trying again...)");
+          Thread.sleep(exceptionCnt * 1000);
+        }
+        case t: Throwable => throw t
+      }
+    }
     if (dirr.getReservations.size != 1) {
       throw new IllegalStateException("expected a single reservation description for instance vmId " + vm.instanceId + " but got " + dirr.getReservations.get(0).getInstances.size)
     }
