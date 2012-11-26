@@ -27,7 +27,11 @@ class AmazonCloud extends Cloud with Logging {
 
   lazy val awsClient = {
     val (key, secret) = ec2Keys
-    new AmazonEC2Client(new BasicAWSCredentials(key, secret))
+    val ec2Client = new AmazonEC2Client(new BasicAWSCredentials(key, secret))
+    val region : String = LasicProperties.getProperty("region")
+    if (region != null)
+      ec2Client.setEndpoint(region)
+    ec2Client
   }
 
   lazy val awsLoadBalancer = {
