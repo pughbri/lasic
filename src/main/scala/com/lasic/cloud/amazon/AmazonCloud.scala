@@ -22,22 +22,29 @@ class AmazonCloud extends Cloud with Logging {
 
   lazy val awsAutoScaling = {
     val (key, secret) = ec2Keys
-    new AmazonAutoScalingClient(new BasicAWSCredentials(key, secret))
+    val amazonAutoScalingClient = new AmazonAutoScalingClient(new BasicAWSCredentials(key, secret))
+    var region : String = LasicProperties.getProperty("region", "us-east-1")
+    region = "autoscaling." + region + ".amazonaws.com"
+    amazonAutoScalingClient.setEndpoint(region)
+    amazonAutoScalingClient
   }
 
   lazy val awsClient = {
     val (key, secret) = ec2Keys
     val ec2Client = new AmazonEC2Client(new BasicAWSCredentials(key, secret))
-    val region : String = LasicProperties.getProperty("region")
-    if (region != null)
-      ec2Client.setEndpoint(region)
+    var region : String = LasicProperties.getProperty("region", "us-east-1")
+    region = "ec2." + region + ".amazonaws.com"
+    ec2Client.setEndpoint(region)
     ec2Client
   }
 
   lazy val awsLoadBalancer = {
     val (key, secret) = ec2Keys
-    new AmazonElasticLoadBalancingClient(new BasicAWSCredentials(key, secret))
-
+    val amazonElasticLoadBalancingClient = new AmazonElasticLoadBalancingClient(new BasicAWSCredentials(key, secret))
+    var region : String = LasicProperties.getProperty("region", "us-east-1")
+    region = "elasticloadbalancing." + region + ".amazonaws.com"
+    amazonElasticLoadBalancingClient.setEndpoint(region)
+    amazonElasticLoadBalancingClient
   }
 
   def ec2Keys = {
@@ -51,6 +58,7 @@ class AmazonCloud extends Cloud with Logging {
   def getLoadBalancerClient(): LoadBalancerClient = {
     new AmazonLoadBalancerClient(awsLoadBalancer)
   }
+
   def getScalingGroupClient(): ScalingGroupClient = {
     new AmazonScalingGroupClient(awsClient, awsAutoScaling)
   }
